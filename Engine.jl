@@ -47,20 +47,6 @@ struct Force
 
 end
 
-struct DOFevolver
-
-    #Name of force in the system
-    #Maybe not needed?
-    name::AbstractString
-
-    #Is it a "pair", "graph" or "external" force?
-    kind::AbstractString
-
-    #If pair: (p_i, p_j, t) elif external (p_i, t) elif graph (p_i, graph, t)
-    #Include t in argument even if t is not used for the calculation
-    contribute
-
-end
 
 function get_forces_of_kind(system, kind)
     #return an array with the forces if they are of the right kind
