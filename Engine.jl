@@ -1,4 +1,4 @@
-using Plots
+using CairoMakie
 using ProgressBars
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
@@ -20,6 +20,7 @@ struct System
     Periodic::Bool
 
 end
+
 function periodic!(p_i, systemsizes)
 
     for (i, xi) in pairs(p_i.x) 
@@ -66,14 +67,12 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot)
 
     #Loop over time
     current_state = deepcopy(system.initial_state)
+    new_state  = deepcopy(system.initial_state)
     for (n, t) in ProgressBar(pairs(0:dt:t_stop))
-
-        
-        new_state = []
-
         #Looping over old states, so could be parallelized
-        for p_i_old in current_state
-            p_i = copy(p_i_old)
+        Threads.@threads for (i, p_i_old) in collect(pairs(current_state))
+        #for (i, p_i_old) in collect(pairs(current_state))
+            p_i = new_state[i]
 
             if Npair>0
     
@@ -82,7 +81,7 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot)
                     if p_i.id != p_j.id
     
                         for force in pair_forces
-                            force.contribute(p_i, p_j, t, dt)
+                            force.contribute(p_i, p_j, t, dt, system.sizes)
                         end
                     end
                 end
@@ -98,12 +97,12 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot)
             if system.Periodic
                 periodic!(p_i, system.sizes)
             end
-            push!(new_state,p_i)
+            new_state[i]=p_i
         end
         current_state = new_state
+        new_state=current_state
         save_state!(states, current_state, n, Tsave)
         if Tplot!=0
-
             plot_state(current_state, n, Tplot)
         end
     end
@@ -121,11 +120,22 @@ end
 
 function plot_state(current_state, n, Tplot)
     if n%Tplot==0
-        S=scatter()
+        
         x = [p_i.x[1] for p_i in current_state]
         y = [p_i.x[2] for p_i in current_state]
+        s=[sqrt(2)*4*p_i.a/sqrt(system.sizes[1]*system.sizes[2]) for p_i in current_state]
         c = [p_i.id for p_i in current_state]
-        scatter!(S,x,y, xlimits = (0,system.sizes[1]), ylimits=(0, system.sizes[2]), legend=false, zcolor=c, color=:hawaii, aspect_ratio = :equal)
-        display(S)
+
+        
+        #S=scatter(x,y, xlimits = (0,system.sizes[1]), ylimits=(0, system.sizes[2]), legend=false, zcolor=c, color=:hawaii, markersize=s,markerspace=SceneSpace ,aspect_ratio = :equal)
+        f = Figure()
+
+        ax = Axis(f[1, 1], xlabel = "x", ylabel = "y",aspect=DataAspect())
+        
+        scatter!(ax, x,y, markersize=s, color=c,markerspace=SceneSpace)
+
+        xlims!(ax,(0, system.sizes[1]))
+        ylims!(ax,(0, system.sizes[2]))
+        display(f)
     end
 end
