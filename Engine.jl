@@ -21,6 +21,7 @@ struct System
 
 end
 
+
 function periodic!(p_i, systemsizes)
 
     for (i, xi) in pairs(p_i.x) 
@@ -42,11 +43,14 @@ struct Force
     #Is it a "pair", "graph" or "external" force?
     kind::AbstractString
 
+    params::AbstractDict
+
     #If pair: (p_i, p_j, t) elif external (p_i, t) elif graph (p_i, graph, t)
     #Include t in argument even if t is not used for the calculation
     contribute
 
 end
+
 
 
 function get_forces_of_kind(system, kind)
@@ -55,7 +59,7 @@ function get_forces_of_kind(system, kind)
 
 end
 
-function Euler_integrator(system, dt, t_stop,  Tsave, Tplot)
+function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_state=nothing)
 
     states = [deepcopy(system.initial_state)]
 
@@ -81,13 +85,13 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot)
                     if p_i.id != p_j.id
     
                         for force in pair_forces
-                            force.contribute(p_i, p_j, t, dt, system.sizes)
+                            force.contribute(p_i, p_j, t, dt, force.params, system.sizes, system.Periodic)
                         end
                     end
                 end
             end
             for force in external_forces
-                force.contribute(p_i, t, dt)
+                force.contribute(p_i, t, dt, force.params, system.sizes, system.Periodic)
             end
 
             for dofevolver in system.dofevolvers
@@ -102,8 +106,11 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot)
         current_state = new_state
         new_state=current_state
         save_state!(states, current_state, n, Tsave)
-        if Tplot!=0
-            plot_state(current_state, n, Tplot)
+
+        if !isnothing(plot_state)
+            if Tplot!=0
+                plot_state(current_state, n, Tplot)
+            end
         end
     end
     return states
@@ -116,26 +123,4 @@ function save_state!(states, current_state, n, Tsave)
 
     end
 
-end
-
-function plot_state(current_state, n, Tplot)
-    if n%Tplot==0
-        
-        x = [p_i.x[1] for p_i in current_state]
-        y = [p_i.x[2] for p_i in current_state]
-        s=[sqrt(2)*4*p_i.a/sqrt(system.sizes[1]*system.sizes[2]) for p_i in current_state]
-        c = [p_i.id for p_i in current_state]
-
-        
-        #S=scatter(x,y, xlimits = (0,system.sizes[1]), ylimits=(0, system.sizes[2]), legend=false, zcolor=c, color=:hawaii, markersize=s,markerspace=SceneSpace ,aspect_ratio = :equal)
-        f = Figure()
-
-        ax = Axis(f[1, 1], xlabel = "x", ylabel = "y",aspect=DataAspect())
-        
-        scatter!(ax, x,y, markersize=s, color=c,markerspace=SceneSpace)
-
-        xlims!(ax,(0, system.sizes[1]))
-        ylims!(ax,(0, system.sizes[2]))
-        display(f)
-    end
 end
