@@ -3,7 +3,6 @@ Simple proof-of-concept simulations of Active Matter in Julia
 See examples on how to use.
 
 
-
 **Required Julia packages:**
 -CairoMakie (for live plotting)
 -ProgressBars (for progressbar in integrator)
