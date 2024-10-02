@@ -1,7 +1,4 @@
 
-
-
-
 function overdamped_x_evolver!(p_i, t, dt)
 
     p_i.x.+= p_i.v * dt

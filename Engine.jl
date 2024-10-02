@@ -1,4 +1,3 @@
-using CairoMakie
 using ProgressBars
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations

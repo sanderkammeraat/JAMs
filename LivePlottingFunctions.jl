@@ -1,4 +1,4 @@
-
+using CairoMakie
 #Define functions for live plotting
 function plot_disks(current_state, n, Tplot)
     if n%Tplot==0
