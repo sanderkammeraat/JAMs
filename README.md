@@ -11,7 +11,7 @@ See https://code.visualstudio.com/docs/languages/julia for detailed instructions
 
 
 **Required Julia packages:**  
-~~-CairoMakie (for live plotting)~~ Note: no longer needed. Instead using the built-in Plots.jl package now.
+-Plots (for live plotting)
 -ProgressBars (for progressbar in integrator)  
 -Random (for noise and random initial positions, probably pre-installed)  
 -Distributions (for noise and random initial positions, probably pre-installed)  
