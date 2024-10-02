@@ -4,11 +4,11 @@ See examples on how to use.
 
 
 **Required Julia packages:**
--CairoMakie (for live plotting)
--ProgressBars (for progressbar in integrator)
--Random (for noise and random initial positions, probably pre-installed)
--Distributions (for noise and random initial positions, probably pre-installed)
--LinearAlgebra (for doing linear algebra, probably pre-installed)
+-CairoMakie (for live plotting)  
+-ProgressBars (for progressbar in integrator)  
+-Random (for noise and random initial positions, probably pre-installed)  
+-Distributions (for noise and random initial positions, probably pre-installed)  
+-LinearAlgebra (for doing linear algebra, probably pre-installed)  
 
 **Multi-threading**
 For information about multi-threading in Julia and how to set the number of threads, visit:
