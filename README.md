@@ -3,6 +3,7 @@ Simple proof-of-concept simulations of Active Matter in Julia
 See examples on how to use.  
 
 **Possible workflow**  
+See https://code.visualstudio.com/docs/languages/julia for detailed instructions  
 1) Install Julia  
 2) Install Visual Studio Code  
 3) Install Julia extension for VS Code
