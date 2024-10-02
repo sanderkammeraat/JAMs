@@ -2,6 +2,12 @@ Simple proof-of-concept simulations of Active Matter in Julia
 
 See examples on how to use.  
 
+**Possible workflow**  
+1) Install Julia  
+2) Install Visual Studio Code  
+3) Install Julia extension for VS Code
+4) Install Julia packages (e.g. via REPL terminal in VS Code) 
+
 
 **Required Julia packages:**  
 -CairoMakie (for live plotting)  
