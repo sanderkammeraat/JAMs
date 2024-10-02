@@ -51,7 +51,7 @@ function contribute_swarm_pos_force!(p_i,p_j,t, dt, params, system_sizes, system
     dx = minimal_image_difference(p_i.x, p_j.x, system_sizes, system_Periodic)
     dxn = norm(dx)
 
-    f = 1/params["N"] * dx/dxn * (1 + params["J"]*cos.(p_j.θ-p_i.θ)[1] ) - dx/dxn^2
+    f = 1/params["N"] * (dx/dxn * (1 + params["J"]*cos.(p_j.θ-p_i.θ)[1] ) - dx/dxn^2)
     p_i.f.+= f    
 end
 
@@ -63,6 +63,3 @@ function contribute_swarm_angular_force!(p_i,p_j,t, dt, params, system_sizes, sy
     ω = 1/params["N"] * params["K"] * sin.(p_j.θ-p_i.θ)[1]/dxn
     p_i.ω.+= ω
 end
-
-
-

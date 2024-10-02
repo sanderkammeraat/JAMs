@@ -1,5 +1,9 @@
 using ProgressBars
 using Plots
+using LoopVectorization
+
+#using LoopVectorization
+#Set default plotting backend
 gr()
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
@@ -15,7 +19,7 @@ struct System
     forces
 
     #Array of functions to evolve dof (and reinitialize forces)
-    dofevolvers
+    dofevolvers::Array{Function}
 
     #Spatially periodic boundary conditions?
     Periodic::Bool
@@ -25,7 +29,7 @@ end
 
 function periodic!(p_i, systemsizes)
 
-    for (i, xi) in pairs(p_i.x) 
+    for (i, xi) in pairs(p_i.x)
 
         if xi<0
             p_i.x[i] = xi + systemsizes[i]
@@ -48,7 +52,7 @@ struct Force
 
     #If pair: (p_i, p_j, t) elif external (p_i, t) elif graph (p_i, graph, t)
     #Include t in argument even if t is not used for the calculation
-    contribute
+    contribute::Function
 
 end
 
@@ -89,19 +93,16 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_state=
 
     for (n, t) in ProgressBar(pairs(0:dt:t_stop))
         #Looping over old states, so could be parallelized
-        Threads.@threads for (i, p_i_old) in collect(pairs(current_state))
-        #for (i, p_i_old) in collect(pairs(current_state))
+        #Threads.@threads
+        Threads.@threads for i in eachindex(current_state)
             p_i = new_state[i]
 
             if Npair>0
     
-                for p_j in current_state
-    
-                    if p_i.id != p_j.id
-    
-                        for force in pair_forces
-                            force.contribute(p_i, p_j, t, dt, force.params, system.sizes, system.Periodic)
-                        end
+                for p_j in current_state[1:end .!= p_i.id]
+
+                    for force in pair_forces
+                        force.contribute(p_i, p_j, t, dt, force.params, system.sizes, system.Periodic)
                     end
                 end
             end

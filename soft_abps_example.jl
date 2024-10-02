@@ -3,7 +3,9 @@ include("Forces.jl")
 include("Particles.jl")
 include("DOFevolvers.jl")
 include("LivePlottingFunctions.jl")
+
 using Random, Distributions
+
 
 forces = []
 
@@ -15,10 +17,9 @@ dofevolvers = [overdamped_x_evolver!,overdamped_v_evolver!, overdamped_f_evolver
 
 
 #Initialize state
-N=500
-L=50.
+N=100
+L=20.
 initial_state = [ PolarParticle2d(i,1,0.3,0.01,[rand(Uniform(0, L)) ,rand(Uniform(0, L))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],1.0,1.,1.,[0.,0.],[0.,0.]) for i=1:N];
-#initial_state = [ PolarParticle2d(i,1,0.3,0.05,[L/2 ,L/2],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],1.0,1,1.,[0.,0.],[0.,0.]) for i=1:N];
 
 
 size = [L,L];
@@ -27,5 +28,6 @@ system = System(size, initial_state, forces, dofevolvers, true);
 
 
 #Run integration
-states = Euler_integrator(system, 0.1, 1000, 10, 10, plot_disks!);
+states = Euler_integrator(system, 0.1, 1000, 1000, 10, plot_disks!);
+
 

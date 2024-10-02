@@ -1,3 +1,4 @@
+using StaticArrays
 #Defining a particle requires a class with particle properties
 struct PolarParticle2d
     id::Integer
@@ -5,19 +6,19 @@ struct PolarParticle2d
     v0::Float64
     Dr::Float64
 
-    x::Vector{Float64}
-    v::Vector{Float64}
-    f::Vector{Float64} #f->v->r
+    x::MVector{2,Float64}
+    v::MVector{2,Float64}
+    f::MVector{2,Float64} #f->v->r
 
-    θ::Vector{Float64}
-    ω::Vector{Float64}
+    θ::MVector{1,Float64}
+    ω::MVector{1,Float64}
 
     k::Float64
     a::Float64
 
     zeta::Float64 #Friction coefficient, only used icw overdamped integrators
-    fact::Vector{Float64}
-    fpas::Vector{Float64}
+    fact::MVector{2,Float64}
+    fpas::MVector{2,Float64}
 end
 #And a way to copy this type of particle
 #Here we see how the function-first approach of Julia works. We have to add to the base copy method how to act on this type (particle class)
@@ -29,15 +30,15 @@ struct Swarmalator
     v0::Float64
     Dr::Float64
 
-    x::Vector{Float64}
-    v::Vector{Float64}
-    f::Vector{Float64} #f->v->r
+    x::MVector{2,Float64}
+    v::MVector{2,Float64}
+    f::MVector{2,Float64} #f->v->r
 
 
-    θ::Vector{Float64}
-    ω::Vector{Float64}
+    θ::MVector{1,Float64}
+    ω::MVector{1,Float64}
 
     zeta::Float64 #Friction coefficient, only used icw overdamped integrators
-    fact::Vector{Float64}
-    fpas::Vector{Float64}
+    fact::MVector{2,Float64}
+    fpas::MVector{2,Float64}
 end
