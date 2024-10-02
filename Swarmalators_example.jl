@@ -29,5 +29,5 @@ system = System(size, initial_state, forces, dofevolvers, false);
 
 
 #%%
-states = Euler_integrator(system, 0.1, 1000, 10000, 10, plot_Swarmalators);
+states = Euler_integrator(system, 0.1, 1000, 10000, 10, plot_Swarmalators!);
 

@@ -1,7 +1,7 @@
 include("Engine.jl")
 include("Forces.jl")
 include("Particles.jl")
-include("DOFEvolvers.jl")
+include("DOFevolvers.jl")
 include("LivePlottingFunctions.jl")
 using Random, Distributions
 
@@ -15,7 +15,7 @@ dofevolvers = [overdamped_x_evolver!,overdamped_v_evolver!, overdamped_f_evolver
 
 
 #Initialize state
-N=200
+N=500
 L=50.
 initial_state = [ PolarParticle2d(i,1,0.3,0.01,[rand(Uniform(0, L)) ,rand(Uniform(0, L))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],1.0,1.,1.,[0.,0.],[0.,0.]) for i=1:N];
 #initial_state = [ PolarParticle2d(i,1,0.3,0.05,[L/2 ,L/2],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],1.0,1,1.,[0.,0.],[0.,0.]) for i=1:N];
@@ -26,19 +26,6 @@ size = [L,L];
 system = System(size, initial_state, forces, dofevolvers, true);
 
 
-#%%
-states = Euler_integrator(system, 0.1, 1000, 10, 10, plot_disks);
+#Run integration
+states = Euler_integrator(system, 0.1, 1000, 10, 10, plot_disks!);
 
-#%%
-
-anim = @animate for (i, state) in pairs(states)
-    x = [p_i.x[1] for p_i in state]
-    y = [p_i.x[2] for p_i in state]
-    c = [p_i.id for p_i in state]
-    scatter(x,y, xlimits = (0,system.sizes[1]), ylimits=(0, system.sizes[2]), legend=false, zcolor=c, color=:hawaii, aspect_ratio = :equal)
-end
-
-gif(anim, "anim_fps15.gif", fps = 15)
-
-#%%
-@profview Euler_integrator(system, 0.01, 100, 100,0)

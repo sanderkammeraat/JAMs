@@ -1,4 +1,6 @@
 using ProgressBars
+using Plots
+gr()
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
 struct System
@@ -71,6 +73,20 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_state=
     #Loop over time
     current_state = deepcopy(system.initial_state)
     new_state  = deepcopy(system.initial_state)
+
+    if !isnothing(plot_state)
+        if Tplot!=0
+            p = plot(aspect_ratio=:equal)
+            xlims!(0, system.sizes[1])
+            ylims!(0, system.sizes[2])
+
+            xlabel!("x")
+            ylabel!("y")
+            display(p)
+        end
+    end
+
+
     for (n, t) in ProgressBar(pairs(0:dt:t_stop))
         #Looping over old states, so could be parallelized
         Threads.@threads for (i, p_i_old) in collect(pairs(current_state))
@@ -108,7 +124,7 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_state=
 
         if !isnothing(plot_state)
             if Tplot!=0
-                plot_state(current_state, n, Tplot)
+                plot_state(p, current_state, n, Tplot)
             end
         end
     end
