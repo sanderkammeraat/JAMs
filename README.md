@@ -7,7 +7,8 @@ See https://code.visualstudio.com/docs/languages/julia for detailed instructions
 1) Install Julia  
 2) Install Visual Studio Code  
 3) Install Julia extension for VS Code
-4) Install Julia packages (e.g. via REPL terminal in VS Code) 
+4) Install Julia packages (e.g. via REPL terminal in VS Code)  
+5) For proper live plotting disable the "Use Plot Pane" option in the settings of the Julia extension of VS code.
 
 
 **Required Julia packages:**  
