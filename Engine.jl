@@ -1,8 +1,5 @@
 using ProgressBars
 using Plots
-using LoopVectorization
-
-#using LoopVectorization
 #Set default plotting backend
 gr()
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
