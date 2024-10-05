@@ -28,7 +28,7 @@ function contribute_2d_ABP_angular_noise!(p_i,t, dt, params, system_sizes, syste
     ω=sqrt(2*p_i.Dr)*rand(Normal(0, 1))
 
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
-    p_i.ω.= ω*sqrt(dt)/dt
+    p_i.ω.+= ω*sqrt(dt)/dt
 end
 
 
