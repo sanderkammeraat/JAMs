@@ -1,7 +1,7 @@
 include("Engine.jl")
 include("Forces.jl")
 include("Particles.jl")
-include("DOFEvolvers.jl")
+include("DOFevolvers.jl")
 include("LivePlottingFunctions.jl")
 using Random, Distributions
 
