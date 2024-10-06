@@ -1,3 +1,5 @@
+
+
 using Random, Distributions
 using LinearAlgebra
 
@@ -18,9 +20,13 @@ function minimal_image_difference(xi, xj, system_sizes, system_Periodic)
 end
 
 function contribute_2d_ABP_propulsion_force!(p_i,t, dt, params, system_sizes, system_Periodic)
-    f = p_i.zeta * p_i.v0 * [cos(p_i.θ[1]), sin(p_i.θ[1])]
-    p_i.f.+= f
+
+    p_i.f[1]+= p_i.zeta * p_i.v0 *cos(p_i.θ[1])
+    p_i.f[2]+= p_i.zeta * p_i.v0 *sin(p_i.θ[1])
     #p_i.fact.+= f
+
+    return p_i
+
 end
 
 function contribute_2d_ABP_angular_noise!(p_i,t, dt, params, system_sizes, system_Periodic)
@@ -29,6 +35,8 @@ function contribute_2d_ABP_angular_noise!(p_i,t, dt, params, system_sizes, syste
 
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
     p_i.ω.+= ω*sqrt(dt)/dt
+
+    return p_i
 end
 
 
@@ -42,6 +50,7 @@ function contribute_soft_disk_force!(p_i,p_j,t, dt, params, system_sizes, system
     p_i.f.+= f
      #p_i.fpas.+= f
     end
+    return p_i
 end
 
 
@@ -52,7 +61,8 @@ function contribute_swarm_pos_force!(p_i,p_j,t, dt, params, system_sizes, system
     dxn = norm(dx)
 
     f = 1/params["N"] * (dx/dxn * (1 + params["J"]*cos.(p_j.θ-p_i.θ)[1] ) - dx/dxn^2)
-    p_i.f.+= f    
+    p_i.f.+= f   
+    return p_i 
 end
 
 function contribute_swarm_angular_force!(p_i,p_j,t, dt, params, system_sizes, system_Periodic)
@@ -62,4 +72,5 @@ function contribute_swarm_angular_force!(p_i,p_j,t, dt, params, system_sizes, sy
 
     ω = 1/params["N"] * params["K"] * sin.(p_j.θ-p_i.θ)[1]/dxn
     p_i.ω.+= ω
+    return p_i
 end

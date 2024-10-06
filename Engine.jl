@@ -4,25 +4,6 @@ using Plots
 gr()
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
-struct System
-
-    #Vector that determines the linear size of the system
-    sizes::Vector{Float64}
-
-    #Array containing particles in a specific state
-    initial_state
-
-    #Array of force functions:
-    forces
-
-    #Array of functions to evolve dof (and reinitialize forces)
-    dofevolvers::Array{Function}
-
-    #Spatially periodic boundary conditions?
-    Periodic::Bool
-
-end
-
 
 function periodic!(p_i, systemsizes)
 
@@ -34,25 +15,43 @@ function periodic!(p_i, systemsizes)
             p_i.x[i] = xi - systemsizes[i]
         end
     end
-
+    return p_i
 end
+
 struct Force
 
     #Name of force in the system
     #Maybe not needed?
-    name::AbstractString
+    name::String
 
     #Is it a "pair", "graph" or "external" force?
-    kind::AbstractString
+    kind::String
 
-    params::AbstractDict
+    params::Dict{String,Float64}
 
     #If pair: (p_i, p_j, t) elif external (p_i, t) elif graph (p_i, graph, t)
     #Include t in argument even if t is not used for the calculation
     contribute::Function
 
 end
+struct System
 
+    #Vector that determines the linear size of the system
+    sizes::Vector{Float64}
+
+    #Array containing particles in a specific state
+    initial_state::AbstractVector
+
+    #Array of force functions:
+    forces::Vector{Force}
+
+    #Array of functions to evolve dof (and reinitialize forces)
+    dofevolvers::Vector{Function}
+
+    #Spatially periodic boundary conditions?
+    Periodic::Bool
+
+end
 
 
 function get_forces_of_kind(system, kind)
@@ -63,7 +62,7 @@ end
 
 function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_state=nothing)
 
-    states = [deepcopy(system.initial_state)]
+    states = [copy(system.initial_state)]
 
     pair_forces = get_forces_of_kind(system, "pair")
 
@@ -71,9 +70,9 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_state=
 
     Npair = length(pair_forces)
 
-    #Loop over time
-    current_state = deepcopy(system.initial_state)
-    new_state  = deepcopy(system.initial_state)
+    
+    current_state = copy(system.initial_state)
+    new_state  = copy(system.initial_state)
 
     if !isnothing(plot_state)
         if Tplot!=0
@@ -87,19 +86,22 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_state=
         end
     end
 
-
+    #Loop over time
     for (n, t) in ProgressBar(pairs(0:dt:t_stop))
         #Looping over old states, so could be parallelized
         #Threads.@threads
-        Threads.@threads for i in eachindex(current_state)
+        for i in eachindex(current_state)
             p_i = new_state[i]
 
             if Npair>0
     
-                for p_j in current_state[1:end .!= p_i.id]
+                for j in eachindex(current_state)
 
-                    for force in pair_forces
-                        force.contribute(p_i, p_j, t, dt, force.params, system.sizes, system.Periodic)
+                    if i!=j
+
+                        for force in pair_forces
+                            force.contribute(p_i, current_state[j], t, dt, force.params, system.sizes, system.Periodic)
+                        end
                     end
                 end
             end
@@ -117,9 +119,7 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_state=
             new_state[i]=p_i
         end
         current_state = new_state
-        new_state=current_state
         save_state!(states, current_state, n, Tsave)
-
         if !isnothing(plot_state)
             if Tplot!=0
                 plot_state(p, current_state, n, Tplot)

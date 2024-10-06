@@ -1,3 +1,4 @@
+
 using StaticArrays
 #Defining a particle requires a class with particle properties
 struct PolarParticle2d
