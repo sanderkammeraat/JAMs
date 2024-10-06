@@ -90,7 +90,7 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_state=
     for (n, t) in ProgressBar(pairs(0:dt:t_stop))
         #Looping over old states, so could be parallelized
         #Threads.@threads
-        for i in eachindex(current_state)
+        Threads.@threads for i in eachindex(current_state)
             p_i = new_state[i]
 
             if Npair>0
