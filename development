@@ -15,3 +15,17 @@ for t in 1:100
 end
 
 T.x
+
+function nl(N)
+
+    for i in 1:N
+
+        for j in 1:N
+            if i!=j
+                a=1
+            end
+        end
+    end
+end
+
+@time nl(10000000000000000)

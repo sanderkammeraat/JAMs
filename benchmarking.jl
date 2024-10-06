@@ -8,8 +8,8 @@ using Random, Distributions
 using JET
 using BenchmarkTools
 function simulation()
-    forces =Force[]
-    push!(forces, Force("ABP propulsion", "external", Dict("nothing"=>0.),contribute_2d_ABP_propulsion_force!))
+    forces =Force[Force("ABP propulsion", "external", Dict("nothing"=>0.),contribute_2d_ABP_propulsion_force!)]
+    #push!(forces, Force("ABP propulsion", "external", Dict("nothing"=>0.),contribute_2d_ABP_propulsion_force!))
     push!(forces, Force("ABP angular noise", "external", Dict("nothing"=>0.), contribute_2d_ABP_angular_noise!))
     push!(forces, Force("soft disk repulsion", "pair",Dict("nothing"=>0.), contribute_soft_disk_force!))
 
@@ -26,7 +26,7 @@ function simulation()
     system = System(size, initial_state, forces, dofevolvers, true);
 
     #Run integration
-    states = Euler_integrator(system, 0.1, 1, 1000, 10, plot_disks!);
+    states = Euler_integrator(system, 0.1, 1, 1000, 0, plot_disks!);
     0
 
 end

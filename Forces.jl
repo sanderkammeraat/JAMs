@@ -2,20 +2,22 @@
 
 using Random, Distributions
 using LinearAlgebra
-
+using StaticArrays
 function minimal_image_difference(xi, xj, system_sizes, system_Periodic)
 
-    dr = (xj - xi)
-    if system_Periodic
-        for (n, dx) in collect(pairs(dr))
-            if dx>system_sizes[n]
-                dr[n]-=system_sizes[n]
-            end
-            if dx<=-system_sizes[n]
-                dr[n]+=system_sizes[n]
-            end
-        end 
-    end
+    dr = @MVector zeros(length(xi))
+    
+        for n in eachindex(xi)
+            dr[n]=xj[n]-xi[n]
+            if system_Periodic
+                if dr[n]>system_sizes[n]
+                    dr[n]-=system_sizes[n]
+                end
+                if dr[n]<=-system_sizes[n]
+                    dr[n]+=system_sizes[n]
+                end
+            end 
+        end
     return dr
 end
 
@@ -45,10 +47,12 @@ function contribute_soft_disk_force!(p_i,p_j,t, dt, params, system_sizes, system
     dx = minimal_image_difference(p_i.x, p_j.x, system_sizes, system_Periodic)
     dxn = norm(dx)
     d2a = p_i.a+p_j.a
+    f = @MVector zeros(length(dx))
     if dxn < d2a
-    f = p_i.k * (dxn-d2a) * dx/dxn
-    p_i.f.+= f
-     #p_i.fpas.+= f
+
+        f.= p_i.k * (dxn-d2a) * dx/dxn
+        p_i.f.+= f
+    #p_i.fpas.+= f
     end
     return p_i
 end
@@ -59,8 +63,8 @@ function contribute_swarm_pos_force!(p_i,p_j,t, dt, params, system_sizes, system
 
     dx = minimal_image_difference(p_i.x, p_j.x, system_sizes, system_Periodic)
     dxn = norm(dx)
-
-    f = 1/params["N"] * (dx/dxn * (1 + params["J"]*cos.(p_j.θ-p_i.θ)[1] ) - dx/dxn^2)
+    f = @MVector zeros(length(dx))
+    f.= 1/params["N"] * (dx/dxn * (1 + params["J"]*cos.(p_j.θ-p_i.θ)[1] ) - dx/dxn^2)
     p_i.f.+= f   
     return p_i 
 end

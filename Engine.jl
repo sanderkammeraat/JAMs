@@ -1,5 +1,6 @@
 using ProgressBars
 using Plots
+
 #Set default plotting backend
 gr()
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
@@ -18,7 +19,7 @@ function periodic!(p_i, systemsizes)
     return p_i
 end
 
-struct Force
+struct Force{T,F}
 
     #Name of force in the system
     #Maybe not needed?
@@ -27,13 +28,15 @@ struct Force
     #Is it a "pair", "graph" or "external" force?
     kind::String
 
-    params::Dict{String,Float64}
+    params::T
 
     #If pair: (p_i, p_j, t) elif external (p_i, t) elif graph (p_i, graph, t)
     #Include t in argument even if t is not used for the calculation
-    contribute::Function
+    contribute::F
 
 end
+
+
 struct System
 
     #Vector that determines the linear size of the system
@@ -90,21 +93,14 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_state=
     for (n, t) in ProgressBar(pairs(0:dt:t_stop))
         #Looping over old states, so could be parallelized
         #Threads.@threads
-        Threads.@threads for i in eachindex(current_state)
+        Np = length(current_state)
+        Threads.@threads for i in 1:Np
             p_i = new_state[i]
 
             if Npair>0
-    
-                for j in eachindex(current_state)
-
-                    if i!=j
-
-                        for force in pair_forces
-                            force.contribute(p_i, current_state[j], t, dt, force.params, system.sizes, system.Periodic)
-                        end
-                    end
-                end
+                p_i=contribute_pair_forces!(i,p_i, current_state, pair_forces, t, dt,system.sizes, system.Periodic)
             end
+
             for force in external_forces
                 force.contribute(p_i, t, dt, force.params, system.sizes, system.Periodic)
             end
@@ -136,4 +132,18 @@ function save_state!(states, current_state, n, Tsave)
 
     end
 
+end
+
+
+function contribute_pair_forces!(i,p_i, current_state, pair_forces, t, dt,system_sizes, periodic)
+
+    for j in eachindex(current_state)
+
+        if i!=j
+            for force in pair_forces
+                force.contribute(p_i, current_state[j], t, dt, force.params, system_sizes, periodic)
+            end
+        end
+    end
+    return p_i
 end
