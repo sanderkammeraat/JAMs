@@ -1,6 +1,6 @@
 Simple proof-of-concept simulations of Active Matter in Julia.  
 
-**Disclaimer:** This code is a hobby project and one of the goals is to learn the Julia programming language so it likely is not fully optimized (yet).  
+**Disclaimer:** This code is a hobby project and one of the goals is to learn the Julia programming language, so it likely is not fully optimized (yet).  
 
 See examples on how to use.  
 
