@@ -38,6 +38,9 @@ struct Swarmalator
     v::MVector{2,Float64}
     f::MVector{2,Float64} #f->v->r
 
+    a::Float64
+    k::Float64
+
 
     θ::MVector{1,Float64}
     ω::MVector{1,Float64}

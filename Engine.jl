@@ -1,11 +1,11 @@
 using ProgressBars
 using Plots
-
+using StaticArrays
 #Set default plotting backend
 gr()
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
-
+include("Forces.jl")
 function periodic!(p_i, systemsizes)
 
     for (i, xi) in pairs(p_i.x)
@@ -19,25 +19,24 @@ function periodic!(p_i, systemsizes)
     return p_i
 end
 
-struct Force{T,F}
 
-    #Name of force in the system
-    #Maybe not needed?
-    name::String
+function minimal_image_difference!(dx,xi, xj, system_sizes, system_Periodic)
 
-    #Is it a "pair", "graph" or "external" force?
-    kind::String
-
-    params::T
-
-    #If pair: (p_i, p_j, t) elif external (p_i, t) elif graph (p_i, graph, t)
-    #Include t in argument even if t is not used for the calculation
-    contribute::F
-
+    
+        for n in eachindex(xi)
+            dx[n]=xj[n]-xi[n]
+            if system_Periodic
+                if dx[n]>system_sizes[n]
+                    dx[n]-=system_sizes[n]
+                end
+                if dx[n]<=-system_sizes[n]
+                    dx[n]+=system_sizes[n]
+                end
+            end 
+        end
+    return dx
 end
-
-
-struct System
+struct System{T3}
 
     #Vector that determines the linear size of the system
     sizes::Vector{Float64}
@@ -46,10 +45,13 @@ struct System
     initial_state::AbstractVector
 
     #Array of force functions:
-    forces::Vector{Force}
+    external_forces
+
+    pair_forces
+    
 
     #Array of functions to evolve dof (and reinitialize forces)
-    dofevolvers::Vector{Function}
+    dofevolvers::T3
 
     #Spatially periodic boundary conditions?
     Periodic::Bool
@@ -57,23 +59,17 @@ struct System
 end
 
 
-function get_forces_of_kind(system, kind)
-    #return an array with the forces if they are of the right kind
-    return [force for force in system.forces if force.kind==kind]
-
-end
 
 function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_state=nothing)
 
     states = [copy(system.initial_state)]
 
-    pair_forces = get_forces_of_kind(system, "pair")
-
-    external_forces = get_forces_of_kind(system, "external")
+    external_forces = system.external_forces
+    pair_forces = system.pair_forces
 
     Npair = length(pair_forces)
 
-    
+
     current_state = copy(system.initial_state)
     new_state  = copy(system.initial_state)
 
@@ -102,15 +98,15 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_state=
             end
 
             for force in external_forces
-                force.contribute(p_i, t, dt, force.params, system.sizes, system.Periodic)
+                p_i=contribute_external_force!(p_i, t, dt, force)
             end
 
             for dofevolver in system.dofevolvers
-                dofevolver(p_i, t, dt)
+                p_i=dofevolver(p_i, t, dt)
             end
 
             if system.Periodic
-                periodic!(p_i, system.sizes)
+                p_i=periodic!(p_i, system.sizes)
             end
             new_state[i]=p_i
         end
@@ -135,13 +131,20 @@ function save_state!(states, current_state, n, Tsave)
 end
 
 
-function contribute_pair_forces!(i,p_i, current_state, pair_forces, t, dt,system_sizes, periodic)
+function contribute_pair_forces!(i,p_i, current_state, pair_forces, t, dt,system_sizes, system_Periodic)
 
+    #Initialize
+    dx = @MVector zeros(Float64,length(p_i.x))
     for j in eachindex(current_state)
 
         if i!=j
-            for force in pair_forces
-                force.contribute(p_i, current_state[j], t, dt, force.params, system_sizes, periodic)
+            p_j = current_state[j]
+
+            dx = minimal_image_difference!(dx, p_i.x, p_j.x, system_sizes, system_Periodic)
+
+            dxn = norm(dx)
+            for n in eachindex(pair_forces)
+                contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, pair_forces[n])
             end
         end
     end

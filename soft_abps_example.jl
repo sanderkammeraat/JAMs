@@ -1,31 +1,52 @@
 include("Engine.jl")
-include("Forces.jl")
+#include("Forces.jl")
 include("Particles.jl")
 include("DOFevolvers.jl")
 include("LivePlottingFunctions.jl")
 
 using Random, Distributions
+using JET
+#using BenchmarkTools
+function simulation()
+
+    external_forces = []
+
+    #push!(forces, Force("ABP propulsion", "external", Dict("nothing"=>0.),contribute_2d_ABP_propulsion_force!))
+    push!(external_forces, ABP_2d_propulsion_force())
+    push!(external_forces, ABP_2d_angular_noise())
+
+    pair_forces = []
+    
+
+    push!(pair_forces, soft_disk_force())
+    print(pair_forces)
+    
+    dofevolvers = [overdamped_x_evolver!,overdamped_v_evolver!, overdamped_f_evolver!, overdamped_θ_evolver!, overdamped_ω_evolver!]
+
+    #Initialize state
+    N=1000
+    L=80.
+    initial_state = [ PolarParticle2d(i,1,0.3,0.01,[rand(Uniform(0, L)) ,rand(Uniform(0, L))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],1.0,1.,1.,[0.,0.],[0.,0.]) for i=1:N];
 
 
-forces = []
+    size = [L,L];
 
-push!(forces, Force("ABP propulsion", "external", Dict("nothing"=>1.),contribute_2d_ABP_propulsion_force!))
-push!(forces, Force("ABP angular noise", "external", Dict("nothing"=>1.), contribute_2d_ABP_angular_noise!))
-push!(forces, Force("soft disk repulsion", "pair",Dict("nothing"=>1.), contribute_soft_disk_force!))
+    system = System(size, initial_state, external_forces, pair_forces , dofevolvers, true);
 
-dofevolvers = [overdamped_x_evolver!,overdamped_v_evolver!, overdamped_f_evolver!, overdamped_θ_evolver!, overdamped_ω_evolver!]
+    #Run integration
+    #Use plot_disks! for nice visuals
+    #Use plot_points! for fast plotting
+    states = Euler_integrator(system, 0.1, 1000, 1000, 10, plot_points!);
 
+end
 
-#Initialize state
-N=1000
-L=80.
-initial_state = [ PolarParticle2d(i,1,0.4,0.001,[rand(Uniform(0, L)) ,rand(Uniform(0, L))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],1.0,1.,1.,[0.,0.],[0.,0.]) for i=1:N];
+simulation()
 
-
-size = [L,L];
-
-system = System(size, initial_state, forces, dofevolvers, true);
+@time simulation() # around 8 it/s without plotting # 2 s 3.7GB allocations
 
 
-#Run integration
-states = Euler_integrator(system, 0.1, 1000, 10, 10, plot_disks!);
+@profview simulation()
+
+@report_opt simulation()
+
+@benchmark simulation()

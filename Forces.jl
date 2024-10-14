@@ -3,35 +3,50 @@
 using Random, Distributions
 using LinearAlgebra
 using StaticArrays
-function minimal_image_difference(xi, xj, system_sizes, system_Periodic)
 
-    dr = @MVector zeros(length(xi))
-    
-        for n in eachindex(xi)
-            dr[n]=xj[n]-xi[n]
-            if system_Periodic
-                if dr[n]>system_sizes[n]
-                    dr[n]-=system_sizes[n]
-                end
-                if dr[n]<=-system_sizes[n]
-                    dr[n]+=system_sizes[n]
-                end
-            end 
-        end
-    return dr
+
+abstract type Force end
+
+
+struct ABP_2d_propulsion_force <:Force
 end
 
-function contribute_2d_ABP_propulsion_force!(p_i,t, dt, params, system_sizes, system_Periodic)
+struct ABP_2d_angular_noise<:Force
+end
+
+
+struct soft_disk_force <: Force
+end
+
+struct swarm_pos_force <: Force
+
+    N_inv::Float64
+    J::Float64
+
+end
+
+struct swarm_angular_force<:Force
+
+    N_inv::Float64
+    K::Float64
+
+end
+
+
+
+
+#Let's test the power of multiple dispatch
+
+
+function contribute_external_force!(p_i,t, dt, force::ABP_2d_propulsion_force)
 
     p_i.f[1]+= p_i.zeta * p_i.v0 *cos(p_i.θ[1])
     p_i.f[2]+= p_i.zeta * p_i.v0 *sin(p_i.θ[1])
-    #p_i.fact.+= f
 
     return p_i
-
 end
 
-function contribute_2d_ABP_angular_noise!(p_i,t, dt, params, system_sizes, system_Periodic)
+function contribute_external_force!(p_i, t, dt, force::ABP_2d_angular_noise)
 
     ω=sqrt(2*p_i.Dr)*rand(Normal(0, 1))
 
@@ -42,39 +57,29 @@ function contribute_2d_ABP_angular_noise!(p_i,t, dt, params, system_sizes, syste
 end
 
 
-function contribute_soft_disk_force!(p_i,p_j,t, dt, params, system_sizes, system_Periodic)
-    
-    dx = minimal_image_difference(p_i.x, p_j.x, system_sizes, system_Periodic)
-    dxn = norm(dx)
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_disk_force)
+
     d2a = p_i.a+p_j.a
     f = @MVector zeros(length(dx))
     if dxn < d2a
 
         f.= p_i.k * (dxn-d2a) * dx/dxn
         p_i.f.+= f
-    #p_i.fpas.+= f
     end
     return p_i
+
 end
 
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::swarm_pos_force)
 
-
-function contribute_swarm_pos_force!(p_i,p_j,t, dt, params, system_sizes, system_Periodic)
-
-    dx = minimal_image_difference(p_i.x, p_j.x, system_sizes, system_Periodic)
-    dxn = norm(dx)
-    f = @MVector zeros(length(dx))
-    f.= 1/params["N"] * (dx/dxn * (1 + params["J"]*cos.(p_j.θ-p_i.θ)[1] ) - dx/dxn^2)
-    p_i.f.+= f   
-    return p_i 
-end
-
-function contribute_swarm_angular_force!(p_i,p_j,t, dt, params, system_sizes, system_Periodic)
-
-    dx = minimal_image_difference(p_i.x, p_j.x, system_sizes, system_Periodic)
-    dxn = norm(dx)
-
-    ω = 1/params["N"] * params["K"] * sin.(p_j.θ-p_i.θ)[1]/dxn
-    p_i.ω.+= ω
+    p_i.f.+= force.N_inv * (dx/dxn * (1 + force.J*cos(p_j.θ[1]-p_i.θ[1]) ) - dx/dxn^2)   
     return p_i
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::swarm_angular_force)
+
+    p_i.ω.+= force.N_inv * force.K * sin(p_j.θ[1]-p_i.θ[1])/dxn
+    return p_i
+
 end
