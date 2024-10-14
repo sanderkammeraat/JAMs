@@ -41,8 +41,7 @@ end
 
 simulation()
 
-@time simulation() # around 8 it/s without plotting # 2 s 3.7GB allocations
-
+@time simulation()
 
 @profview simulation()
 
