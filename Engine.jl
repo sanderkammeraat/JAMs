@@ -36,22 +36,22 @@ function minimal_image_difference!(dx,xi, xj, system_sizes, system_Periodic)
         end
     return dx
 end
-struct System{T3}
+struct System{T1, T2, T3, T4}
 
     #Vector that determines the linear size of the system
     sizes::Vector{Float64}
 
     #Array containing particles in a specific state
-    initial_state::AbstractVector
+    initial_state::T1
 
     #Array of force functions:
-    external_forces
+    external_forces::T2
 
-    pair_forces
+    pair_forces::T3
     
 
     #Array of functions to evolve dof (and reinitialize forces)
-    dofevolvers::T3
+    dofevolvers::T4
 
     #Spatially periodic boundary conditions?
     Periodic::Bool

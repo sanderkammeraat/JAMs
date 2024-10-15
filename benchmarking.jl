@@ -34,7 +34,7 @@ function simulation()
     system = System(size, initial_state, external_forces, pair_forces , dofevolvers, true);
 
     #Run integration
-    states = Euler_integrator(system, 0.1, 1000, 1000, 10, plot_points!);
+    states = Euler_integrator(system, 0.1, 100, 1000000, 0, plot_points!);
     0
 
 end

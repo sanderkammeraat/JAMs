@@ -31,7 +31,7 @@ function simulation()
 
 
     #%%
-    states = Euler_integrator(system, 0.1, 1000, 1000, 10, plot_Swarmalators!);
+    states = Euler_integrator(system, 0.1, 100, 1000000, 10, plot_Swarmalators!);
     0
 end
 

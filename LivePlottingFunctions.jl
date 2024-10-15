@@ -13,9 +13,15 @@ function plot_disks!(p, current_state, n, Tplot)
         
         empty!(p)
 
-        for p_i in current_state
-            plot!( disk(p_i.x[1], p_i.x[2] , p_i.a), seriestype=[:shape], lw=0.5, c=:blue, linecolor = :black, legend=false; fillalpha=0.2, aspect_ratio=1)
-        end
+        # for p_i in current_state
+        #     plot!( disk(p_i.x[1], p_i.x[2] , p_i.a), seriestype=[:shape], lw=0.5, c=:blue, linecolor = :black, legend=false; fillalpha=0.2, aspect_ratio=1)
+        # end
+
+        x = [p_i.x[1] for p_i in current_state]
+        y = [p_i.x[2] for p_i in current_state]
+        a = [ p_i.a  for p_i in current_state]
+        plot!( disk.(x, y , a), seriestype=[:shape], lw=0.5, c=:blue, linecolor = :black, legend=false; fillalpha=0.2, aspect_ratio=1)
+
 
         display(p)
     end
