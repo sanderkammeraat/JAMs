@@ -5,7 +5,11 @@ using StaticArrays
 gr()
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
+include("Particles.jl")
 include("Forces.jl")
+include("DOFevolvers.jl")
+
+
 function periodic!(p_i, systemsizes)
 
     for (i, xi) in pairs(p_i.x)
@@ -49,7 +53,6 @@ struct System{T1, T2, T3, T4}
 
     pair_forces::T3
     
-
     #Array of functions to evolve dof (and reinitialize forces)
     dofevolvers::T4
 
@@ -110,11 +113,17 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_state=
             end
             new_state[i]=p_i
         end
+
         current_state = new_state
         save_state!(states, current_state, n, Tsave)
         if !isnothing(plot_state)
             if Tplot!=0
-                plot_state(p, current_state, n, Tplot)
+                if n%Tplot==0
+                    empty!(p)
+                    plot_state(p, current_state)
+                    title!("t = $(t)")
+                    display(p)
+                end
             end
         end
     end
@@ -132,19 +141,20 @@ end
 
 
 function contribute_pair_forces!(i,p_i, current_state, pair_forces, t, dt,system_sizes, system_Periodic)
-
-    #Initialize
+    
     dx = @MVector zeros(Float64,length(p_i.x))
-    for j in eachindex(current_state)
+    for force in pair_forces
+        
+        for j in eachindex(current_state)
 
-        if i!=j
-            p_j = current_state[j]
+            if i!=j
+                p_j = current_state[j]
 
-            dx = minimal_image_difference!(dx, p_i.x, p_j.x, system_sizes, system_Periodic)
+                dx = minimal_image_difference!(dx, p_i.x, p_j.x, system_sizes, system_Periodic)
 
-            dxn = norm(dx)
-            for n in eachindex(pair_forces)
-                contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, pair_forces[n])
+                dxn = norm(dx)
+                
+                p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force)
             end
         end
     end
