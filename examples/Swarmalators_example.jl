@@ -1,5 +1,4 @@
-include("Engine.jl")
-include("LivePlottingFunctions.jl")
+include("../src/Engine.jl")
 using Random, Distributions
 
 function simulation()

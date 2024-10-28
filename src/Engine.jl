@@ -1,13 +1,13 @@
+
 using ProgressBars
-using Plots
 using StaticArrays
-#Set default plotting backend
-gr()
+
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
 include("Particles.jl")
 include("Forces.jl")
 include("DOFevolvers.jl")
+include("LivePlottingFunctions.jl")
 
 
 function periodic!(p_i, systemsizes)
@@ -160,3 +160,4 @@ function contribute_pair_forces!(i,p_i, current_state, pair_forces, t, dt,system
     end
     return p_i
 end
+

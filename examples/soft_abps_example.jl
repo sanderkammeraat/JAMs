@@ -1,6 +1,4 @@
-include("Engine.jl")
-include("LivePlottingFunctions.jl")
-
+include("../src/Engine.jl")
 using Random, Distributions
 
 function simulation()
@@ -15,7 +13,7 @@ function simulation()
 
     #Initialize state
     N=500
-    ϕ = 0.8
+    ϕ = 0.5
     L=sqrt(N*pi/ϕ)
 
     poly = 0.2
@@ -36,6 +34,8 @@ function simulation()
 
 end
 
+
 states = simulation()
 
 
+ 

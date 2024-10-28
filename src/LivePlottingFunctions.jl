@@ -1,3 +1,7 @@
+#Set default plotting backend
+using Plots
+gr()
+
 
 function disk(x, y, R)
     
@@ -33,6 +37,18 @@ function plot_points!(p, current_state)
     c = [ p_i.id[1] for p_i in current_state]
 
     scatter!(x,y , zcolor=c, colormap=:hawaii, legend=false, colorbar = :none)
+
+end
+function plot_sized_points!(p, current_state)
+
+    x = [p_i.x[1] for p_i in current_state]
+    y = [p_i.x[2] for p_i in current_state]
+
+    c = [ p_i.id[1] for p_i in current_state]
+
+    s = [ 4*p_i.a^2  for p_i in current_state]
+
+    scatter!(x,y , zcolor=c, colormap=:hawaii, legend=false, colorbar = :none, markersize =s, markerspace=:data)
 
 end
 
