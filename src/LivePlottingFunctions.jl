@@ -25,7 +25,7 @@ function plot_Swarmalators!(p, current_state)
 
     c = angle2range.([ p_i.θ[1] for p_i in current_state])
 
-    scatter!(x,y , zcolor=c, colormap=:hsv, legend=false, colorbar = :none)
+    scatter!(x,y , zcolor=c, colormap=:hsv, legend=false, colorbar = :none, clims=(0, 2*pi))
 
 end
 
