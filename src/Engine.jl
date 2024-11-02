@@ -14,9 +14,9 @@ function periodic!(p_i, systemsizes)
 
     for (i, xi) in pairs(p_i.x)
 
-        if xi<0
+        if xi<-systemsizes[i]/2
             p_i.x[i] = xi + systemsizes[i]
-        elseif xi>systemsizes[i]
+        elseif xi>=systemsizes[i]/2
             p_i.x[i] = xi - systemsizes[i]
         end
     end
@@ -30,10 +30,10 @@ function minimal_image_difference!(dx,xi, xj, system_sizes, system_Periodic)
         for n in eachindex(xi)
             dx[n]=xj[n]-xi[n]
             if system_Periodic
-                if dx[n]>system_sizes[n]
+                if dx[n]>system_sizes[n]/2
                     dx[n]-=system_sizes[n]
                 end
-                if dx[n]<=-system_sizes[n]
+                if dx[n]<=-system_sizes[n]/2
                     dx[n]+=system_sizes[n]
                 end
             end 
@@ -63,7 +63,7 @@ end
 
 
 
-function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_state=nothing)
+function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_functions=nothing)
 
     states = [copy(system.initial_state)]
 
@@ -76,15 +76,10 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_state=
     current_state = copy(system.initial_state)
     new_state  = copy(system.initial_state)
 
-    if !isnothing(plot_state)
+    if !isnothing(plot_functions)
         if Tplot!=0
-            p = plot(aspect_ratio=:equal)
-            xlims!(0, system.sizes[1])
-            ylims!(0, system.sizes[2])
-
-            xlabel!("x")
-            ylabel!("y")
-            display(p)
+            
+            f, ax = setup_plotting(system.sizes)
         end
     end
 
@@ -116,13 +111,18 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_state=
 
         current_state = new_state
         save_state!(states, current_state, n, Tsave)
-        if !isnothing(plot_state)
+        if !isnothing(plot_functions)
             if Tplot!=0
                 if n%Tplot==0
-                    empty!(p)
-                    plot_state(p, current_state)
-                    title!("t = $(t)")
-                    display(p)
+                    empty!(ax)
+                    
+
+                    for plot_function in plot_functions
+                        plot_function(ax, current_state)
+                    end
+                    ax.title="t = $(t)"
+                    display(f)
+                    
                 end
             end
         end
@@ -159,5 +159,29 @@ function contribute_pair_forces!(i,p_i, current_state, pair_forces, t, dt,system
         end
     end
     return p_i
+end
+
+
+function setup_plotting(system_sizes)
+    GLMakie.activate!()
+    f = Figure()
+
+    dimension = length(system_sizes)
+    if dimension==2
+        ax = Axis(f[1, 1], xlabel = "x", ylabel="y",  aspect = 1)
+        xlims!(ax, -system_sizes[1]/2, system_sizes[1]/2)
+        ylims!(ax,  -system_sizes[2]/2, system_sizes[2]/2)
+
+    elseif dimension==3
+
+        ax = Axis3(f[1, 1], xlabel = "x", ylabel="y", zlabel="z",  aspect = (1,1,1))
+        xlims!(ax,  -system_sizes[1]/2, system_sizes[1]/2)
+        ylims!(ax, -system_sizes[2]/2, system_sizes[2]/2)
+        zlims!(ax,  -system_sizes[3]/2, system_sizes[3]/2)
+
+    end
+    display(f)
+
+    return f, ax
 end
 

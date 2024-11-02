@@ -3,7 +3,7 @@ using Random, Distributions
 function simulation()
 
     #Initialize state
-    N=300
+    N=500
     L=10.
     external_forces = (ABP_2d_propulsion_force(), ABP_2d_angular_noise())
 
@@ -13,7 +13,7 @@ function simulation()
     
     dofevolvers = [overdamped_evolver!]
 
-    initial_state = [ VicsekParticle(i,0.03,0.1,[rand(Uniform(0, L)) ,rand(Uniform(0,L))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[0],[0.],1.0,[0.,0.],[0.,0.]) for i=1:N];
+    initial_state = [ VicsekParticle(i,0.03,0.6,[rand(Uniform(-L/2, L/2)) ,rand(Uniform(-L/2,L/2))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[0],[0.],1.0,[0.,0.],[0.,0.]) for i=1:N];
 
     size = [L,L]
 
@@ -21,7 +21,7 @@ function simulation()
 
 
     #%%
-    states = Euler_integrator(system, 1, 10000, 1000000, 10, plot_directors!);
+    states = Euler_integrator(system, 1, 10000, 1000000, 10, [plot_directors!]);
     0
 end
 

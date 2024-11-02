@@ -13,13 +13,12 @@ function simulation()
 
     #Initialize state
     N=500
-    ϕ = 0.5
+    ϕ = 0.9
     L=sqrt(N*pi/ϕ)
+    poly = 0.0000002
 
-    poly = 0.2
 
-
-    initial_state = [ PolarParticle2d(i,1,0.2,0.01,[rand(Uniform(0, L)) ,rand(Uniform(0, L))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],3,rand(Uniform(1-poly, 1+poly)),1.,[0.,0.],[0.,0.]) for i=1:N];
+    initial_state = [ PolarParticle2d(i,1,0.1,0.01,[rand(Uniform(-L/2, L/2)) ,rand(Uniform(-L/2,L/2))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],1,rand(Uniform(1-poly, 1+poly)),1.,[0.,0.],[0.,0.]) for i=1:N];
 
 
     size = [L,L];
@@ -29,7 +28,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    states = Euler_integrator(system, 0.1, 1000, 100000, 10, plot_polar_disks!);
+    states = Euler_integrator(system, 0.1, 1000, 100000, 10, [plot_sized_points!, plot_directors!]);
     return states
 
 end
@@ -37,5 +36,3 @@ end
 
 states = simulation()
 
-
- 
