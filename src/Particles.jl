@@ -29,8 +29,61 @@ struct PolarParticle2d<:Particle
     fpas::MVector{2,Float64}
 end
 
+struct PolarParticle2dNtype<:Particle
+    id::Integer
+    type::Integer
+    a::Float64
+    k::Float64
+
+    v0::Float64
+    Dr::Float64
+
+    x::MVector{2,Float64}
+    v::MVector{2,Float64}
+    f::MVector{2,Float64} #f->v->r
+
+    θ::MVector{1,Float64}
+    ω::MVector{1,Float64}
+
+    #Neighbour memory
+    n::MVector{1,Int64}
+    fn::MVector{2,Float64}
+    
+
+    zeta::Float64 #Friction coefficient, only used icw overdamped integrators
+    fact::MVector{2,Float64}
+    fpas::MVector{2,Float64}
+end
+
 struct PolarParticle3dN<:Particle
     id::Integer
+    #particle radius
+    a::Float64
+    k::Float64
+    v0::Float64
+    Dr::Float64
+
+    x::MVector{3,Float64}
+    v::MVector{3,Float64}
+    f::MVector{3,Float64} #f->v->r
+
+    p::MVector{3,Float64}
+    q::MVector{3,Float64}
+
+    #Neighbour memory
+    n::MVector{1,Int64}
+    qn::MVector{3,Float64}
+    
+    
+
+    zeta::Float64 #Friction coefficient, only used icw overdamped integrators
+    fact::MVector{3,Float64}
+    fpas::MVector{3,Float64}
+end
+
+struct PolarParticle3dNtype<:Particle
+    id::Integer
+    type::Integer
     #particle radius
     a::Float64
     k::Float64

@@ -20,7 +20,9 @@ end
 struct ABP_3d_angular_noise<:Force
 end
 
-struct soft_disk_type_force
+struct soft_atre_type_force{T1, T2}
+    karray::T1
+    ϵarray::T2
 end
 
 struct soft_disk_force <: Force
@@ -44,7 +46,9 @@ struct Vicsek_align_force<:Force
     r::Float64
 end
 
-
+struct pairABP_force<:Force
+    rfact::Float64
+end
 
 #Let's test the power of multiple dispatch
 
@@ -110,6 +114,38 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_disk_force
 
 end
 
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_atre_type_force)
+
+    bij = p_i.a+p_j.a
+    f = @MVector zeros(length(dx))
+    
+    ϵ = force.ϵarray[p_i.type,p_j.type]::Float64
+
+    r1 = (1+ϵ)*bij
+
+    r2 = (1+2*ϵ)*bij
+
+    if dxn <= r1
+        k = force.karray[p_i.type,p_j.type]
+
+        f.= k * (dxn-bij) * dx/dxn
+        p_i.f.+= f
+
+    elseif  r1<dxn<r2
+        k = force.karray[p_i.type,p_j.type]
+        f.=  k * (dxn-r2) * dx/dxn
+
+        p_i.f.+= f
+    else
+        0
+    end
+    return p_i
+
+end
+
+
+
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::swarm_pos_force)
 
     p_i.f.+= force.N_inv * (dx/dxn * (1 + force.J*cos(p_j.ϕ[1]-p_i.ϕ[1]) ) - dx/dxn^2)   
@@ -134,6 +170,22 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::Vicsek_align_fo
     return p_i
 end
 
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::pairABP_force)
+    
+    d2a = p_i.a+p_j.a
+
+    r = force.rfact*d2a::Float64
+
+    if dxn < r
+        β = 1 - dxn/r
+        p_i.fn[1] += -β*(cos(p_j.θ[1])*p_j.v0- cos(p_i.θ[1])*p_i.v0)/2
+        p_i.fn[2] += -β*(sin(p_j.θ[1])*p_j.v0- sin(p_i.θ[1])*p_i.v0)/2
+        p_i.n[1]+=1
+    end
+    return p_i
+
+
+end
 
 
 

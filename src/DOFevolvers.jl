@@ -14,6 +14,27 @@ function overdamped_evolver!(p_i::PolarParticle2d, t, dt)
 
 end
 
+function overdamped_evolver!(p_i::PolarParticle2dNtype, t, dt)
+
+    if p_i.n[1]>0
+        p_i.f.+= p_i.fn/p_i.n[1]
+    end
+
+    #Evolve
+    p_i.x.+= p_i.v * dt
+    p_i.v.= p_i.f/p_i.zeta
+    p_i.θ.+= p_i.ω * dt
+
+    #reinitalize
+    p_i.ω.*= 0.
+    p_i.f.*= 0.
+    p_i.fn.*=0.
+    p_i.n[1]= 0
+
+    return p_i
+
+end
+
 function overdamped_evolver!(p_i::Swarmalator, t, dt)
 
     #Evolve
