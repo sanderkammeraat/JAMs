@@ -22,6 +22,10 @@ end
 struct external_friction_force<:Force
 end
 
+struct ABP_perpendicular_angular_noise<:Force
+    perpendicular_vector::MVector{3,Float64}
+end
+
 struct ABP_2d_propulsion_force <:Force
 end
 
@@ -102,6 +106,17 @@ function contribute_external_force!(p_i, t, dt, force::ABP_3d_angular_noise)
 
     return p_i
 end
+
+function contribute_external_force!(p_i, t, dt, force::ABP_perpendicular_angular_noise)
+    
+    η =sqrt(2*p_i.Dr)*rand(Normal(0, 1))
+
+    p_i.q.+= η*cross(p_i.p, force.perpendicular_vector ) * sqrt(dt)/dt
+
+    return p_i
+end
+
+
 
 function contribute_external_force!(p_i, t, dt, force::self_align_with_v_force)
 
