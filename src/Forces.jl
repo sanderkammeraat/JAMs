@@ -7,6 +7,20 @@ using StaticArrays
 
 abstract type Force end
 
+struct self_align_with_v_force<:Force
+    β::Float64
+end
+
+struct self_align_with_v_unit_force<:Force
+    β::Float64
+end
+
+struct external_harmonic_force<:Force
+    k::Float64
+end
+
+struct external_friction_force<:Force
+end
 
 struct ABP_2d_propulsion_force <:Force
 end
@@ -89,9 +103,29 @@ function contribute_external_force!(p_i, t, dt, force::ABP_3d_angular_noise)
     return p_i
 end
 
+function contribute_external_force!(p_i, t, dt, force::self_align_with_v_force)
 
+    #compensate for the dt from the dof evolver, can be changed if the evolver also changes
+    p_i.q.+= force.β*cross(cross(p_i.p, p_i.v ), p_i.p)
 
+    return p_i
+end
 
+function contribute_external_force!(p_i, t, dt, force::external_harmonic_force)
+
+    #compensate for the dt from the dof evolver, can be changed if the evolver also changes
+    p_i.f.+= - force.k * p_i.x
+
+    return p_i
+end
+
+function contribute_external_force!(p_i, t, dt, force::external_friction_force)
+
+    #compensate for the dt from the dof evolver, can be changed if the evolver also changes
+    p_i.f.+= - p_i.zeta * p_i.v
+
+    return p_i
+end
 
 
 

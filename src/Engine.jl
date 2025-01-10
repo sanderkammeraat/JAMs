@@ -63,7 +63,7 @@ end
 
 
 
-function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_functions=nothing)
+function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_functions=nothing, plot_on_plane=false)
 
     states = [copy(system.initial_state)]
 
@@ -79,7 +79,7 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_functi
     if !isnothing(plot_functions)
         if Tplot!=0
             
-            f, ax = setup_plotting(system.sizes)
+            f, ax = setup_system_plotting(system.sizes,plot_on_plane)
         end
     end
 
@@ -162,12 +162,12 @@ function contribute_pair_forces!(i,p_i, current_state, pair_forces, t, dt,system
 end
 
 
-function setup_plotting(system_sizes)
+function setup_system_plotting(system_sizes, plot_on_plane)
     GLMakie.activate!()
     f = Figure()
 
     dimension = length(system_sizes)
-    if dimension==2
+    if dimension==2 || plot_on_plane
         ax = Axis(f[1, 1], xlabel = "x", ylabel="y",  aspect = 1)
         xlims!(ax, -system_sizes[1]/2, system_sizes[1]/2)
         ylims!(ax,  -system_sizes[2]/2, system_sizes[2]/2)
@@ -184,4 +184,6 @@ function setup_plotting(system_sizes)
 
     return f, ax
 end
+
+
 

@@ -1,3 +1,24 @@
+function inertial_evolver!(p_i::Hexbug, t, dt)
+
+    #evolve
+    p_i.a .= p_i.f/p_i.m
+
+    p_i.x .+= p_i.v * dt
+    p_i.v .+= p_i.a * dt
+
+    p_i.p .+= p_i.q * dt
+    p_i.p .=normalize(p_i.p)
+
+
+    #reinitialize
+    p_i.q.*= 0.
+    p_i.f.*= 0.
+
+    return p_i
+end
+
+
+
 
 function overdamped_evolver!(p_i::PolarParticle2d, t, dt)
 

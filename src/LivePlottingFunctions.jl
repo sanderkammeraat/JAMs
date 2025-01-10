@@ -36,6 +36,18 @@ function plot_points!(ax, current_state)
 
 end
 
+function plot_points_on_plane!(ax, current_state)
+
+
+    x = [p_i.x[1] for p_i in current_state]
+    y = [p_i.x[2] for p_i in current_state]
+    c = [ p_i.id[1] for p_i in current_state]
+
+    scatter!(ax,x,y, color=c)
+
+
+end
+
 function plot_type_points!(ax, current_state)
 
 
