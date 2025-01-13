@@ -29,6 +29,28 @@ struct Hexbug<:Particle
 
 end
 
+struct NewPolarParticle3d<:Particle
+
+    id::Integer
+    m::Float64
+    zeta::Float64
+    R::Float64
+    
+    v0::Float64
+    Dr::Float64
+
+    x::MVector{3,Float64}
+    v::MVector{3,Float64}
+    a::MVector{3,Float64}
+
+    f::MVector{3,Float64} #f->a->v->r
+
+    p::MVector{3,Float64}
+    q::MVector{3,Float64}
+
+
+end
+
 
 #Defining a particle requires a class with particle properties
 struct PolarParticle2d<:Particle

@@ -46,6 +46,9 @@ end
 struct soft_disk_force <: Force
 end
 
+struct new_soft_disk_force <: Force
+    k::Float64
+end
 struct swarm_pos_force <: Force
 
     N_inv::Float64
@@ -145,7 +148,18 @@ end
 
 
 
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::new_soft_disk_force)
 
+    d2R = p_i.R+p_j.R
+    f = @MVector zeros(length(dx))
+    if dxn < d2R
+
+        f.= force.k * (dxn-d2R) * dx/dxn
+        p_i.f.+= f
+    end
+    return p_i
+
+end
 
 
 
