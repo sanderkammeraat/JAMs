@@ -50,6 +50,42 @@ function inertial_evolver!(p_i::NewPolarParticle3d, t, dt)
 
     return p_i
 end
+
+function overdamped_evolver!(p_i::NewPolarParticle3d, t, dt)
+
+    #evolve
+    p_i.x .+= p_i.v * dt
+    p_i.v .= p_i.f/p_i.zeta
+
+    p_i.p .+= p_i.q * dt
+    p_i.p .=normalize(p_i.p)
+
+
+    #reinitialize
+    p_i.q.*= 0.
+    p_i.f.*= 0.
+
+    return p_i
+end
+
+
+
+function overdamped_evolver!(p_i::PolarParticle2d, t, dt)
+
+
+    #Evolve
+    p_i.x.+= p_i.v * dt
+    p_i.v.= p_i.f/p_i.zeta
+    p_i.θ.+= p_i.ω * dt
+
+    #reinitalize
+    p_i.ω.*= 0.
+    p_i.f.*= 0.
+
+    return p_i
+
+end
+
 function overdamped_evolver!(p_i::NewPolarParticle3d, t, dt)
 
     #evolve

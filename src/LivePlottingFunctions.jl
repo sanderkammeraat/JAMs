@@ -36,6 +36,10 @@ function plot_points!(ax, current_state)
 
 end
 
+function plot_field_magnitude!(ax, field)
+    heatmap!(ax,field.x_bin_centers,field.y_bin_centers,transpose(field.C), alpha=0.2,colormap=:jet,colorrange=(0,1))
+end
+
 function plot_points_on_plane!(ax, current_state)
 
 

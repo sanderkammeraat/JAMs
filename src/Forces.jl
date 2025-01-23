@@ -7,6 +7,12 @@ using StaticArrays
 
 abstract type Force end
 
+struct field_propulsion_force<:Force
+    consumption_rate::Float64
+    v0offset::Float64
+
+end
+
 struct self_align_with_v_force<:Force
     β::Float64
 end
@@ -71,6 +77,10 @@ struct pairABP_force<:Force
     rfact::Float64
 end
 
+struct chain_force<:Force
+    k::Float64
+    l::Float64
+end
 #Let's test the power of multiple dispatch
 
 
@@ -129,6 +139,19 @@ function contribute_external_force!(p_i, t, dt, force::self_align_with_v_force)
     return p_i
 end
 
+function contribute_external_force!(p_i, t, dt, force::self_align_with_v_unit_force)
+
+    #compensate for the dt from the dof evolver, can be changed if the evolver also changes
+    vnorm = norm(p_i.v)
+    if vnorm!=0
+        p_i.q.+= force.β*cross(cross(p_i.p,  p_i.v), p_i.p)./vnorm
+    else
+        p_i.q.+= force.β*cross(cross(p_i.p,  p_i.v), p_i.p)
+    end
+
+    return p_i
+end
+
 function contribute_external_force!(p_i, t, dt, force::external_harmonic_force)
 
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
@@ -161,6 +184,15 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::new_soft_disk_f
 
 end
 
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::chain_force)
+
+    if p_j.id == p_i.id+1 || p_j.id == p_i.id-1
+        p_i.f.+= force.k * (dxn-force.l) * dx/dxn
+    end
+
+    return p_i
+
+end
 
 
 
@@ -250,6 +282,20 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::pairABP_force)
 
 end
 
+function contribute_field_force!(p_i,field, t, dt, force::field_propulsion_force)
+    
+    x_index = find_closest_bin_center(p_i.x[1], field.x_bin_centers)
+    y_index = find_closest_bin_center(p_i.x[2], field.y_bin_centers)
+    #print(x_index)
 
+    p_i.f[1]+= p_i.zeta * (field.C[y_index, x_index]+force.v0offset) *cos(p_i.θ[1])
+    p_i.f[2]+= p_i.zeta * (field.C[y_index, x_index]+force.v0offset) *sin(p_i.θ[1])
 
+    if field.C[y_index, x_index]>0
+    field.C[y_index, x_index]+=-force.consumption_rate*dt
+    end
+
+    return p_i, field
+
+end
 
