@@ -195,3 +195,15 @@ function overdamped_evolver!(p_i::PolarParticle3dN, t, dt)
     return p_i
 
 end
+
+
+function overdamped_evolver!(field::FuelField2d, t, dt)
+
+    field.C.+= field.Cv*dt
+
+    field.Cv.= field.Cf
+
+    #reinitalize
+    field.Cf.*= 0.
+    return field
+end

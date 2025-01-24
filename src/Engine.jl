@@ -5,10 +5,13 @@ using StaticArrays
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
 include("Particles.jl")
+include("Fields.jl")
 include("Forces.jl")
 include("DOFevolvers.jl")
+include("FieldUpdaters.jl")
+
 include("LivePlottingFunctions.jl")
-include("Fields.jl")
+
 
 
 function periodic!(p_i, systemsizes)
@@ -26,41 +29,48 @@ end
 
 
 
-function find_closest_bin_center(val, bin_centers)
+function minimal_image_closest_bin_center!(field_indices,x, bin_centers,system_sizes,system_Periodic)
 
-    d = abs.(bin_centers .- val)
-
-    minval, index  = findmin(d)
-
-    return index
+    
+    for (i, xi) in pairs(x)
+        d = @MVector zeros(length(x))
+        d= abs.(bin_centers[i] .- x[i])
+        if system_Periodic
+            d.=d .% system_sizes[i]
+        end
+        field_indices[i] = findmin(d)[2]
+        
+    end
+    return field_indices
 
 end
 
 function minimal_image_difference!(dx,xi, xj, system_sizes, system_Periodic)
 
     
-        for n in eachindex(xi)
-            dx[n]=xj[n]-xi[n]
-            if system_Periodic
-                if dx[n]>system_sizes[n]/2
-                    dx[n]-=system_sizes[n]
-                end
-                if dx[n]<=-system_sizes[n]/2
-                    dx[n]+=system_sizes[n]
-                end
-            end 
-        end
+    for n in eachindex(xi)
+        dx[n]=xj[n]-xi[n]
+        if system_Periodic
+            if dx[n]>system_sizes[n]/2
+                dx[n]-=system_sizes[n]
+            end
+            if dx[n]<=-system_sizes[n]/2
+                dx[n]+=system_sizes[n]
+            end
+        end 
+    end
     return dx
 end
-struct System{T1, T2, T3, T4, T5, T6}
+struct System{T1, T2, T3, T4, T5, T6, T7}
 
     #Vector that determines the linear size of the system
     sizes::Vector{Float64}
 
     #Array containing particles in a specific state
-    initial_state::T1
+    initial_particle_state::T1
 
-    field::T2
+    #Array containing fields in a specific state
+    initial_field_state::T2
 
     #Array of force functions:
     external_forces::T3
@@ -68,9 +78,11 @@ struct System{T1, T2, T3, T4, T5, T6}
     pair_forces::T4
 
     field_forces::T5
+
+    field_updaters::T6
     
     #Array of functions to evolve dof (and reinitialize forces)
-    dofevolvers::T6
+    dofevolvers::T7
 
     #Spatially periodic boundary conditions?
     Periodic::Bool
@@ -81,31 +93,36 @@ struct System{T1, T2, T3, T4, T5, T6}
 end
 
 
+function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_functions=nothing,plot_on_plane=false)
 
-function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_functions=nothing, plot_field_functions=nothing ,plot_on_plane=false)
-
-    states = [copy(system.initial_state)]
+    particle_states = [copy(system.initial_particle_state)]
+    field_states = [copy(system.initial_field_state)]
 
     external_forces = system.external_forces
     pair_forces = system.pair_forces
 
-    field = system.field
-
     field_forces = system.field_forces
+
+    field_updaters = system.field_updaters
 
     Npair = length(pair_forces)
 
     Nfield = length(field_forces)
 
+    Nfieldu = length(field_updaters)
+
     
 
-    current_state = copy(system.initial_state)
-    new_state  = copy(system.initial_state)
+    current_particle_state = copy(system.initial_particle_state)
+    new_particle_state  = copy(system.initial_particle_state)
+
+    current_field_state = copy(system.initial_field_state)
+    new_field_state  = copy(system.initial_field_state)
 
     if !isnothing(plot_functions)
         if Tplot!=0
             
-            f, ax = setup_system_plotting(system.sizes,plot_on_plane)
+            f, ax = setup_system_plotting(system.sizes, plot_on_plane)
         end
     end
 
@@ -113,19 +130,17 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_functi
     for (n, t) in pairs(0:dt:t_stop)
         #Looping over old states, so could be parallelized
         #Threads.@threads
-        Np = length(current_state)
+        #First loop over particles
+        Np = length(current_particle_state)
         Threads.@threads for i in 1:Np
-            p_i = new_state[i]
+            p_i = new_particle_state[i]
 
             if Npair>0
-                p_i=contribute_pair_forces!(i,p_i, current_state, pair_forces, t, dt,system.sizes, system.Periodic, system.rcut_pair_global)
+                p_i=contribute_pair_forces!(i,p_i, current_particle_state, pair_forces, t, dt,system.sizes, system.Periodic, system.rcut_pair_global)
             end
 
             if Nfield>0
-
-                for force in field_forces
-                    p_i, field = contribute_field_force!(p_i, field, t, dt, force)
-                end
+                p_i, new_field_state = contribute_field_forces!(p_i, current_field_state, new_field_state, field_forces, t, dt,system.sizes, system.Periodic)
 
             end
 
@@ -140,11 +155,33 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_functi
             if system.Periodic
                 p_i=periodic!(p_i, system.sizes)
             end
-            new_state[i]=p_i
+            new_particle_state[i]=p_i
         end
 
-        current_state = new_state
-        save_state!(states, current_state, n, Tsave)
+        #Now update fields
+        Nf = length(current_field_state)
+        for i in 1:Nf
+
+            field_i = new_field_state[i]
+
+            if Nfieldu>0
+                for field_updater in field_updaters
+                    field_i=contribute_field_update!(field_i, t, dt, field_updater)
+                end
+            end
+            for dofevolver in system.dofevolvers
+                field_i=dofevolver(field_i, t, dt)
+            end
+            new_field_state[i] = field_i
+                
+        end
+
+        current_particle_state = new_particle_state    
+        current_field_state = new_field_state
+
+        save_state!(particle_states, current_particle_state, n, Tsave)
+        save_state!(field_states, current_field_state, n, Tsave)
+        
         if !isnothing(plot_functions)
             if Tplot!=0
                 if n%Tplot==0
@@ -152,12 +189,9 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_functi
                     
 
                     for plot_function in plot_functions
-                        plot_function(ax, current_state)
+                        plot_function(ax, current_particle_state, current_field_state)
                     end
 
-                    for plot_field_function in plot_field_functions
-                        plot_field_function(ax, field)
-                    end
                     ax.title="t = $(t)"
                     display(f)
                     
@@ -177,16 +211,34 @@ function save_state!(states, current_state, n, Tsave)
 
 end
 
+function contribute_field_forces!(p_i, current_field_state,new_field_state, field_forces, t, dt,system_sizes, system_Periodic)
+    field_indices = @MVector zeros(Int,length(p_i.x))
+    
 
-function contribute_pair_forces!(i,p_i, current_state, pair_forces, t, dt,system_sizes, system_Periodic, system_rcut_pair_global)
+    for force in field_forces
+
+        for (j, field_j) in pairs(current_field_state)
+            
+            field_indices = minimal_image_closest_bin_center!(field_indices, p_i.x, field_j.bin_centers, system_sizes, system_Periodic)
+
+            p_i, new_field_state[j] = contribute_field_force!(p_i, field_j, field_indices, t, dt, force)
+        end
+    end
+    return p_i, new_field_state
+end
+
+
+
+
+function contribute_pair_forces!(i,p_i, current_particle_state, pair_forces, t, dt,system_sizes, system_Periodic, system_rcut_pair_global)
     
     dx = @MVector zeros(Float64,length(p_i.x))
     for force in pair_forces
         
-        for j in eachindex(current_state)
+        for j in eachindex(current_particle_state)
 
             if i!=j
-                p_j = current_state[j]
+                p_j = current_particle_state[j]
 
                 dx = minimal_image_difference!(dx, p_i.x, p_j.x, system_sizes, system_Periodic)
 
@@ -225,6 +277,3 @@ function setup_system_plotting(system_sizes, plot_on_plane)
 
     return f, ax
 end
-
-
-

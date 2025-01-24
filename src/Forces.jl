@@ -8,7 +8,7 @@ using StaticArrays
 abstract type Force end
 
 struct field_propulsion_force<:Force
-    consumption_rate::Float64
+    consumption::Float64
     v0offset::Float64
 
 end
@@ -282,20 +282,20 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::pairABP_force)
 
 end
 
-function contribute_field_force!(p_i,field, t, dt, force::field_propulsion_force)
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_propulsion_force)
     
-    x_index = find_closest_bin_center(p_i.x[1], field.x_bin_centers)
-    y_index = find_closest_bin_center(p_i.x[2], field.y_bin_centers)
+    x_index = field_indices[1]
+    y_index = field_indices[2]
     #print(x_index)
 
-    p_i.f[1]+= p_i.zeta * (field.C[y_index, x_index]+force.v0offset) *cos(p_i.θ[1])
-    p_i.f[2]+= p_i.zeta * (field.C[y_index, x_index]+force.v0offset) *sin(p_i.θ[1])
+    p_i.f[1]+= p_i.zeta * (field_j.C[y_index, x_index]+force.v0offset) *cos(p_i.θ[1])
+    p_i.f[2]+= p_i.zeta * (field_j.C[y_index, x_index]+force.v0offset) *sin(p_i.θ[1])
 
-    if field.C[y_index, x_index]>0
-    field.C[y_index, x_index]+=-force.consumption_rate*dt
+    if field_j.C[y_index, x_index]>0
+        field_j.Cf[y_index, x_index]+=-force.consumption
     end
 
-    return p_i, field
+    return p_i, field_j
 
 end
 

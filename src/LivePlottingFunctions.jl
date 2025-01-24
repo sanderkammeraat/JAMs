@@ -18,15 +18,15 @@ function sphere!(x,y,z, R)
     return x,y,z
 end
 
-function plot_points!(ax, current_state)
+function plot_points!(ax, current_particle_state, current_field_state)
 
 
-    x = [p_i.x[1] for p_i in current_state]
-    y = [p_i.x[2] for p_i in current_state]
-    c = [ p_i.id[1] for p_i in current_state]
-    if length(current_state[1].x)>2
+    x = [p_i.x[1] for p_i in current_particle_state]
+    y = [p_i.x[2] for p_i in current_particle_state]
+    c = [ p_i.id[1] for p_i in current_particle_state]
+    if length(current_particle_state[1].x)>2
         
-        z = [p_i.x[3] for p_i in current_state]
+        z = [p_i.x[3] for p_i in current_particle_state]
         meshscatter!(ax,x,y,z, color=c)
 
     else
@@ -36,31 +36,34 @@ function plot_points!(ax, current_state)
 
 end
 
-function plot_field_magnitude!(ax, field)
-    heatmap!(ax,field.x_bin_centers,field.y_bin_centers,transpose(field.C), alpha=0.2,colormap=:jet,colorrange=(0,1))
+function plot_field_magnitude!(ax, current_particle_state, current_field_state)
+
+    for field in current_field_state
+        heatmap!(ax,field.bin_centers[1],field.bin_centers[2],transpose(field.C), alpha=0.2,colormap=:viridis,colorrange=(0,0.5))
+    end
 end
 
-function plot_points_on_plane!(ax, current_state)
+function plot_points_on_plane!(ax, current_particle_state, current_field_state)
 
 
-    x = [p_i.x[1] for p_i in current_state]
-    y = [p_i.x[2] for p_i in current_state]
-    c = [ p_i.id[1] for p_i in current_state]
+    x = [p_i.x[1] for p_i in current_particle_state]
+    y = [p_i.x[2] for p_i in current_particle_state]
+    c = [ p_i.id[1] for p_i in current_particle_state]
 
     scatter!(ax,x,y, color=c)
 
 
 end
 
-function plot_type_points!(ax, current_state)
+function plot_type_points!(ax, current_particle_state, current_field_state)
 
 
-    x = [p_i.x[1] for p_i in current_state]
-    y = [p_i.x[2] for p_i in current_state]
-    c = [ p_i.type for p_i in current_state]
-    if length(current_state[1].x)>2
+    x = [p_i.x[1] for p_i in current_particle_state]
+    y = [p_i.x[2] for p_i in current_particle_state]
+    c = [ p_i.type for p_i in current_particle_state]
+    if length(current_particle_state[1].x)>2
         
-        z = [p_i.x[3] for p_i in current_state]
+        z = [p_i.x[3] for p_i in current_particle_state]
         meshscatter!(ax,x,y,z, color=c)
 
     else
@@ -71,12 +74,12 @@ function plot_type_points!(ax, current_state)
 end
 
 
-function plot_Swarmalators!(ax, current_state)
+function plot_Swarmalators!(ax, current_particle_state, current_field_state)
 
-    x = [p_i.x[1] for p_i in current_state]
-    y = [p_i.x[2] for p_i in current_state]
+    x = [p_i.x[1] for p_i in current_particle_state]
+    y = [p_i.x[2] for p_i in current_particle_state]
 
-    c = angle2range.([ p_i.ϕ[1] for p_i in current_state])
+    c = angle2range.([ p_i.ϕ[1] for p_i in current_particle_state])
 
     scatter!(ax,x,y , color=c, colormap=:hsv, colorrange=(0, 2*pi))
 
@@ -84,26 +87,26 @@ end
 
 
 
-function plot_sized_points!(ax, current_state)
+function plot_sized_points!(ax, current_particle_state, current_field_state)
 
-    x = [p_i.x[1] for p_i in current_state]
-    y = [p_i.x[2] for p_i in current_state]
+    x = [p_i.x[1] for p_i in current_particle_state]
+    y = [p_i.x[2] for p_i in current_particle_state]
 
-    c = [ p_i.id[1] for p_i in current_state]
+    c = [ p_i.id[1] for p_i in current_particle_state]
 
     
 
-    if length(current_state[1].x)>2
+    if length(current_particle_state[1].x)>2
         
-        z = [p_i.x[3] for p_i in current_state]
+        z = [p_i.x[3] for p_i in current_particle_state]
 
-        R = [p_i.a  for p_i in current_state]
+        R = [p_i.a  for p_i in current_particle_state]
 
         meshscatter!(ax,x,y,z, color=c, markersize =R, transparency=true)
 
 
     else
-        s = [2*p_i.a^2  for p_i in current_state]
+        s = [2*p_i.a^2  for p_i in current_particle_state]
         scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
 
     end
@@ -111,26 +114,26 @@ function plot_sized_points!(ax, current_state)
 
 end
 
-function new_plot_sized_points!(ax, current_state)
+function new_plot_sized_points!(ax, current_particle_state, current_field_state)
 
-    x = [p_i.x[1] for p_i in current_state]
-    y = [p_i.x[2] for p_i in current_state]
+    x = [p_i.x[1] for p_i in current_particle_state]
+    y = [p_i.x[2] for p_i in current_particle_state]
 
-    c = [ p_i.id[1] for p_i in current_state]
+    c = [ p_i.id[1] for p_i in current_particle_state]
 
     
 
-    if length(current_state[1].x)>2
+    if length(current_particle_state[1].x)>2
         
-        z = [p_i.x[3] for p_i in current_state]
+        z = [p_i.x[3] for p_i in current_particle_state]
 
-        R = [p_i.R  for p_i in current_state]
+        R = [p_i.R  for p_i in current_particle_state]
 
         meshscatter!(ax,x,y,z, color=c, markersize =R, transparency=true)
 
 
     else
-        s = [2*p_i.R^2  for p_i in current_state]
+        s = [2*p_i.R^2  for p_i in current_particle_state]
         scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
 
     end
@@ -138,26 +141,26 @@ function new_plot_sized_points!(ax, current_state)
 
 end
 
-function plot_type_sized_points!(ax, current_state)
+function plot_type_sized_points!(ax, current_particle_state, current_field_state)
 
-    x = [p_i.x[1] for p_i in current_state]
-    y = [p_i.x[2] for p_i in current_state]
+    x = [p_i.x[1] for p_i in current_particle_state]
+    y = [p_i.x[2] for p_i in current_particle_state]
 
-    c = [ p_i.type for p_i in current_state]
+    c = [ p_i.type for p_i in current_particle_state]
 
     
 
-    if length(current_state[1].x)>2
+    if length(current_particle_state[1].x)>2
         
-        z = [p_i.x[3] for p_i in current_state]
+        z = [p_i.x[3] for p_i in current_particle_state]
 
-        R = [p_i.a  for p_i in current_state]
+        R = [p_i.a  for p_i in current_particle_state]
 
         meshscatter!(ax,x,y,z, color=c, markersize =R, transparency=true)
 
 
     else
-        s = [2*p_i.a^2  for p_i in current_state]
+        s = [2*p_i.a^2  for p_i in current_particle_state]
         scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
 
     end
@@ -165,25 +168,25 @@ function plot_type_sized_points!(ax, current_state)
 
 end
 
-function plot_directors!(ax, current_state)
+function plot_directors!(ax, current_particle_state, current_field_state)
 
-    x = [p_i.x[1] for p_i in current_state]
-    y = [p_i.x[2] for p_i in current_state]
+    x = [p_i.x[1] for p_i in current_particle_state]
+    y = [p_i.x[2] for p_i in current_particle_state]
 
     
-    if length(current_state[1].x)>2
+    if length(current_particle_state[1].x)>2
 
-        x = [ Point3f( p_i.x[1],p_i.x[2],p_i.x[3]) for p_i in current_state]
-        p = [ Point3f( p_i.p[1],p_i.p[2],p_i.p[3]) for p_i in current_state]
-        c = [ p_i.p[1] for p_i in current_state]
+        x = [ Point3f( p_i.x[1],p_i.x[2],p_i.x[3]) for p_i in current_particle_state]
+        p = [ Point3f( p_i.p[1],p_i.p[2],p_i.p[3]) for p_i in current_particle_state]
+        c = [ p_i.p[1] for p_i in current_particle_state]
         arrows!(ax, x, p , color=c,  colormap=:seismic,colorrange=(-1, 1))
         
 
 
     else
-        nx = cos.([ p_i.θ[1] for p_i in current_state])
-        ny = sin.([ p_i.θ[1] for p_i in current_state])
-        c = angle2range.([ p_i.θ[1] for p_i in current_state])
+        nx = cos.([ p_i.θ[1] for p_i in current_particle_state])
+        ny = sin.([ p_i.θ[1] for p_i in current_particle_state])
+        c = angle2range.([ p_i.θ[1] for p_i in current_particle_state])
         arrows!(ax, x, y, nx, ny, color=c,  colormap=:hsv,colorrange=(0, 2*pi))
 
 
@@ -192,25 +195,25 @@ function plot_directors!(ax, current_state)
 
 end
 
-function plot_velocity_vectors!(ax, current_state)
+function plot_velocity_vectors!(ax, current_particle_state, current_field_state)
 
-    x = [p_i.x[1] for p_i in current_state]
-    y = [p_i.x[2] for p_i in current_state]
+    x = [p_i.x[1] for p_i in current_particle_state]
+    y = [p_i.x[2] for p_i in current_particle_state]
 
     
-    if length(current_state[1].x)>2
+    if length(current_particle_state[1].x)>2
 
-        x = [ Point3f( p_i.x[1],p_i.x[2],p_i.x[3]) for p_i in current_state]
-        v = [ Point3f( p_i.v[1],p_i.v[2],p_i.v[3]) for p_i in current_state]
-        c = [ norm(p_i.v) for p_i in current_state]
+        x = [ Point3f( p_i.x[1],p_i.x[2],p_i.x[3]) for p_i in current_particle_state]
+        v = [ Point3f( p_i.v[1],p_i.v[2],p_i.v[3]) for p_i in current_particle_state]
+        c = [ norm(p_i.v) for p_i in current_particle_state]
         arrows!(ax, x, v , color=c,  colormap=:seismic)
         
 
 
     else
-        vx = [ p_i.v[1] for p_i in current_state]
-        vy = [ p_i.v[2] for p_i in current_state]
-        c = [ norm(p_i.v) for p_i in current_state]
+        vx = [ p_i.v[1] for p_i in current_particle_state]
+        vy = [ p_i.v[2] for p_i in current_particle_state]
+        c = [ norm(p_i.v) for p_i in current_particle_state]
         arrows!(ax, x, y, vx, vy, color=c,  colormap=:plasma)
 
 
