@@ -39,7 +39,7 @@ end
 function plot_field_magnitude!(ax, current_particle_state, current_field_state)
 
     for field in current_field_state
-        heatmap!(ax,field.bin_centers[1],field.bin_centers[2],transpose(field.C), alpha=0.2,colormap=:viridis,colorrange=(0,0.5))
+        heatmap!(ax,field.bin_centers[1],field.bin_centers[2],transpose(field.C), alpha=0.2,colormap=:viridis,colorrange=(0,0.4))
     end
 end
 

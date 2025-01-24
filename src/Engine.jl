@@ -98,18 +98,12 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_functi
     particle_states = [copy(system.initial_particle_state)]
     field_states = [copy(system.initial_field_state)]
 
-    external_forces = system.external_forces
-    pair_forces = system.pair_forces
 
-    field_forces = system.field_forces
+    Npair = length(system.pair_forces)
 
-    field_updaters = system.field_updaters
+    Nfield = length(system.field_forces)
 
-    Npair = length(pair_forces)
-
-    Nfield = length(field_forces)
-
-    Nfieldu = length(field_updaters)
+    Nfieldu = length(system.field_updaters)
 
     
 
@@ -128,80 +122,97 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_functi
 
     #Loop over time
     for (n, t) in pairs(0:dt:t_stop)
-        #Looping over old states, so could be parallelized
+
+        particle_states,field_states = Eulerstep!(particle_states, field_states,current_particle_state,current_field_state, new_particle_state, new_field_state,Npair, Nfield, Nfieldu,n,t,dt, system,Tsave,Tplot,plot_functions,ax,f)
+        
+    end
+    return particle_states,field_states
+end
+function Eulerstep!(particle_states, field_states,current_particle_state,current_field_state, new_particle_state, new_field_state,Npair, Nfield, Nfieldu,n,t,dt, system,Tsave,Tplot, plot_functions,ax,f)
+    #Looping over old states, so could be parallelized
         #Threads.@threads
         #First loop over particles
-        Np = length(current_particle_state)
-        Threads.@threads for i in 1:Np
-            p_i = new_particle_state[i]
+    Np = length(current_particle_state)
+    Threads.@threads for i in 1:Np
+        p_i = new_particle_state[i]
 
-            if Npair>0
-                p_i=contribute_pair_forces!(i,p_i, current_particle_state, pair_forces, t, dt,system.sizes, system.Periodic, system.rcut_pair_global)
-            end
+        p_i, new_field_state = particle_step!(i,p_i, current_particle_state,current_field_state, new_field_state,Npair, Nfield,t, dt, system)
+        new_particle_state[i]=p_i
+    end
 
-            if Nfield>0
-                p_i, new_field_state = contribute_field_forces!(p_i, current_field_state, new_field_state, field_forces, t, dt,system.sizes, system.Periodic)
+    #Now update fields
+    Nf = length(current_field_state)
+    for i in 1:Nf
 
-            end
+        field_i = new_field_state[i]
 
-            for force in external_forces
-                p_i=contribute_external_force!(p_i, t, dt, force)
-            end
+        field_i = field_step!(i, field_i,current_field_state,new_field_state,Nfieldu,t,dt, system)
 
-            for dofevolver in system.dofevolvers
-                p_i=dofevolver(p_i, t, dt)
-            end
 
-            if system.Periodic
-                p_i=periodic!(p_i, system.sizes)
-            end
-            new_particle_state[i]=p_i
-        end
+        new_field_state[i] = field_i
+            
+    end
 
-        #Now update fields
-        Nf = length(current_field_state)
-        for i in 1:Nf
+    current_particle_state = new_particle_state    
+    current_field_state = new_field_state
 
-            field_i = new_field_state[i]
-
-            if Nfieldu>0
-                for field_updater in field_updaters
-                    field_i=contribute_field_update!(field_i, t, dt, field_updater)
-                end
-            end
-            for dofevolver in system.dofevolvers
-                field_i=dofevolver(field_i, t, dt)
-            end
-            new_field_state[i] = field_i
+    save_state!(particle_states, current_particle_state, n, Tsave)
+    save_state!(field_states, current_field_state, n, Tsave)
+    
+    if !isnothing(plot_functions)
+        if Tplot!=0
+            if n%Tplot==0
+                empty!(ax)
                 
-        end
 
-        current_particle_state = new_particle_state    
-        current_field_state = new_field_state
-
-        save_state!(particle_states, current_particle_state, n, Tsave)
-        save_state!(field_states, current_field_state, n, Tsave)
-        
-        if !isnothing(plot_functions)
-            if Tplot!=0
-                if n%Tplot==0
-                    empty!(ax)
-                    
-
-                    for plot_function in plot_functions
-                        plot_function(ax, current_particle_state, current_field_state)
-                    end
-
-                    ax.title="t = $(t)"
-                    display(f)
-                    
+                for plot_function in plot_functions
+                    plot_function(ax, current_particle_state, current_field_state)
                 end
+
+                ax.title="t = $(t)"
+                display(f)
+                
             end
         end
     end
-    return states
+    return particle_states,field_states
+end
+function particle_step!(i,p_i, current_particle_state,current_field_state, new_field_state,Npair, Nfield,t, dt, system)
+    if Npair>0
+        p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system)
+    end
+
+    if Nfield>0
+        p_i, new_field_state = contribute_field_forces!(p_i, current_field_state, new_field_state, t, dt,system)
+
+    end
+
+    for force in system.external_forces
+        p_i=contribute_external_force!(p_i, t, dt, force)
+    end
+
+    for dofevolver in system.dofevolvers
+        p_i=dofevolver(p_i, t, dt)
+    end
+
+    if system.Periodic
+        p_i=periodic!(p_i, system.sizes)
+    end
+    return p_i, new_field_state
 end
 
+function field_step!(i, field_i,current_field_state,new_field_state,Nfieldu,t,dt, system)
+    if Nfieldu>0
+        for field_updater in system.field_updaters
+            field_i=contribute_field_update!(field_i, t, dt, field_updater)
+        end
+    end
+    for dofevolver in system.dofevolvers
+        field_i=dofevolver(field_i, t, dt)
+    end
+    return field_i
+
+end
 function save_state!(states, current_state, n, Tsave)
 
     if n%Tsave==0 && n>0
@@ -211,15 +222,15 @@ function save_state!(states, current_state, n, Tsave)
 
 end
 
-function contribute_field_forces!(p_i, current_field_state,new_field_state, field_forces, t, dt,system_sizes, system_Periodic)
+function contribute_field_forces!(p_i, current_field_state,new_field_state, t, dt,system)
     field_indices = @MVector zeros(Int,length(p_i.x))
     
 
-    for force in field_forces
+    for force in system.field_forces
 
         for (j, field_j) in pairs(current_field_state)
             
-            field_indices = minimal_image_closest_bin_center!(field_indices, p_i.x, field_j.bin_centers, system_sizes, system_Periodic)
+            field_indices = minimal_image_closest_bin_center!(field_indices, p_i.x, field_j.bin_centers, system.sizes, system.Periodic)
 
             p_i, new_field_state[j] = contribute_field_force!(p_i, field_j, field_indices, t, dt, force)
         end
@@ -230,21 +241,21 @@ end
 
 
 
-function contribute_pair_forces!(i,p_i, current_particle_state, pair_forces, t, dt,system_sizes, system_Periodic, system_rcut_pair_global)
+function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system)
     
     dx = @MVector zeros(Float64,length(p_i.x))
-    for force in pair_forces
+    for force in system.pair_forces
         
         for j in eachindex(current_particle_state)
 
             if i!=j
                 p_j = current_particle_state[j]
 
-                dx = minimal_image_difference!(dx, p_i.x, p_j.x, system_sizes, system_Periodic)
+                dx = minimal_image_difference!(dx, p_i.x, p_j.x, system.sizes, system.Periodic)
 
                 dxn = norm(dx)
                 
-                if dxn<=system_rcut_pair_global
+                if dxn<=system.rcut_pair_global
                     p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force)
                 end
 

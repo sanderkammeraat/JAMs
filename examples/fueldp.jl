@@ -8,19 +8,19 @@ function simulation()
     pair_forces = [soft_disk_force()]
 
     field_forces = [field_propulsion_force(1e-2,0.01)]
-    field_updaters = [PeriodicDiffusion(6e-3)]
+    field_updaters = [PeriodicDiffusion(10e-3)]
 
     dofevolvers =  [overdamped_evolver!]
 
     #Initialize state
     N=1000
     Lx=150.
-    Ly=150
+    Ly=150.
     L=min(Lx,Ly)
     poly = 0.0000002
 
 
-    initial_particle_state = [ PolarParticle2d(i,1,0.0,0.0001,[rand(Uniform(-L/2, L/2)) ,rand(Uniform(-L/2,L/2))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],1,rand(Uniform(1-poly, 1+poly)),1.,[0.,0.],[0.,0.]) for i=1:N];
+    initial_particle_state = [ PolarParticle2d(i,1,0.0,0.001,[rand(Uniform(-L/2, L/2)) ,rand(Uniform(-L/2,L/2))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],1,rand(Uniform(1-poly, 1+poly)),1.,[0.,0.],[0.,0.]) for i=1:N];
     
     size = [Lx,Ly];
 
