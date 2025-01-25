@@ -21,13 +21,17 @@ function simulation()
     #push!(initial_state, NewPolarParticle3d(N, 1, 1, 1, 0, 0.01, [0 , -N*2,0],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0]))
     
     size = [L,L,L];
+    initial_field_state=[]
+    field_forces = []
+    field_updaters = []
 
-    system = System(size, initial_state, external_forces, pair_forces , dofevolvers, true);
+
+    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, true,1e9);
 
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    states = Euler_integrator(system,1e-3, 1e5, 1e10, 1e3, (new_plot_sized_points!, plot_directors!, plot_velocity_vectors!), true); 
+    states = Euler_integrator(system,1e-3, 1e5, 1e10, 1e3, 120,(new_plot_sized_points!, plot_directors!, plot_velocity_vectors!), true); 
     return states
 
 end

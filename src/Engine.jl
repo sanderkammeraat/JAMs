@@ -1,6 +1,7 @@
 
 using ProgressBars
 using StaticArrays
+using Observables
 
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
@@ -9,7 +10,6 @@ include("Fields.jl")
 include("Forces.jl")
 include("DOFevolvers.jl")
 include("FieldUpdaters.jl")
-
 include("LivePlottingFunctions.jl")
 
 
@@ -93,7 +93,7 @@ struct System{T1, T2, T3, T4, T5, T6, T7}
 end
 
 
-function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_functions=nothing,plot_on_plane=false)
+function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing, plot_functions=nothing,plot_on_plane=false)
 
     particle_states = [copy(system.initial_particle_state)]
     field_states = [copy(system.initial_field_state)]
@@ -114,64 +114,52 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, plot_functi
     new_field_state  = copy(system.initial_field_state)
 
     if !isnothing(plot_functions)
-        if Tplot!=0
-            
-            f, ax = setup_system_plotting(system.sizes, plot_on_plane)
+        if fps!=0
+            cpsO = Observable(current_particle_state)
+            cfsO = Observable(current_field_state)
+            tO = Observable(0.)
+            f, ax = setup_system_plotting(system.sizes,plot_functions, plot_on_plane,cpsO,cfsO,tO)
         end
     end
 
     #Loop over time
     for (n, t) in pairs(0:dt:t_stop)
 
-        particle_states,field_states = Eulerstep!(particle_states, field_states,current_particle_state,current_field_state, new_particle_state, new_field_state,Npair, Nfield, Nfieldu,n,t,dt, system,Tsave,Tplot,plot_functions,ax,f)
-        
-    end
-    return particle_states,field_states
-end
-function Eulerstep!(particle_states, field_states,current_particle_state,current_field_state, new_particle_state, new_field_state,Npair, Nfield, Nfieldu,n,t,dt, system,Tsave,Tplot, plot_functions,ax,f)
-    #Looping over old states, so could be parallelized
-        #Threads.@threads
-        #First loop over particles
-    Np = length(current_particle_state)
-    Threads.@threads for i in 1:Np
-        p_i = new_particle_state[i]
+        Np = length(current_particle_state)
+        Threads.@threads for i in 1:Np
+            p_i = new_particle_state[i]
 
-        p_i, new_field_state = particle_step!(i,p_i, current_particle_state,current_field_state, new_field_state,Npair, Nfield,t, dt, system)
-        new_particle_state[i]=p_i
-    end
+            p_i, new_field_state = particle_step!(i,p_i, current_particle_state,current_field_state, new_field_state,Npair, Nfield,t, dt, system)
+            new_particle_state[i]=p_i
+        end
 
     #Now update fields
-    Nf = length(current_field_state)
-    for i in 1:Nf
+        Nf = length(current_field_state)
+        for i in 1:Nf
 
-        field_i = new_field_state[i]
+            field_i = new_field_state[i]
 
-        field_i = field_step!(i, field_i,current_field_state,new_field_state,Nfieldu,t,dt, system)
+            field_i = field_step!(i, field_i,current_field_state,new_field_state,Nfieldu,t,dt, system)
 
 
-        new_field_state[i] = field_i
-            
-    end
-
-    current_particle_state = new_particle_state    
-    current_field_state = new_field_state
-
-    save_state!(particle_states, current_particle_state, n, Tsave)
-    save_state!(field_states, current_field_state, n, Tsave)
-    
-    if !isnothing(plot_functions)
-        if Tplot!=0
-            if n%Tplot==0
-                empty!(ax)
+            new_field_state[i] = field_i
                 
+        end
 
-                for plot_function in plot_functions
-                    plot_function(ax, current_particle_state, current_field_state)
+        current_particle_state = new_particle_state    
+        current_field_state = new_field_state
+
+        save_state!(particle_states, current_particle_state, n, Tsave)
+        save_state!(field_states, current_field_state, n, Tsave)
+        
+        if !isnothing(plot_functions)
+            if fps!=0
+                if n%Tplot==0
+                    cpsO[] = current_particle_state
+                    cfsO[]= current_field_state
+                    tO[] = t
+                    sleep(1/fps)
                 end
-
-                ax.title="t = $(t)"
-                display(f)
-                
             end
         end
     end
@@ -216,9 +204,10 @@ end
 function save_state!(states, current_state, n, Tsave)
 
     if n%Tsave==0 && n>0
-        push!(states,current_state)
+        states=push!(states,current_state)
 
     end
+    return states
 
 end
 
@@ -266,25 +255,28 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system)
 end
 
 
-function setup_system_plotting(system_sizes, plot_on_plane)
+function setup_system_plotting(system_sizes,plot_functions, plot_on_plane,cpsO,cfsO,tO)
     GLMakie.activate!()
     f = Figure()
-
     dimension = length(system_sizes)
+    title = @lift("t = $($tO)")
     if dimension==2 || plot_on_plane
-        ax = Axis(f[1, 1], xlabel = "x", ylabel="y",  aspect =system_sizes[1]/system_sizes[2] )
+        ax = Axis(f[1, 1], xlabel = "x", ylabel="y",  aspect =system_sizes[1]/system_sizes[2], title=title )
         xlims!(ax, -system_sizes[1]/2, system_sizes[1]/2)
         ylims!(ax,  -system_sizes[2]/2, system_sizes[2]/2)
 
     elseif dimension==3
 
-        ax = Axis3(f[1, 1], xlabel = "x", ylabel="y", zlabel="z",  aspect = (1,1,1))
+        ax = Axis3(f[1, 1], xlabel = "x", ylabel="y", zlabel="z",  aspect = (1,1,1), title=title)
         xlims!(ax,  -system_sizes[1]/2, system_sizes[1]/2)
         ylims!(ax, -system_sizes[2]/2, system_sizes[2]/2)
         zlims!(ax,  -system_sizes[3]/2, system_sizes[3]/2)
 
     end
+    
+    for plot_function in plot_functions
+       ax=plot_function(ax,cpsO,cfsO)
+    end
     display(f)
-
     return f, ax
 end

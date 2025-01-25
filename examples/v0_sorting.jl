@@ -34,13 +34,17 @@ function simulation()
     end
 
     size = [L,L];
+    initial_field_state=[]
+    field_forces = []
+    field_updaters = []
 
-    system = System(size, initial_state, external_forces, pair_forces , dofevolvers, false);
+
+    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, true,1e9);
 
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    states = Euler_integrator(system, 0.1, 100000, 100000, 10, [plot_type_sized_points!, plot_directors!]);
+    states = Euler_integrator(system, 0.1, 100000, 100000, 10,120, [plot_type_sized_points!, plot_directors!]);
     return states
 
 end

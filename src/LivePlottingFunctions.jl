@@ -18,116 +18,124 @@ function sphere!(x,y,z, R)
     return x,y,z
 end
 
-function plot_points!(ax, current_particle_state, current_field_state)
+function plot_points!(ax, cpsO, cfsO)
 
 
-    x = [p_i.x[1] for p_i in current_particle_state]
-    y = [p_i.x[2] for p_i in current_particle_state]
-    c = [ p_i.id[1] for p_i in current_particle_state]
-    if length(current_particle_state[1].x)>2
+    x = @lift([p_i.x[1] for p_i in $cpsO])
+    y = @lift([p_i.x[2] for p_i in $cpsO])
+
+    c = @lift([ p_i.id[1] for p_i in $cpsO])
+    if length(cpsO[][1].x)>2
         
-        z = [p_i.x[3] for p_i in current_particle_state]
+        z = @lift([p_i.x[3] for p_i in $cpsO])
         meshscatter!(ax,x,y,z, color=c)
 
     else
         scatter!(ax,x,y, color=c)
 
     end
-
+    return ax
 end
 
-function plot_field_magnitude!(ax, current_particle_state, current_field_state)
-
-    for field in current_field_state
-        heatmap!(ax,field.bin_centers[1],field.bin_centers[2],transpose(field.C), alpha=0.2,colormap=:viridis,colorrange=(0,0.4))
-    end
+function plot_field_magnitude!(ax, cpsO, cfsO)
+    
+    field_centers1 = @lift($(cfsO)[1].bin_centers[1])
+    field_centers2 = @lift($(cfsO)[1].bin_centers[2])
+    field_C = @lift(transpose.($(cfsO)[1].C))
+    heatmap!(ax,field_centers1,field_centers2,field_C, alpha=0.2,colormap=:viridis,colorrange=(0,0.4))
+    return ax
 end
 
-function plot_points_on_plane!(ax, current_particle_state, current_field_state)
+function plot_points_on_plane!(ax, cpsO, cfsO)
 
 
-    x = [p_i.x[1] for p_i in current_particle_state]
-    y = [p_i.x[2] for p_i in current_particle_state]
-    c = [ p_i.id[1] for p_i in current_particle_state]
+    x = @lift([p_i.x[1] for p_i in $cpsO])
+    y = @lift([p_i.x[2] for p_i in $cpsO])
+
+    c = @lift([ p_i.id[1] for p_i in $cpsO])
 
     scatter!(ax,x,y, color=c)
-
+    return ax
 
 end
 
-function plot_type_points!(ax, current_particle_state, current_field_state)
+function plot_type_points!(ax, cpsO, cfsO)
 
 
-    x = [p_i.x[1] for p_i in current_particle_state]
-    y = [p_i.x[2] for p_i in current_particle_state]
-    c = [ p_i.type for p_i in current_particle_state]
-    if length(current_particle_state[1].x)>2
+    x = @lift([p_i.x[1] for p_i in $cpsO])
+    y = @lift([p_i.x[2] for p_i in $cpsO])
+
+    c = @lift([ p_i.type for p_i in $cpsO])
+    if length(cpsO[][1].x)>2
         
-        z = [p_i.x[3] for p_i in current_particle_state]
+        z = @lift([p_i.x[3] for p_i in $cpsO])
         meshscatter!(ax,x,y,z, color=c)
 
     else
         scatter!(ax,x,y, color=c)
 
     end
-
+    return ax
 end
 
 
-function plot_Swarmalators!(ax, current_particle_state, current_field_state)
+function plot_Swarmalators!(ax, cpsO, cfsO)
 
-    x = [p_i.x[1] for p_i in current_particle_state]
-    y = [p_i.x[2] for p_i in current_particle_state]
+    x = @lift([p_i.x[1] for p_i in $cpsO])
+    y = @lift([p_i.x[2] for p_i in $cpsO])
 
-    c = angle2range.([ p_i.ϕ[1] for p_i in current_particle_state])
+    c = @lift(angle2range.([ p_i.ϕ[1] for p_i in $cpsO]))
 
     scatter!(ax,x,y , color=c, colormap=:hsv, colorrange=(0, 2*pi))
-
+    return ax
 end
 
 
 
-function plot_sized_points!(ax, current_particle_state, current_field_state)
+function plot_sized_points!(ax, cpsO, cfsO)
 
-    x = [p_i.x[1] for p_i in current_particle_state]
-    y = [p_i.x[2] for p_i in current_particle_state]
+    x = @lift([p_i.x[1] for p_i in $cpsO])
+    y = @lift([p_i.x[2] for p_i in $cpsO])
 
-    c = [ p_i.id[1] for p_i in current_particle_state]
+    c = @lift([ p_i.id[1] for p_i in $cpsO])
 
     
 
-    if length(current_particle_state[1].x)>2
+    if length(cpsO[][1].x)>2
+        print(length(cpsO[][1].x))
         
-        z = [p_i.x[3] for p_i in current_particle_state]
+        z = @lift([p_i.x[3] for p_i in $cpsO])
 
-        R = [p_i.a  for p_i in current_particle_state]
+        R = @lift([p_i.a  for p_i in $cpsO])
 
         meshscatter!(ax,x,y,z, color=c, markersize =R, transparency=true)
 
 
     else
-        s = [2*p_i.a^2  for p_i in current_particle_state]
+        s = @lift([2*p_i.a^2  for p_i in $cpsO])
         scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
 
     end
-
+    return ax
 
 end
 
-function new_plot_sized_points!(ax, current_particle_state, current_field_state)
 
-    x = [p_i.x[1] for p_i in current_particle_state]
-    y = [p_i.x[2] for p_i in current_particle_state]
+function new_plot_sized_points!(ax, cpsO, cfsO)
 
-    c = [ p_i.id[1] for p_i in current_particle_state]
+
+    x = @lift([p_i.x[1] for p_i in $cpsO])
+    y = @lift([p_i.x[2] for p_i in $cpsO])
+
+    c = @lift([ p_i.id[1] for p_i in $cpsO])
 
     
 
-    if length(current_particle_state[1].x)>2
+    if length(cpsO[][1].x)>2
         
-        z = [p_i.x[3] for p_i in current_particle_state]
+        z = @lift([p_i.x[3] for p_i in $cpsO])
 
-        R = [p_i.R  for p_i in current_particle_state]
+        R = @lift([p_i.R for p_i in $cpsO])
 
         meshscatter!(ax,x,y,z, color=c, markersize =R, transparency=true)
 
@@ -138,87 +146,87 @@ function new_plot_sized_points!(ax, current_particle_state, current_field_state)
 
     end
 
-
+    return ax
 end
 
-function plot_type_sized_points!(ax, current_particle_state, current_field_state)
+function plot_type_sized_points!(ax, cpsO, cfsO)
 
-    x = [p_i.x[1] for p_i in current_particle_state]
-    y = [p_i.x[2] for p_i in current_particle_state]
+    x = @lift([p_i.x[1] for p_i in $cpsO])
+    y = @lift([p_i.x[2] for p_i in $cpsO])
 
-    c = [ p_i.type for p_i in current_particle_state]
+    c = @lift([ p_i.type for p_i in $cpsO])
 
     
 
-    if length(current_particle_state[1].x)>2
+    if length(cpsO[][1].x)>2
         
-        z = [p_i.x[3] for p_i in current_particle_state]
+        z = @lift([p_i.x[3] for p_i in $cpsO])
 
-        R = [p_i.a  for p_i in current_particle_state]
+        R = @lift([p_i.a for p_i in $cpsO])
 
         meshscatter!(ax,x,y,z, color=c, markersize =R, transparency=true)
 
 
     else
-        s = [2*p_i.a^2  for p_i in current_particle_state]
+        s = @lift([2*p_i.a^2  for p_i in $cpsO])
         scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
 
     end
-
+    return ax
 
 end
 
-function plot_directors!(ax, current_particle_state, current_field_state)
+function plot_directors!(ax, cpsO, cfsO)
 
-    x = [p_i.x[1] for p_i in current_particle_state]
-    y = [p_i.x[2] for p_i in current_particle_state]
+    x = @lift([p_i.x[1] for p_i in $cpsO])
+    y = @lift([p_i.x[2] for p_i in $cpsO])
 
     
-    if length(current_particle_state[1].x)>2
+    if length(cpsO[][1].x)>2
 
-        x = [ Point3f( p_i.x[1],p_i.x[2],p_i.x[3]) for p_i in current_particle_state]
-        p = [ Point3f( p_i.p[1],p_i.p[2],p_i.p[3]) for p_i in current_particle_state]
-        c = [ p_i.p[1] for p_i in current_particle_state]
+        x = @lift([ Point3f( p_i.x[1],p_i.x[2],p_i.x[3]) for p_i in $cpsO])
+        p = @lift([ Point3f( p_i.p[1],p_i.p[2],p_i.p[3]) for p_i in $cpsO])
+        c = @lift([ p_i.p[1] for p_i in $cpsO])
         arrows!(ax, x, p , color=c,  colormap=:seismic,colorrange=(-1, 1))
         
 
 
     else
-        nx = cos.([ p_i.θ[1] for p_i in current_particle_state])
-        ny = sin.([ p_i.θ[1] for p_i in current_particle_state])
-        c = angle2range.([ p_i.θ[1] for p_i in current_particle_state])
+        nx = @lift(cos.([ p_i.θ[1] for p_i in $cpsO]))
+        ny = @lift(sin.([ p_i.θ[1] for p_i in $cpsO]))
+        c = @lift(angle2range.([ p_i.θ[1] for p_i in $cpsO]))
         arrows!(ax, x, y, nx, ny, color=c,  colormap=:hsv,colorrange=(0, 2*pi))
 
 
     end
-
+    return ax
 
 end
 
-function plot_velocity_vectors!(ax, current_particle_state, current_field_state)
+function plot_velocity_vectors!(ax,cpsO, cfsO)
 
-    x = [p_i.x[1] for p_i in current_particle_state]
-    y = [p_i.x[2] for p_i in current_particle_state]
+    x = @lift([p_i.x[1] for p_i in $cpsO])
+    y = @lift([p_i.x[2] for p_i in $cpsO])
 
     
-    if length(current_particle_state[1].x)>2
+    if length(cpsO[][1].x)>2
 
-        x = [ Point3f( p_i.x[1],p_i.x[2],p_i.x[3]) for p_i in current_particle_state]
-        v = [ Point3f( p_i.v[1],p_i.v[2],p_i.v[3]) for p_i in current_particle_state]
-        c = [ norm(p_i.v) for p_i in current_particle_state]
+        x = @lift([ Point3f( p_i.x[1],p_i.x[2],p_i.x[3]) for p_i in $cpsO])
+        v = @lift([ Point3f( p_i.v[1],p_i.v[2],p_i.v[3]) for p_i in $cpsO])
+        c = @lift([ norm(p_i.v) for p_i in $cpsO])
         arrows!(ax, x, v , color=c,  colormap=:seismic)
         
 
 
     else
-        vx = [ p_i.v[1] for p_i in current_particle_state]
-        vy = [ p_i.v[2] for p_i in current_particle_state]
-        c = [ norm(p_i.v) for p_i in current_particle_state]
+        vx = @lift([ p_i.v[1] for p_i in $cpsO])
+        vy = @lift([ p_i.v[2] for p_i in $cpsO])
+        c = @lift([ norm(p_i.v) for p_i in $cpsO])
         arrows!(ax, x, y, vx, vy, color=c,  colormap=:plasma)
 
 
     end
-
+    return ax
 
 end
 
