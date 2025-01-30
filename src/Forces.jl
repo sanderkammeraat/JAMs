@@ -7,10 +7,22 @@ using StaticArrays
 
 abstract type Force end
 
+
+
 struct field_propulsion_force<:Force
     consumption::Float64
     v0offset::Float64
 
+end
+
+struct electrode_force<:Force
+    Emag::Float64
+    d::Float64
+    Qreset::Float64
+end
+
+struct coulomb_force<:Force
+    k::Float64
 end
 
 struct self_align_with_v_force<:Force
@@ -80,6 +92,13 @@ end
 struct chain_force<:Force
     k::Float64
     l::Float64
+end
+
+struct periodic_chain_force<:Force
+    k::Float64
+    l::Float64
+    periodic_id_begin::Int64
+    periodic_id_end::Int64
 end
 #Let's test the power of multiple dispatch
 
@@ -160,6 +179,23 @@ function contribute_external_force!(p_i, t, dt, force::external_harmonic_force)
     return p_i
 end
 
+function contribute_external_force!(p_i, t, dt, force::electrode_force)
+
+    #compensate for the dt from the dof evolver, can be changed if the evolver also changes
+    if p_i.x[3]+p_i.R<=force.d/2 && p_i.x[3]-p_i.R>=-force.d/2
+        p_i.f[3]+= force.Emag * p_i.Q[1]
+
+    elseif p_i.x[3]+p_i.R>force.d/2
+        p_i.Q.=1*force.Qreset
+        p_i.v[3]*= -1
+    elseif p_i.x[3]-p_i.R<-force.d/2
+        p_i.Q.=-1*force.Qreset
+        p_i.v[3]*= -1
+    end
+
+    return p_i
+end
+
 function contribute_external_force!(p_i, t, dt, force::external_friction_force)
 
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
@@ -189,10 +225,28 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::chain_force)
     if p_j.id == p_i.id+1 || p_j.id == p_i.id-1
         p_i.f.+= force.k * (dxn-force.l) * dx/dxn
     end
+    return p_i
+
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::periodic_chain_force)
+
+    if p_j.id == p_i.id+1 || p_j.id == p_i.id-1
+        p_i.f.+= force.k * (dxn-force.l) * dx/dxn
+    end
+
+    if p_i.id ==force.periodic_id_begin  && p_j.id ==force.periodic_id_end
+        p_i.f.+= force.k * (dxn-force.l) * dx/dxn
+    end
+
+    if p_i.id ==force.periodic_id_end  && p_j.id ==force.periodic_id_begin
+        p_i.f.+= force.k * (dxn-force.l) * dx/dxn
+    end
 
     return p_i
 
 end
+
 
 
 
@@ -238,7 +292,11 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_atre_type_
     return p_i
 
 end
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::coulomb_force)
 
+    p_i.f.+= -force.k * (dx/dxn^3 * p_i.Q[1] * p_j.Q[1])   
+    return p_i
+end
 
 
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::swarm_pos_force)
@@ -288,11 +346,11 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_
     y_index = field_indices[2]
     #print(x_index)
 
-    p_i.f[1]+= p_i.zeta * (field_j.C[y_index, x_index]+force.v0offset) *cos(p_i.θ[1])
-    p_i.f[2]+= p_i.zeta * (field_j.C[y_index, x_index]+force.v0offset) *sin(p_i.θ[1])
+    p_i.f[1]+= p_i.zeta * (field_j.C[x_index, y_index]+force.v0offset) *cos(p_i.θ[1])
+    p_i.f[2]+= p_i.zeta * (field_j.C[x_index, y_index]+force.v0offset) *sin(p_i.θ[1])
 
-    if field_j.C[y_index, x_index]>0
-        field_j.Cf[y_index, x_index]+=-force.consumption
+    if field_j.C[x_index, y_index]>0
+        field_j.Cf[x_index, y_index]+=-force.consumption
     end
 
     return p_i, field_j

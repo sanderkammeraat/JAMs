@@ -6,7 +6,7 @@ function simulation()
     dofevolvers = [overdamped_evolver!]
 
     #Initialize state
-    N=1000
+    N=500
     L=4.
     external_forces =  (ABP_2d_propulsion_force(), ABP_2d_angular_noise())
 
@@ -24,7 +24,7 @@ function simulation()
 
     system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,1e9);
 
-    states = Euler_integrator(system, 0.1, 1000, 1000000, 1,120, [plot_Swarmalators!]);
+    states = Euler_integrator(system, 0.1, 1000, 1000000, 5,120, [plot_Swarmalators!]);
 
 end
 

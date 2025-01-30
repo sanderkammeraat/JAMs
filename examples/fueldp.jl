@@ -8,19 +8,19 @@ function simulation()
     pair_forces = [soft_disk_force()]
 
     field_forces = [field_propulsion_force(1e-2,0.01)]
-    field_updaters = [PeriodicDiffusion(6e-3)]
+    field_updaters = [PeriodicDiffusion(8e-3)]
 
     dofevolvers =  [overdamped_evolver!]
 
     #Initialize state
     N=1000
-    Lx=110.
-    Ly=110.
+    Lx=120.
+    Ly=120.
     L=min(Lx,Ly)
     poly = 0.0000002
 
 
-    initial_particle_state = [ PolarParticle2d(i,1,0.0,0.001,[rand(Uniform(-L/2, L/2)) ,rand(Uniform(-L/2,L/2))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],1,rand(Uniform(1-poly, 1+poly)),1.,[0.,0.],[0.,0.]) for i=1:N];
+    initial_particle_state = [ PolarParticle2d(i,1,0.0,0.0001,[rand(Uniform(-L/2, L/2)) ,rand(Uniform(-L/2,L/2))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],1,rand(Uniform(1-poly, 1+poly)),1.,[0.,0.],[0.,0.]) for i=1:N];
     
     size = [Lx,Ly];
 
@@ -34,7 +34,7 @@ function simulation()
 
     v00=0.4
 
-    C = ones(length(y_bin_centers), length(x_bin_centers))*v00
+    C = ones(length(x_bin_centers), length(y_bin_centers))*v00
     
     initial_field_state=[FuelField2d(bin_centers,C, C.*0, C.*0)]
 
@@ -44,15 +44,19 @@ function simulation()
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
     plot_functions = (plot_sized_points!, plot_directors!, plot_velocity_vectors!,plot_field_magnitude!)
-    particle_states,field_states = Euler_integrator(system, 0.1, 1000, 10000000000,10, 120, plot_functions,false);
+    particle_states,field_states = Euler_integrator(system, 0.1, 1e7, 1e7,5, 120, plot_functions,false);
+    #particle_states,field_states = Euler_integrator(system, 0.1, 10, 10000000000,0, 0, plot_functions,false);
     return particle_states,field_states, system
 
 end
 
-simulation()
-
 
 particle_states,field_states, system = simulation()
+
+@time simulation();
+
+
+
 
 
 psO = Observable(particle_states[1])
