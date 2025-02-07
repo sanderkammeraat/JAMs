@@ -14,12 +14,16 @@ See https://code.visualstudio.com/docs/languages/julia for detailed instructions
 
 
 **Required Julia packages:**  
--StaticArrays (for speedup for small vectors, e.g. position or force vectors)  
--Plots (for live plotting)  
+-StaticArrays (for speedup for small vectors, e.g. position or force vectors) 
+-GLMakie (for plotting)
+-Observables (for live plotting)
 -ProgressBars (for progressbar in integrator)  
--Random (for noise and random initial positions, probably pre-installed)  
--Distributions (for noise and random initial positions, probably pre-installed)  
--LinearAlgebra (for doing linear algebra, probably pre-installed)  
+-Distributions (for noise and random initial positions)  
+
+Probably pre-installed:
+-LinearAlgebra (for doing linear algebra)  
+-Random (for noise and random initial positions)  
+
 
 **Multi-threading**  
 For information about multi-threading in Julia and how to set the number of threads, visit:  
