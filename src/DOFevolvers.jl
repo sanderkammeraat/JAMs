@@ -220,3 +220,13 @@ function overdamped_evolver!(field::FuelField2d, t, dt)
     field.Cf.*= 0.
     return field
 end
+function overdamped_evolver!(field::GeneralField2d, t, dt)
+
+    field.C.+= field.Cv*dt
+
+    field.Cv.= field.Cf
+
+    #reinitalize
+    field.Cf.*= 0.
+    return field
+end

@@ -357,3 +357,16 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_
 
 end
 
+# function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_persistence_force)
+    
+#     x_index = field_indices[1]
+#     y_index = field_indices[2]
+#     #print(x_index)
+
+#     p_i.Dr[1]+= field_j.C[x_index, y_index]
+
+
+#     return p_i, field_j
+
+# end
+
