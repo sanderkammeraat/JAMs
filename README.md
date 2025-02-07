@@ -13,14 +13,14 @@ See https://code.visualstudio.com/docs/languages/julia for detailed instructions
 5) For proper live plotting, disable the "Use Plot Pane" option in the settings of the Julia extension of VS code.
 
 
-**Required Julia packages:**  
+**Required Julia packages:**   
 -StaticArrays (for speedup for small vectors, e.g. position or force vectors) 
 -GLMakie (for plotting)
 -Observables (for live plotting)
 -ProgressBars (for progressbar in integrator)  
 -Distributions (for noise and random initial positions)  
 
-Probably pre-installed:
+Probably pre-installed:  
 -LinearAlgebra (for doing linear algebra)  
 -Random (for noise and random initial positions)  
 
