@@ -14,9 +14,9 @@ See https://code.visualstudio.com/docs/languages/julia for detailed instructions
 
 
 **Required Julia packages:**   
--StaticArrays (for speedup for small vectors, e.g. position or force vectors) 
--GLMakie (for plotting)
--Observables (for live plotting)
+-StaticArrays (for speedup for small vectors, e.g. position or force vectors)   
+-GLMakie (for plotting)  
+-Observables (for live plotting)  
 -ProgressBars (for progressbar in integrator)  
 -Distributions (for noise and random initial positions)  
 
