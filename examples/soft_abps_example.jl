@@ -13,7 +13,7 @@ function simulation()
 
     #Initialize state
     N=1000
-    ϕ = 0.2
+    ϕ = 0.9
     L=sqrt(N*pi/ϕ)
     poly = 0.2
 
