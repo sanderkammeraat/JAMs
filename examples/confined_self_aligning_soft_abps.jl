@@ -20,7 +20,7 @@ function simulation()
         push!(initial_state,ConfinedPolarParticle3d(i, 1, 1, r, 0, 0.01, [R*cos(2*pi/Nb*j) , R*sin(2*pi/Nb*j),0],[0,0,0], [0,0,0],[0,0,0],push!(normalize(rand(Normal(0),2)),0).*[1,1,0],[0,0,0]))
         j+=1
     end
-    size = [2*R+2*r,2*R+r,2*R+2*r];
+    size = [2*R+2*r,2*R+2*r,2*R+2*r];
     initial_field_state=[]
     field_forces = []
     field_updaters = []
