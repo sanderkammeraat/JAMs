@@ -19,6 +19,8 @@ See https://code.visualstudio.com/docs/languages/julia for detailed instructions
 -Observables (for live plotting)  
 -ProgressBars (for progressbar in integrator)  
 -Distributions (for noise and random initial positions)  
+-JLD2 (for saving/loading simulations: phase space trajectories + simulation settings)  
+-CodecZlib (for saving with compression)  
 
 Probably pre-installed:  
 -LinearAlgebra (for doing linear algebra)  
