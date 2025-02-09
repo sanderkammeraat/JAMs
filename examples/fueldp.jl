@@ -44,14 +44,14 @@ function simulation()
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
     plot_functions = (plot_sized_points!, plot_directors!, plot_velocity_vectors!,plot_field_magnitude!)
-    particle_states,field_states = Euler_integrator(system, 0.1, 1e7, 1e7,5, 120, plot_functions,false);
+    sim = Euler_integrator(system, 0.1, 1e7, 1e7,5, 120, plot_functions,false);
     #particle_states,field_states = Euler_integrator(system, 0.1, 10, 10000000000,0, 0, plot_functions,false);
-    return particle_states,field_states, system
+    return sim
 
 end
 
 
-particle_states,field_states, system = simulation()
+sim = simulation()
 
 @time simulation();
 

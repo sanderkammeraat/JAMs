@@ -46,36 +46,10 @@ function simulation()
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
     plot_functions = (plot_sized_points!, plot_directors!, plot_velocity_vectors!,plot_field_magnitude!)
-    particle_states,field_states = Euler_integrator(system, 0.1, 1e7, 1e7,5, 120, plot_functions,false);
+    sim = Euler_integrator(system, 0.1, 1e7, 1e7,5, 120, plot_functions,false);
     #particle_states,field_states = Euler_integrator(system, 0.1, 10, 10000000000,0, 0, plot_functions,false);
-    return particle_states,field_states, system
-
+    return sim
 end
 
 
-particle_states,field_states, system = simulation()
-
-    
-@time simulation();
-
-
-
-
-
-psO = Observable(particle_states[1])
-
-
-
-f, ax = setup_system_plotting(system.sizes,[test!], false, psO,[],0)
-
-ax=test!(ax, psO ,[])
-
-fps = 1
-for i in eachindex(particle_states)
-    psO[].= particle_states[i]
-    notify(psO)
-    sleep(1/fps)
-end
-
-GLMakie.activate!()
-f = Figure()
+sim = simulation()

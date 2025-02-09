@@ -36,13 +36,13 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    states = Euler_integrator(system, 1e-3, 100000, 100000, 1e2, 120,[new_plot_sized_points!,plot_velocity_vectors!],false);
-    return states
+    sim = Euler_integrator(system, 1e-3, 100000, 100000, 1e2, 120,[new_plot_sized_points!,plot_velocity_vectors!],false);
+    return sim
 
 end
 
 
-states = simulation();
+sim = simulation();
 
 
     

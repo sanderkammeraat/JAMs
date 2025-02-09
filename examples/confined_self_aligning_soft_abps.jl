@@ -29,11 +29,11 @@ function simulation()
     system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,r*10);
 
     #Run integration
-    states = Euler_integrator(system,1e-1, 1e5, 1e10, 5e0, 120,(new_plot_sized_points!,plot_directors!, plot_velocity_vectors!), true); 
-    return states
+    sim = Euler_integrator(system,1e-1, 1e5, 1e10, 5e0, 120,(new_plot_sized_points!,plot_directors!, plot_velocity_vectors!), true); 
+    return sim
 
 end
 
 
-states = simulation()
+sim = simulation()
 

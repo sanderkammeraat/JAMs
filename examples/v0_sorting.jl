@@ -44,11 +44,11 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    states = Euler_integrator(system, 0.1, 100000, 100000, 10,120, [plot_type_sized_points!, plot_directors!]);
-    return states
+    sim = Euler_integrator(system, 0.1, 100000, 100000, 10,120, [plot_type_sized_points!, plot_directors!]);
+    return sim
 
 end
 
 
-states = simulation()
+sim = simulation()
 

@@ -24,9 +24,9 @@ function simulation()
 
     system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,1e9);
 
-    states = Euler_integrator(system, 0.1, 1000, 1000000, 5,120, [plot_Swarmalators!]);
-
+    sim = Euler_integrator(system, 0.1, 1000, 1000000, 5,120, [plot_Swarmalators!]);
+    return sim
 end
 
-simulation()
+sim=simulation()
 

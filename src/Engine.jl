@@ -2,6 +2,8 @@
 using ProgressBars
 using StaticArrays
 using Observables
+using JLD2
+using CodecZlib
 
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
@@ -11,7 +13,6 @@ include("Forces.jl")
 include("DOFevolvers.jl")
 include("FieldUpdaters.jl")
 include("LivePlottingFunctions.jl")
-
 
 
 function periodic!(p_i, systemsizes)
@@ -92,11 +93,40 @@ struct System{T1, T2, T3, T4, T5, T6, T7}
 
 end
 
+struct SIM{T1, T2, T3, T4, T5}
+    particle_states::T1
+    field_states::T2
+    tsax::T3
+    dt::T4
+    t_stop::T5
+    system::System
+end
+
+
+function save_SIM(folder_path, file_name, sim)
+
+
+    mkpath(folder_path)
+    file_path = folder_path*file_name*".jld2"
+
+    println(file_path)
+    jldsave(file_path, true; sim=sim)
+    return file_path
+end
+
+function load_SIM(file_path)
+    sim_file = jldopen(file_path, "r");
+    sim = sim_file["sim"]
+    close(sim_file)
+    return sim
+end
+
 
 function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing, plot_functions=nothing,plot_on_plane=false)
 
     particle_states = [copy(system.initial_particle_state)]
     field_states = [copy(system.initial_field_state)]
+    tsax = [0.]
 
 
     Npair = length(system.pair_forces)
@@ -151,6 +181,7 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
 
         save_state!(particle_states, current_particle_state, n, Tsave)
         save_state!(field_states, current_field_state, n, Tsave)
+        save_state!(tsax,t, n, Tsave)
         
         if !isnothing(plot_functions)
             if fps!=0
@@ -163,7 +194,7 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
             end
         end
     end
-    return particle_states,field_states
+    return SIM(particle_states, field_states, tsax,dt, t_stop, system)
 end
 function particle_step!(i,p_i, current_particle_state,current_field_state, new_field_state,Npair, Nfield,t, dt, system)
     if Npair>0
@@ -204,7 +235,7 @@ end
 function save_state!(states, current_state, n, Tsave)
 
     if n%Tsave==0 && n>0
-        states=push!(states,copy(current_state))
+        states=push!(states,deepcopy(current_state))
 
     end
     return states
@@ -267,7 +298,7 @@ function setup_system_plotting(system_sizes,plot_functions, plot_on_plane,cpsO,c
 
     elseif dimension==3
 
-        ax = Axis3(f[1, 1], xlabel = "x", ylabel="y", zlabel="z",  aspect = (1,system_sizes[2]/system_sizes[1],system_sizes[3]/system_sizes[1]), title=title)
+        ax = Axis3(f[1, 1], xlabel = "x", ylabel="y", zlabel="z",  aspect = (1,system_sizes[2]/system_sizes[1],system_sizes[3]/system_sizes[1]), title=title,zoommode = :cursor)
         xlims!(ax,  -system_sizes[1]/2, system_sizes[1]/2)
         ylims!(ax, -system_sizes[2]/2, system_sizes[2]/2)
         zlims!(ax,  -system_sizes[3]/2, system_sizes[3]/2)

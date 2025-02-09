@@ -25,9 +25,9 @@ function simulation()
 
 
     #%%
-    states = Euler_integrator(system, 1, 10000, 1000000, 1,120, [plot_directors!]);
-    0
+    sim = Euler_integrator(system, 1, 10000, 1000000, 1,120, [plot_directors!]);
+    return sim
 end
 
-simulation()
+sim()
 

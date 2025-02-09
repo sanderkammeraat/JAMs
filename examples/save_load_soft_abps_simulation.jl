@@ -1,4 +1,7 @@
+
 include("../src/Engine.jl")
+
+#%%Running
 using Random, Distributions
 
 function simulation()
@@ -12,8 +15,8 @@ function simulation()
     dofevolvers =  [overdamped_evolver!]
 
     #Initialize state
-    N=1000
-    ϕ = 0.3
+    N=500
+    ϕ = 0.2
     L=sqrt(N*pi/ϕ)
     poly = 0.2
 
@@ -32,10 +35,18 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system, 0.1, 400, 1e8, 5,120, (plot_sized_points!, plot_directors!, plot_velocity_vectors!));
+    sim = Euler_integrator(system, 0.1, 20, 10, 5,120);
     return sim
 end
 
 
-sim = simulation()
+sim= simulation();
+
+
+folder_path = "enter_folder_path_ending_in_/"
+
+file_path=save_SIM(folder_path, "soft_abps_sim", sim)
+
+
+siml = load_SIM(file_path);
 
