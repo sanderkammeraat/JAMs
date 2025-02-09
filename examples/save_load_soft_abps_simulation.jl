@@ -43,7 +43,7 @@ end
 sim= simulation();
 
 
-folder_path = "enter_folder_path_ending_in_/"
+folder_path = " folder path ending in  /"
 
 file_path=save_SIM(folder_path, "soft_abps_sim", sim)
 

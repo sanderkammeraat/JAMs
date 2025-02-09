@@ -298,7 +298,7 @@ function setup_system_plotting(system_sizes,plot_functions, plot_on_plane,cpsO,c
 
     elseif dimension==3
 
-        ax = Axis3(f[1, 1], xlabel = "x", ylabel="y", zlabel="z",  aspect = (1,system_sizes[2]/system_sizes[1],system_sizes[3]/system_sizes[1]), title=title,zoommode = :cursor)
+        ax = Axis3(f[1, 1], xlabel = "x", ylabel="y", zlabel="z",  aspect = (1,system_sizes[2]/system_sizes[1],system_sizes[3]/system_sizes[1]), title=title)
         xlims!(ax,  -system_sizes[1]/2, system_sizes[1]/2)
         ylims!(ax, -system_sizes[2]/2, system_sizes[2]/2)
         zlims!(ax,  -system_sizes[3]/2, system_sizes[3]/2)
