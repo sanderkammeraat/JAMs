@@ -284,9 +284,13 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system)
 end
 
 
-function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO)
+function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO,res=nothing)
     GLMakie.activate!()
-    f = Figure()
+    if !isnothing(res)
+        f = Figure(resolution=res)
+    else
+        f=Figure()
+    end
     title = @lift("t = $($tO)")
 
     if !isnothing(plotdim)
@@ -315,4 +319,29 @@ function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO
     end
     display(f)
     return f, ax
+end
+
+
+
+function make_movie(SIM, save_path, plot_functions, fps,plotdim=nothing)
+
+    mkpath(save_path)
+
+    cpsO = Observable(SIM.particle_states[1])
+
+    cfsO = Observable(SIM.field_states[1])
+
+    tO = Observable(SIM.tsax[1])
+
+    t_indices = range(1,length(SIM.tsax))
+
+    fig, ax = setup_system_plotting(SIM.system.sizes,plot_functions,plotdim ,cpsO,cfsO,tO,(500,500))
+    
+    record(fig, save_path, t_indices; framerate=fps, compression=30) do t_index 
+        cpsO[] = SIM.particle_states[t_index]
+        cfsO[] = SIM.field_states[t_index]
+        tO[] = SIM.tsax[t_index]
+    end
+
+
 end

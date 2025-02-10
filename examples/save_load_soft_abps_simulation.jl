@@ -35,12 +35,15 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system, 0.1, 20, 10, 5,120);
+    sim = Euler_integrator(system, 0.1, 1000, 10, 5,120);
     return sim
 end
 
 
 sim= simulation();
+
+make_movie(sim,"/Users/kammeraat/test_JAMS/movies/soft_abps_v21.mp4",(plot_disks!,plot_directors!, plot_velocity_vectors!),60)
+
 
 
 folder_path = " folder path ending in  /"

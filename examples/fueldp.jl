@@ -44,35 +44,14 @@ function simulation()
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
     plot_functions = (plot_sized_points!, plot_directors!, plot_velocity_vectors!,plot_field_magnitude!)
-    sim = Euler_integrator(system, 0.1, 1e7, 1e7,5, 120, plot_functions,2);
+    sim = Euler_integrator(system, 0.1, 5e2, 5,5, 120, plot_functions,2);
     #particle_states,field_states = Euler_integrator(system, 0.1, 10, 10000000000,0, 0, plot_functions,false);
     return sim
 
 end
 
 
-sim = simulation()
+sim = simulation();
 
-@time simulation();
+make_movie(sim, "/Users/kammeraat/test_JAMS/movies/fueldp_v8.mp4",(plot_sized_points!, plot_directors!, plot_velocity_vectors!,plot_field_magnitude!),60)
 
-
-
-
-
-psO = Observable(particle_states[1])
-
-
-
-f, ax = setup_system_plotting(system.sizes,[test!], false, psO,[],0)
-
-ax=test!(ax, psO ,[])
-
-fps = 1
-for i in eachindex(particle_states)
-    psO[].= particle_states[i]
-    notify(psO)
-    sleep(1/fps)
-end
-
-GLMakie.activate!()
-f = Figure()
