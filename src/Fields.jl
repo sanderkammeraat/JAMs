@@ -1,6 +1,7 @@
 abstract type Field end
 
 struct FuelField2d<:Field
+    type::Int64
     bin_centers::Vector{Vector{Float64}}
     C::Array{Float64}
     Cv::Array{Float64}
@@ -8,6 +9,7 @@ struct FuelField2d<:Field
 end
 
 struct GeneralField2d<:Field
+    type::Int64
     bin_centers::Vector{Vector{Float64}}
     C::Array{Float64}
     Cv::Array{Float64}

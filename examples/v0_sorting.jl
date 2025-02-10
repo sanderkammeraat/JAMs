@@ -3,13 +3,13 @@ using Random, Distributions
 
 function simulation()
 
-    external_forces = (ABP_2d_propulsion_force(), ABP_2d_angular_noise())
+    external_forces = (ABP_2d_propulsion_force(1), ABP_2d_angular_noise(1))
 
-    karray = @SMatrix [1.0 1.0; 1.0 1.0]
+    karray =  [1.0 1.0; 1.0 1.0]
 
-    ϵarray = @SMatrix [0.5 0.5; 0.5 0.5]
+    ϵarray = [0.1 0.1; 0.1 0.1]
 
-    pair_forces = [soft_atre_type_force(karray,ϵarray )]
+    pair_forces = [soft_atre_type_force([1,2],karray,ϵarray )]
 
     
     
@@ -28,9 +28,9 @@ function simulation()
     fr=0.2
 
 
-    initial_state = [ PolarParticle2dNtype(i,1,rand(Uniform(1-poly, 1+poly)),1.,v01,Dr,rand(Uniform(-L/2*fr, L/2*fr),2),[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[0.],[0.,0.],1,[0.,0.],[0.,0.]) for i=1:N1];
+    initial_state = [ PolarParticle2dN(i,1,rand(Uniform(1-poly, 1+poly)),1.,v01,Dr,rand(Uniform(-L/2*fr, L/2*fr),2),[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[0.],[0.,0.],1,[0.,0.],[0.,0.]) for i=1:N1];
     for i in N1+1:N1+N2
-        push!(initial_state,PolarParticle2dNtype(i,2,rand(Uniform(1-poly, 1+poly)),1.,v02,Dr,rand(Uniform(-L/2*fr, L/2*fr),2),[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[0.],[0.,0.],1,[0.,0.],[0.,0.]))
+        push!(initial_state,PolarParticle2dN(i,2,rand(Uniform(1-poly, 1+poly)),1.,v02,Dr,rand(Uniform(-L/2*fr, L/2*fr),2),[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[0.],[0.,0.],1,[0.,0.],[0.,0.]))
     end
 
     size = [L,L];
@@ -44,7 +44,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system, 0.1, 100000, 100000, 10,120, [plot_type_sized_points!, plot_directors!]);
+    sim = Euler_integrator(system, 0.1, 100000, 100000, 5,120, [plot_type_sized_points!, plot_directors!]);
     return sim
 
 end

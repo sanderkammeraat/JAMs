@@ -2,22 +2,6 @@
 using GLMakie
 
 
-function sphere!(x,y,z, R)
-
-    φ = 0:π/100:2π
-
-    θ = 0:π/200:π
-
-
-    x.+= [R*cos(θ) * sin(φ) for θ in θ, φ in φ]
-
-    y.+= [R*sin(θ)*sin(φ) for θ in θ, φ in φ]
-    
-    z.+= [R*cos(φ) for θ in θ, φ in φ]
-    
-    return x,y,z
-end
-
 function plot_points!(ax, cpsO, cfsO)
 
 
@@ -46,18 +30,6 @@ function plot_field_magnitude!(ax, cpsO, cfsO)
     return ax
 end
 
-function plot_points_on_plane!(ax, cpsO, cfsO)
-
-
-    x = @lift([p_i.x[1] for p_i in $cpsO])
-    y = @lift([p_i.x[2] for p_i in $cpsO])
-
-    c = @lift([ p_i.id[1] for p_i in $cpsO])
-
-    scatter!(ax,x,y, color=c)
-    return ax
-
-end
 
 function plot_type_points!(ax, cpsO, cfsO)
 
@@ -94,35 +66,6 @@ end
 
 function plot_sized_points!(ax, cpsO, cfsO)
 
-    x = @lift([p_i.x[1] for p_i in $cpsO])
-    y = @lift([p_i.x[2] for p_i in $cpsO])
-
-    c = @lift([ p_i.id[1] for p_i in $cpsO])
-
-    
-
-    if length(cpsO[][1].x)>2
-        print(length(cpsO[][1].x))
-        
-        z = @lift([p_i.x[3] for p_i in $cpsO])
-
-        R = @lift([p_i.a  for p_i in $cpsO])
-
-        meshscatter!(ax,x,y,z, color=c, markersize =R, transparency=true)
-
-
-    else
-        s = @lift([2*p_i.a^2  for p_i in $cpsO])
-        scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
-
-    end
-    return ax
-
-end
-
-
-function new_plot_sized_points!(ax, cpsO, cfsO)
-
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
     y = @lift([p_i.x[2] for p_i in $cpsO])
@@ -141,7 +84,7 @@ function new_plot_sized_points!(ax, cpsO, cfsO)
 
 
     else
-        s = [2*p_i.R^2  for p_i in current_particle_state]
+        s = @lift([2*p_i.R^2  for p_i in $cpsO])
         scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
 
     end
@@ -162,13 +105,13 @@ function plot_type_sized_points!(ax, cpsO, cfsO)
         
         z = @lift([p_i.x[3] for p_i in $cpsO])
 
-        R = @lift([p_i.a for p_i in $cpsO])
+        R = @lift([p_i.R for p_i in $cpsO])
 
         meshscatter!(ax,x,y,z, color=c, markersize =R, transparency=true)
 
 
     else
-        s = @lift([2*p_i.a^2  for p_i in $cpsO])
+        s = @lift([2*p_i.R^2  for p_i in $cpsO])
         scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
 
     end

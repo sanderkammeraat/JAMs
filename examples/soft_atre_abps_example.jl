@@ -3,11 +3,11 @@ using Random, Distributions
 
 function simulation()
 
-    external_forces = [ABP_2d_angular_noise()]
-    karray = @SMatrix [1.0 1.0; 1.0 1.0]
+    external_forces = [ABP_2d_angular_noise(1)]
+    karray =  [1.0 1.0; 1.0 1.0]
 
-    ϵarray = @SMatrix [0.01 0.01; 0.01 0.1]
-    pair_forces = (pairABP_force(1.1), soft_atre_type_force(karray,ϵarray ))
+    ϵarray =  [0.01 0.01; 0.01 0.1]
+    pair_forces = (pairABP_force([1,2],1.1), soft_atre_type_force([1,2],karray,ϵarray ))
     #pair_forces = (pairABP_force(1.1), soft_disk_force())
     
     
@@ -23,9 +23,9 @@ function simulation()
 
     fr = 0.2
 
-    initial_state = [ PolarParticle2dNtype(i,1,rand(Uniform(1-poly, 1+poly)),1.,v0,Dr,rand(Uniform(-L/2*fr, L/2*fr),2),[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[0.],[0.,0.],1,[0.,0.],[0.,0.]) for i=1:N1];
+    initial_state = [ PolarParticle2dN(i,1,rand(Uniform(1-poly, 1+poly)),1.,v0,Dr,rand(Uniform(-L/2*fr, L/2*fr),2),[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[0.],[0.,0.],1,[0.,0.],[0.,0.]) for i=1:N1];
     for i in N1+1:N1+N2
-        push!(initial_state,PolarParticle2dNtype(i,2,rand(Uniform(1-poly, 1+poly)),1.,v0,Dr,rand(Uniform(-L/2*fr, L/2*fr),2),[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[0.],[0.,0.],1,[0.,0.],[0.,0.]))
+        push!(initial_state,PolarParticle2dN(i,2,rand(Uniform(1-poly, 1+poly)),1.,v0,Dr,rand(Uniform(-L/2*fr, L/2*fr),2),[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[0.],[0.,0.],1,[0.,0.],[0.,0.]))
     end
 
     size = [L,L];

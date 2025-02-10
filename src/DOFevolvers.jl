@@ -1,3 +1,5 @@
+
+
 function inertial_evolver!(p_i::Hexbug, t, dt)
 
     #evolve
@@ -45,7 +47,7 @@ function overdamped_evolver!(p_i::Hexbug, t, dt)
 
     return p_i
 end
-function inertial_evolver!(p_i::NewPolarParticle3d, t, dt)
+function inertial_evolver!(p_i::PolarParticle3d, t, dt)
 
     #evolve
     p_i.a .= p_i.f/p_i.m
@@ -64,7 +66,7 @@ function inertial_evolver!(p_i::NewPolarParticle3d, t, dt)
     return p_i
 end
 
-function overdamped_evolver!(p_i::NewPolarParticle3d, t, dt)
+function overdamped_evolver!(p_i::PolarParticle3d, t, dt)
 
     #evolve
     p_i.x .+= p_i.v * dt
@@ -111,26 +113,8 @@ function overdamped_evolver!(p_i::PolarParticle2d, t, dt)
 
 end
 
-function overdamped_evolver!(p_i::NewPolarParticle3d, t, dt)
 
-    #evolve
-    p_i.x .+= p_i.v * dt
-    p_i.v .= p_i.f/p_i.zeta
-
-    p_i.p .+= p_i.q * dt
-    p_i.p .=normalize(p_i.p)
-
-
-    #reinitialize
-    p_i.q.*= 0.
-    p_i.f.*= 0.
-
-    return p_i
-end
-
-
-
-function overdamped_evolver!(p_i::PolarParticle2dNtype, t, dt)
+function overdamped_evolver!(p_i::PolarParticle2dN, t, dt)
 
     if p_i.n[1]>0
         p_i.f.+= p_i.fn/p_i.n[1]

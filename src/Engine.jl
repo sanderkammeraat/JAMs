@@ -122,7 +122,7 @@ function load_SIM(file_path)
 end
 
 
-function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing, plot_functions=nothing,plot_on_plane=false)
+function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing, plot_functions=nothing,plotdim=nothing)
 
     particle_states = [copy(system.initial_particle_state)]
     field_states = [copy(system.initial_field_state)]
@@ -148,15 +148,14 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
             cpsO = Observable(current_particle_state)
             cfsO = Observable(current_field_state)
             tO = Observable(0.)
-            f, ax = setup_system_plotting(system.sizes,plot_functions, plot_on_plane,cpsO,cfsO,tO)
+            f, ax = setup_system_plotting(system.sizes,plot_functions, plotdim,cpsO,cfsO,tO)
         end
     end
 
     #Loop over time
     for (n, t) in pairs(0:dt:t_stop)
 
-        Np = length(current_particle_state)
-        Threads.@threads for i in 1:Np
+        Threads.@threads  for i in eachindex(current_particle_state)
             p_i = new_particle_state[i]
 
             p_i, new_field_state = particle_step!(i,p_i, current_particle_state,current_field_state, new_field_state,Npair, Nfield,t, dt, system)
@@ -164,8 +163,7 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
         end
 
     #Now update fields
-        Nf = length(current_field_state)
-        for i in 1:Nf
+        @inbounds for i in eachindex(current_field_state)
 
             field_i = new_field_state[i]
 
@@ -264,9 +262,9 @@ end
 function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system)
     
     dx = @MVector zeros(Float64,length(p_i.x))
-    for force in system.pair_forces
+    @inbounds for force in system.pair_forces
         
-        for j in eachindex(current_particle_state)
+        @inbounds for j in eachindex(current_particle_state)
 
             if i!=j
                 p_j = current_particle_state[j]
@@ -286,17 +284,24 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system)
 end
 
 
-function setup_system_plotting(system_sizes,plot_functions, plot_on_plane,cpsO,cfsO,tO)
+function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO)
     GLMakie.activate!()
     f = Figure()
-    dimension = length(system_sizes)
     title = @lift("t = $($tO)")
-    if dimension==2 || plot_on_plane
+
+    if !isnothing(plotdim)
+        plotdim_set = plotdim
+    else
+        plotdim_set = length(system_sizes)
+
+    end
+
+    if plotdim_set==2
         ax = Axis(f[1, 1], xlabel = "x", ylabel="y",  aspect =system_sizes[1]/system_sizes[2], title=title )
         xlims!(ax, -system_sizes[1]/2, system_sizes[1]/2)
         ylims!(ax,  -system_sizes[2]/2, system_sizes[2]/2)
 
-    elseif dimension==3
+    elseif plotdim_set==3
 
         ax = Axis3(f[1, 1], xlabel = "x", ylabel="y", zlabel="z",  aspect = (1,system_sizes[2]/system_sizes[1],system_sizes[3]/system_sizes[1]), title=title)
         xlims!(ax,  -system_sizes[1]/2, system_sizes[1]/2)

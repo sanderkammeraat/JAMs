@@ -5,15 +5,15 @@ function simulation()
     #Initialize state
     N=3000
     L=32.
-    external_forces = (ABP_2d_propulsion_force(), ABP_2d_angular_noise())
+    external_forces = (ABP_2d_propulsion_force(1), ABP_2d_angular_noise(1))
 
-    pair_forces = [ Vicsek_align_force(1)]
+    pair_forces = [ Vicsek_align_force(1,1)]
 
     
     
     dofevolvers = [overdamped_evolver!]
 
-    initial_state = [ VicsekParticle(i,0.5,0.05,[rand(Uniform(-L/2, L/2)) ,rand(Uniform(-L/2,L/2))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[0],[0.],1.0,[0.,0.],[0.,0.]) for i=1:N];
+    initial_state = [ VicsekParticle(i,1,0.5,0.05,[rand(Uniform(-L/2, L/2)) ,rand(Uniform(-L/2,L/2))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[0],[0.],1.0,[0.,0.],[0.,0.]) for i=1:N];
 
     size = [L,L];
     initial_field_state=[]
@@ -29,5 +29,5 @@ function simulation()
     return sim
 end
 
-sim()
+sim=simulation()
 
