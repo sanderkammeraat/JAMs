@@ -144,8 +144,8 @@ function plot_directors!(ax, cpsO, cfsO)
 
         x = @lift([ Point3f( p_i.x[1],p_i.x[2],p_i.x[3]) for p_i in $cpsO])
         p = @lift([ Point3f( p_i.p[1],p_i.p[2],p_i.p[3]) for p_i in $cpsO])
-        c = @lift([ p_i.p[1] for p_i in $cpsO])
-        arrows!(ax, x, p , color=c,  colormap=:seismic,colorrange=(-1, 1))
+        c = @lift([ angle(p_i.p[1]+1im*p_i.p[2]) for p_i in $cpsO])
+        arrows!(ax, x, p , color=c,  colormap=:hsv,colorrange=(-pi,pi))
         
 
 
@@ -171,16 +171,16 @@ function plot_velocity_vectors!(ax,cpsO, cfsO)
 
         x = @lift([ Point3f( p_i.x[1],p_i.x[2],p_i.x[3]) for p_i in $cpsO])
         v = @lift([ Point3f( p_i.v[1],p_i.v[2],p_i.v[3]) for p_i in $cpsO])
-        c = @lift([ norm(p_i.v) for p_i in $cpsO])
-        arrows!(ax, x, v , color=c,  colormap=:seismic)
+        c = @lift([ angle(p_i.v[1]+1im*p_i.v[2]) for p_i in $cpsO])
+        arrows!(ax, x, v , color=c,  colormap=:hsv,colorrange=(-pi,pi))
         
 
 
     else
         vx = @lift([ p_i.v[1] for p_i in $cpsO])
         vy = @lift([ p_i.v[2] for p_i in $cpsO])
-        c = @lift([ norm(p_i.v) for p_i in $cpsO])
-        arrows!(ax, x, y, vx, vy, color=c,  colormap=:plasma)
+        c = @lift([ angle(p_i.v[1]+1im*p_i.v[2]) for p_i in $cpsO])
+        arrows!(ax, x, y, vx, vy, color=c, colormap=:hsv,colorrange=(-pi,pi))
 
 
     end

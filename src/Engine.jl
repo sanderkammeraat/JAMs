@@ -36,9 +36,9 @@ function minimal_image_closest_bin_center!(field_indices,x, bin_centers,system_s
     for (i, xi) in pairs(x)
         d = @MVector zeros(length(x))
         d= abs.(bin_centers[i] .- x[i])
-        if system_Periodic
-            d.=d .% system_sizes[i]
-        end
+        # if system_Periodic
+        #     d.=d .% system_sizes[i]
+        # end
         field_indices[i] = findmin(d)[2]
         
     end
@@ -124,6 +124,9 @@ end
 
 function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing, plot_functions=nothing,plotdim=nothing)
 
+    
+    system, cells,cell_bin_centers,stencils = construct_cell_lists!(system)
+
     particle_states = [copy(system.initial_particle_state)]
     field_states = [copy(system.initial_field_state)]
     tsax = [0.]
@@ -155,15 +158,22 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
     #Loop over time
     for (n, t) in pairs(0:dt:t_stop)
 
-        Threads.@threads  for i in eachindex(current_particle_state)
+        Threads.@threads for i in eachindex(current_particle_state)
             p_i = new_particle_state[i]
 
-            p_i, new_field_state = particle_step!(i,p_i, current_particle_state,current_field_state, new_field_state,Npair, Nfield,t, dt, system)
+            p_i, cells,new_field_state = particle_step!(i,p_i, current_particle_state,current_field_state, new_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils)
             new_particle_state[i]=p_i
         end
 
+        #Updating the cell list is not threadsafe, hence put it outside the threaded loop
+        for i in eachindex(new_particle_state)
+            p_i = new_particle_state[i]
+            p_i, cells=update_cells!(p_i, cells,cell_bin_centers, stencils,system)
+            cells = update_ghost_cells!(cells,system)
+            new_particle_state[i]=p_i
+        end
     #Now update fields
-        @inbounds for i in eachindex(current_field_state)
+        for i in eachindex(current_field_state)
 
             field_i = new_field_state[i]
 
@@ -194,9 +204,9 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
     end
     return SIM(particle_states, field_states, tsax,dt, t_stop, system)
 end
-function particle_step!(i,p_i, current_particle_state,current_field_state, new_field_state,Npair, Nfield,t, dt, system)
+function particle_step!(i,p_i, current_particle_state,current_field_state, new_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils)
     if Npair>0
-        p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system)
+        p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system,cells,stencils)
     end
 
     if Nfield>0
@@ -215,7 +225,8 @@ function particle_step!(i,p_i, current_particle_state,current_field_state, new_f
     if system.Periodic
         p_i=periodic!(p_i, system.sizes)
     end
-    return p_i, new_field_state
+
+    return p_i,cells, new_field_state
 end
 
 function field_step!(i, field_i,current_field_state,new_field_state,Nfieldu,t,dt, system)
@@ -259,24 +270,29 @@ end
 
 
 
-function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system)
+function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cells,stencils)
     
     dx = @MVector zeros(Float64,length(p_i.x))
-    @inbounds for force in system.pair_forces
-        
-        @inbounds for j in eachindex(current_particle_state)
+    for force in system.pair_forces
 
-            if i!=j
-                p_j = current_particle_state[j]
+        neighbours = get_neighbours(p_i,cells,stencils)
+        if !isempty(neighbours)
 
-                dx = minimal_image_difference!(dx, p_i.x, p_j.x, system.sizes, system.Periodic)
 
-                dxn = norm(dx)
-                
-                if dxn<=system.rcut_pair_global
-                    p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force)
+            for n in neighbours
+                p_j = current_particle_state[n]
+
+                if p_i.id!=p_j.id
+
+                    dx = minimal_image_difference!(dx, p_i.x, p_j.x, system.sizes, system.Periodic)
+
+                    dxn = norm(dx)
+                    
+                    if dxn<=system.rcut_pair_global
+                        p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force)
+                    end
+
                 end
-
             end
         end
     end
@@ -344,4 +360,126 @@ function make_movie(SIM, save_path, plot_functions, fps,plotdim=nothing)
     end
 
 
+end
+
+
+function construct_cell_lists!(system)
+
+    dim = length(system.sizes)
+    lbin = system.rcut_pair_global
+
+    Lx = system.sizes[1]
+    Ly = system.sizes[2]
+    x_bin_centers = [-1e8]
+    x_bin_centers = append!(x_bin_centers,range(start=-Lx/2, stop=Lx/2, step=lbin).+lbin/2)
+    x_bin_centers = append!(x_bin_centers,1e8)
+
+    y_bin_centers = [-1e8]
+    y_bin_centers = append!(y_bin_centers,range(start=-Ly/2, stop=Ly/2, step=lbin).+lbin/2)
+    y_bin_centers = append!(y_bin_centers,1e8)
+    nx = length(x_bin_centers)
+    ny = length(y_bin_centers)
+    if dim==2
+        cell_bin_centers = [x_bin_centers, y_bin_centers]
+
+        cells = reshape([Int64[] for i in 1:nx*ny],nx,ny)
+        for p_i in system.initial_particle_state
+
+            cell_indices=@MVector zeros(Int,length(p_i.x))
+            cell_indices = minimal_image_closest_bin_center!(cell_indices,p_i.x, cell_bin_centers,system.sizes,system.Periodic)
+
+            #push!(Int64[id for id in  cells[cell_indices][1]]))
+            cells[cell_indices...]= append!(cells[cell_indices...],p_i.id)
+            p_i.ci.= cell_indices
+
+        end
+        stencils = [ @SVector [ni, nj] for ni in -1:1 for nj in -1:1]
+        
+
+    elseif dim==3
+        Lz = system.sizes[3]
+        z_bin_centers = [-1e8]
+        z_bin_centers = append!(z_bin_centers,range(start=-Lz/2, stop=Lz/2, step=lbin).+lbin/2)
+        z_bin_centers = append!(z_bin_centers,1e8)
+        nz = length(z_bin_centers)
+        cell_bin_centers = [x_bin_centers, y_bin_centers, z_bin_centers]
+
+        cells = reshape([Int64[] for i in 1:nx*ny*nz],nx,ny,nz)
+        for p_i in system.initial_particle_state
+
+            cell_indices=@MVector zeros(Int,length(p_i.x))
+            cell_indices = minimal_image_closest_bin_center!(cell_indices,p_i.x, cell_bin_centers,system.sizes,system.Periodic)
+
+            #push!(Int64[id for id in  cells[cell_indices][1]]))
+            cells[cell_indices...]= append!(cells[cell_indices...],p_i.id)
+            p_i.ci.= cell_indices
+
+        end
+        stencils = [ @SVector [ni, nj, nk] for ni in -1:1 for nj in -1:1 for nk in -1:1]
+    end
+    cells = update_ghost_cells!(cells,system)
+    return system, cells, cell_bin_centers, stencils
+end
+
+function get_neighbours(p_i, cells, stencils)
+
+    neighbours=Int64[]
+    candidate=@MVector zeros(Int64, length(p_i.ci))
+    for stencil in stencils
+
+        for i in eachindex(candidate)
+            candidate[i]= p_i.ci[i] + stencil[i]
+        end
+
+        if !isempty(cells[candidate...])
+            for id in cells[candidate...]
+                push!(neighbours,id)
+            end
+        end
+    end
+    return neighbours
+end
+
+function update_cells!(p_i, cells, cell_bin_centers, stencils,system)
+
+    new_bin_location=@MVector zeros(Int,length(p_i.x))
+    new_bin_location = minimal_image_closest_bin_center!(new_bin_location,p_i.x, cell_bin_centers,system.sizes,system.Periodic)
+    if p_i.id in cells[new_bin_location...]
+    else
+        #remove
+        filter!(e->e≠p_i.id,cells[p_i.ci...])
+        #add to correct lists
+        p_i.ci.= new_bin_location
+        cells[new_bin_location...] = append!(cells[new_bin_location...],p_i.id)
+    end
+    return p_i,cells
+end
+
+function update_ghost_cells!(cells,system)
+    
+    if system.Periodic
+        dims = length(system.sizes)
+        if dims==2
+            cells[1,:]=@view cells[end-1,:]
+            cells[end,:]=@view cells[2,:]
+
+            cells[:,1]=@view cells[:,end-1]
+            cells[:,end]=@view cells[:,2]
+        end
+
+        if dims==3
+            cells[1,:,:]=@view cells[end-1,:,:]
+            cells[end,:,:]=@view cells[2,:,:]
+
+            cells[:,1,:]=@view cells[:,end-1,:]
+            cells[:,end,:]=@view cells[:,2,:]
+
+            cells[:,:,1]=@view cells[:,:,end-1]
+            cells[:,:,end]=@view cells[:,:,2]
+        end
+
+
+        
+    end
+    return cells
 end

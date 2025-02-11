@@ -12,13 +12,12 @@ function simulation()
     dofevolvers =  [overdamped_evolver!]
 
     #Initialize state
-    N=1000
+    N=10000
     ϕ = 0.3
     L=sqrt(N*pi/ϕ)
-    poly = 0.2
+    poly = 1e-3
 
-
-    initial_state = [ PolarParticle2d(i,1,1,0.3,0.0001,[rand(Uniform(-L/2, L/2)) ,rand(Uniform(-L/2,L/2))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],rand(Uniform(1-poly, 1+poly)),1.,[0.,0.],[0.,0.]) for i=1:N];
+    initial_state = [ PolarParticle2d(i,1,1,0.3,0.0001,[rand(Uniform(-L/2, L/2)) ,rand(Uniform(-L/2, L/2))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],rand(Uniform(1-poly, 1+poly)),1.,[0.,0.],[0.,0.],[0,0]) for i=1:N];
 
 
     size = [L,L];
@@ -32,10 +31,9 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system, 0.1, 1e4, 1e8, 5,120, (plot_sized_points!, plot_directors!, plot_velocity_vectors!));
+    sim = Euler_integrator(system, 0.1,1e5, 1e8, 5,120, (plot_sized_points!, plot_directors!, plot_velocity_vectors!));
     return sim
 end
 
 
-sim = simulation()
-
+sim = simulation();

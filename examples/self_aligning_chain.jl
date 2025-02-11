@@ -12,21 +12,21 @@ function simulation()
     L=4 * N*1.
     v0 =  0.2
     Dr=0.01
-    initial_state = [PolarParticle3d(1,1, 1, 1, 1,v0, Dr, [0 , -1,0],[0,0,0], [0,0,0],[0,0,0],normalize(rand(Normal(0, 1),3)).*[1,1,0],[0,0,0])];
+    initial_state = [PolarParticle3d(1,1, 1, 1, 1,v0, Dr, [0 , -1,0],[0,0,0], [0,0,0],[0,0,0],normalize(rand(Normal(0, 1),3)).*[1,1,0],[0,0,0],[0,0,0])];
 
     for i in 2:N-1
         
-        push!(initial_state, PolarParticle3d(i,1, 1, 1, 1,v0, Dr, [0 , -i*2,0],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0]))
+        push!(initial_state, PolarParticle3d(i,1, 1, 1, 1,v0, Dr, [0 , -i*2,0],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
         print(v0)
     end
 
-    size = [L,L,L];
+    size = [L,L,3.];
     initial_field_state=[]
     field_forces = []
     field_updaters = []
 
 
-    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, true,1e9);
+    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, true,10.);
 
     #Run integration
     #Use plot_disks! for nice visuals

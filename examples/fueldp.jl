@@ -14,13 +14,14 @@ function simulation()
 
     #Initialize state
     N=1000
-    Lx=120.
-    Ly=120.
-    L=min(Lx,Ly)
+    ϕ = 0.3
+    L=sqrt(N*pi/ϕ)
+    Lx= L
+    Ly=L
     poly = 0.0000002
 
 
-    initial_particle_state = [ PolarParticle2d(i,1,1,0.0,0.0001,[rand(Uniform(-L/2, L/2)) ,rand(Uniform(-L/2,L/2))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],1,rand(Uniform(1-poly, 1+poly)),[0.,0.],[0.,0.]) for i=1:N];
+    initial_particle_state = [ PolarParticle2d(i,1,1,0.0,0.0001,[rand(Uniform(-L/2, L/2)) ,rand(Uniform(-L/2,L/2))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],1,rand(Uniform(1-poly, 1+poly)),[0.,0.],[0.,0.],[0,0]) for i=1:N];
     
     size = [Lx,Ly];
 
@@ -44,7 +45,7 @@ function simulation()
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
     plot_functions = (plot_sized_points!, plot_directors!, plot_velocity_vectors!,plot_field_magnitude!)
-    sim = Euler_integrator(system, 0.1, 5e2, 5,5, 120, plot_functions,2);
+    sim = Euler_integrator(system, 0.1, 5e2, 1e5,5, 120, plot_functions,2);
     #particle_states,field_states = Euler_integrator(system, 0.1, 10, 10000000000,0, 0, plot_functions,false);
     return sim
 

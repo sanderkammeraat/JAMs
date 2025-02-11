@@ -26,6 +26,7 @@ struct Hexbug<:Particle
 
     p::MVector{3,Float64}
     q::MVector{3,Float64}
+    ci::MVector{3,Int64}
 
 
 end
@@ -41,6 +42,7 @@ struct ChargedParticle3d<:Particle
     v::MVector{3,Float64}
     a::MVector{3,Float64}
     f::MVector{3,Float64} #f->a->v->r
+    ci::MVector{3,Int64}
 
 end
 struct PolarParticle3d<:Particle
@@ -62,6 +64,7 @@ struct PolarParticle3d<:Particle
 
     p::MVector{3,Float64}
     q::MVector{3,Float64}
+    ci::MVector{3,Int64}
 
 
 end
@@ -85,6 +88,7 @@ struct ConfinedPolarParticle3d<:Particle
 
     p::MVector{3,Float64}
     q::MVector{3,Float64}
+    ci::MVector{3,Int64}
 
 
 end
@@ -110,6 +114,7 @@ struct PolarParticle2d<:Particle
     zeta::Float64 #Friction coefficient, only used icw overdamped integrators
     fact::MVector{2,Float64}
     fpas::MVector{2,Float64}
+    ci::MVector{2,Int64}
 end
 
 struct PolarParticle2dN<:Particle
@@ -136,6 +141,7 @@ struct PolarParticle2dN<:Particle
     zeta::Float64 #Friction coefficient, only used icw overdamped integrators
     fact::MVector{2,Float64}
     fpas::MVector{2,Float64}
+    ci::MVector{2,Int64}
 end
 
 struct PolarParticle3dN<:Particle
@@ -160,10 +166,12 @@ struct PolarParticle3dN<:Particle
     qn::MVector{3,Float64}
     
     
+    
 
     zeta::Float64 #Friction coefficient, only used icw overdamped integrators
     fact::MVector{3,Float64}
     fpas::MVector{3,Float64}
+    ci::MVector{3,Int64}
 end
 
 struct Swarmalator<:Particle
@@ -191,6 +199,7 @@ struct Swarmalator<:Particle
     zeta::Float64 #Friction coefficient, only used icw overdamped integrators
     fact::MVector{2,Float64}
     fpas::MVector{2,Float64}
+    ci::MVector{2,Int64}
 end
 
 
@@ -215,4 +224,5 @@ struct VicsekParticle<:Particle
     zeta::Float64 #Friction coefficient, only used icw overdamped integrators
     fact::MVector{2,Float64}
     fpas::MVector{2,Float64}
+    ci::MVector{2,Int64}
 end
