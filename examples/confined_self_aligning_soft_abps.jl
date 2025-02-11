@@ -4,10 +4,10 @@ function simulation()
 
     external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,1),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
-    pair_forces = @SVector[soft_disk_force([1, 2],[1 2; 2 1])]
+    pair_forces = [soft_disk_force([1, 2],[1 2; 2 1])]
 
     #dofevolvers = [inertial_evolver!]
-    dofevolvers = @SVector[overdamped_evolver!]
+    dofevolvers = [overdamped_evolver!]
     N=1000
     ϕ = 1.2
     r=1.

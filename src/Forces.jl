@@ -244,12 +244,12 @@ end
 
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_disk_force)
 
-    if p_i.type in force.ontypes && p_j.type in force.ontypes
+    if p_i.type::Int64 in force.ontypes && p_j.type::Int64 in force.ontypes
     d2R = p_i.R+p_j.R
     f = @MVector zeros(length(dx))
         if dxn < d2R
 
-            @inbounds f.= force.karray[p_i.type,p_j.type] * (dxn-d2R) * dx/dxn
+            @inbounds @views f.= force.karray[p_i.type,p_j.type] * (dxn-d2R) * dx/dxn
             p_i.f.+= f
         end
     end
@@ -325,7 +325,7 @@ end
 
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::swarm_pos_force)
     if p_i.type in force.ontypes && p_j.type in force.ontypes
-    p_i.f.+= force.N_inv * (dx/dxn * (1 + force.J*cos(p_j.ϕ[1]-p_i.ϕ[1]) ) - dx/dxn^2)  
+    @views p_i.f.+= force.N_inv * (dx/dxn * (1 + force.J*cos(p_j.ϕ[1]-p_i.ϕ[1]) ) - dx/dxn^2)  
     end 
     return p_i
 end

@@ -3,7 +3,7 @@ using Random, Distributions
 function simulation()
 
     #Initialize state
-    N=5000
+    N=1000
     L=32.
     external_forces = (ABP_2d_propulsion_force(1), ABP_2d_angular_noise(1))
 

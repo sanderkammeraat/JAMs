@@ -35,7 +35,7 @@ function minimal_image_closest_bin_center!(field_indices,x, bin_centers,system_s
     
     for (i, xi) in pairs(x)
         d = @MVector zeros(length(x))
-        d= abs.(bin_centers[i] .- x[i])
+        @views d= abs.( bin_centers[i].- x[i])
         # if system_Periodic
         #     d.=d .% system_sizes[i]
         # end
@@ -62,10 +62,10 @@ function minimal_image_difference!(dx,xi, xj, system_sizes, system_Periodic)
     end
     return dx
 end
-struct System{T1, T2, T3, T4, T5, T6, T7}
+struct System{T0,T1, T2, T3, T4, T5, T6, T7}
 
     #Vector that determines the linear size of the system
-    sizes::Vector{Float64}
+    sizes::T0
 
     #Array containing particles in a specific state
     initial_particle_state::T1
@@ -157,8 +157,8 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
 
     #Loop over time
     for (n, t) in pairs(0:dt:t_stop)
-
-        Threads.@threads for i in eachindex(current_particle_state)
+        #Threads.@threads  
+        Threads.@threads  for i in eachindex(current_particle_state)
             p_i = new_particle_state[i]
 
             p_i, cells,new_field_state = particle_step!(i,p_i, current_particle_state,current_field_state, new_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils)
@@ -273,26 +273,25 @@ end
 function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cells,stencils)
     
     dx = @MVector zeros(Float64,length(p_i.x))
-    for force in system.pair_forces
+    neighbours = Int64[]
+    get_neighbours!(neighbours,p_i,cells,stencils)
+    if !isempty(neighbours)
 
-        neighbours = get_neighbours(p_i,cells,stencils)
-        if !isempty(neighbours)
+        for n in neighbours
 
+            if i!=n
+            p_j = current_particle_state[n]
 
-            for n in neighbours
-                p_j = current_particle_state[n]
+            dx = minimal_image_difference!(dx, p_i.x, p_j.x, system.sizes, system.Periodic)
 
-                if p_i.id!=p_j.id
-
-                    dx = minimal_image_difference!(dx, p_i.x, p_j.x, system.sizes, system.Periodic)
-
-                    dxn = norm(dx)
-                    
-                    if dxn<=system.rcut_pair_global
-                        p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force)
-                    end
-
+            dxn = norm(dx)
+            
+            if dxn<=system.rcut_pair_global
+                for force in system.pair_forces
+                    p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force)
                 end
+            end
+
             end
         end
     end
@@ -421,9 +420,7 @@ function construct_cell_lists!(system)
     return system, cells, cell_bin_centers, stencils
 end
 
-function get_neighbours(p_i, cells, stencils)
-
-    neighbours=Int64[]
+function get_neighbours!(neighbours,p_i, cells, stencils)
     candidate=@MVector zeros(Int64, length(p_i.ci))
     for stencil in stencils
 

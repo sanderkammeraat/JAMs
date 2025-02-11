@@ -9,8 +9,8 @@ abstract type Particle end
 
 struct Hexbug<:Particle
 
-    id::Integer
-    type::Integer
+    id::Int64
+    type::Int64
     m::Float64
     zeta::Float64
     
@@ -31,8 +31,8 @@ struct Hexbug<:Particle
 
 end
 struct ChargedParticle3d<:Particle
-    id::Integer
-    type::Integer
+    id::Int64
+    type::Int64
     m::Float64
     zeta::Float64
     R::Float64
@@ -47,8 +47,8 @@ struct ChargedParticle3d<:Particle
 end
 struct PolarParticle3d<:Particle
 
-    id::Integer
-    type::Integer
+    id::Int64
+    type::Int64
     m::Float64
     zeta::Float64
     R::Float64
@@ -71,8 +71,8 @@ end
 
 struct ConfinedPolarParticle3d<:Particle
 
-    id::Integer
-    type::Integer
+    id::Int64
+    type::Int64
     m::Float64
     zeta::Float64
     R::Float64
@@ -96,8 +96,8 @@ end
 
 #Defining a particle requires a class with particle properties
 struct PolarParticle2d<:Particle
-    id::Integer
-    type::Integer
+    id::Int64
+    type::Int64
     m::Float64 #mass, only used icw intertial integrators
     v0::Float64
     Dr::Float64
@@ -118,8 +118,8 @@ struct PolarParticle2d<:Particle
 end
 
 struct PolarParticle2dN<:Particle
-    id::Integer
-    type::Integer
+    id::Int64
+    type::Int64
     R::Float64
     k::Float64
 
@@ -145,8 +145,8 @@ struct PolarParticle2dN<:Particle
 end
 
 struct PolarParticle3dN<:Particle
-    id::Integer
-    type::Integer
+    id::Int64
+    type::Int64
 
     #particle radius
     R::Float64
@@ -175,8 +175,8 @@ struct PolarParticle3dN<:Particle
 end
 
 struct Swarmalator<:Particle
-    id::Integer
-    type::Integer
+    id::Int64
+    type::Int64
 
 
     v0::Float64
@@ -204,8 +204,8 @@ end
 
 
 struct VicsekParticle<:Particle
-    id::Integer
-    type::Integer
+    id::Int64
+    type::Int64
 
     v0::Float64
     Dr::Float64
