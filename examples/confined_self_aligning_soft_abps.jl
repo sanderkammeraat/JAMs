@@ -8,7 +8,7 @@ function simulation()
 
     #dofevolvers = [inertial_evolver!]
     dofevolvers = @SVector[overdamped_evolver!]
-    N=5000
+    N=1000
     ϕ = 1.2
     r=1.
     R =  sqrt(N * r^2 / ϕ)
