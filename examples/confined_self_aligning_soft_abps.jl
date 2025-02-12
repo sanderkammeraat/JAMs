@@ -8,7 +8,7 @@ function simulation()
 
     #dofevolvers = [inertial_evolver!]
     dofevolvers = [overdamped_evolver!]
-    N=1000
+    N=10000
     ϕ = 1.2
     r=1.
     R =  sqrt(N * r^2 / ϕ)
@@ -33,6 +33,5 @@ function simulation()
     return sim
 
 end
-
 
 sim = simulation()

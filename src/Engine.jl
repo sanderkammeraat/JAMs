@@ -273,7 +273,7 @@ end
 function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cells,stencils)
     
     dx = @MVector zeros(Float64,length(p_i.x))
-    neighbours = Int64[]
+    neighbours= Int64[]
     get_neighbours!(neighbours,p_i,cells,stencils)
     if !isempty(neighbours)
 
@@ -462,9 +462,17 @@ function update_ghost_cells!(cells,system)
 
             cells[:,1]=@view cells[:,end-1]
             cells[:,end]=@view cells[:,2]
+
+            cells[1,1] = cells[end-1, end-1]
+            cells[1,end] = cells[end-1, 2]
+
+            cells[end,1] = cells[2, end-1]
+            cells[end,end] = cells[2, 2]
+
         end
 
         if dims==3
+
             cells[1,:,:]=@view cells[end-1,:,:]
             cells[end,:,:]=@view cells[2,:,:]
 
@@ -473,10 +481,54 @@ function update_ghost_cells!(cells,system)
 
             cells[:,:,1]=@view cells[:,:,end-1]
             cells[:,:,end]=@view cells[:,:,2]
+
+            #set the rings
+            #Write for three faces sharing a vertex, comment out duplicates, then do the remaining edges
+            ##face 1
+            cells[1,:,1] =@view cells[end-1,:,end-1]
+            cells[1,:,end] =@view cells[end-1,:,2]
+
+            cells[1,1,:] =@view cells[end-1,end-1,:]
+            cells[1,end,:] =@view cells[end-1,2,:]
+
+            ## face 2
+
+            cells[:,1,1] =@view cells[:,end-1, end-1]
+            cells[:,end,1] =@view cells[:,2,end-1]
+
+            #cells[1,:,1] = cells[end-1,:,end-1]
+            cells[end,:,1] =@view cells[2,:,end-1]
+
+            ## face 3
+
+            #cells[1,1,:] = cells[end-1, end-1,:]
+            cells[end,1,:] =@view cells[2,end-1,:]
+
+            #cells[:,1,1] = cells[:,end-1,end-1]
+            cells[:,1,end] =@view cells[:,end-1,2]
+
+            #We are now at 9 of 12 edges
+            cells[end, end,:] =@view cells[2,2,:]
+            cells[end,:,end] =@view cells[2,:,2]
+            cells[:,end, end] =@view cells[:,2,2]
+            #Done
+
+            #set the 8 corner points
+
+            cells[1,1,1] =cells[end-1, end-1, end-1]
+
+            cells[end, 1, 1] =cells[2, end-1, end-1]
+            cells[1,1,end] =cells[end-1, end-1, 2]
+            cells[1,end,1] = cells[end-1,2,end-1]
+
+            cells[1, end, end] = cells[end-1, 2, 2]
+            cells[end, end, 1] = cells[2,2, end-1]
+            cells[end, 1, end] = cells[2, end-1, 2]
+
+            cells[end, end, end] = cells[2,2,2]
+
         end
 
-
-        
     end
     return cells
 end
