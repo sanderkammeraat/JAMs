@@ -124,7 +124,10 @@ end
 
 function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing, plot_functions=nothing,plotdim=nothing)
 
-    
+    if system.Periodic==false
+        print("System is set to non-periodic: you should make sure particles always stay in system sizes for correctly working cell lists")
+    end
+
     system, cells,cell_bin_centers,stencils = construct_cell_lists!(system)
 
     particle_states = [copy(system.initial_particle_state)]
@@ -224,9 +227,21 @@ function particle_step!(i,p_i, current_particle_state,current_field_state, new_f
 
     if system.Periodic
         p_i=periodic!(p_i, system.sizes)
+
+    else
+        check_outside_system(p_i,system.sizes)
     end
 
     return p_i,cells, new_field_state
+end
+
+function check_outside_system(p_i, system_sizes)
+    for i in eachindex(p_i.x)
+        if p_i.x[i]>system_sizes[i]/2 || p_i.x[i]<-system_sizes[i]/2
+            error("Particle outside simulation box. This invalidates cell lists. Suggested fix: make sure particles always stay inside system sizes by increasing the system size of the relevant dimension.")
+        end
+    end
+
 end
 
 function field_step!(i, field_i,current_field_state,new_field_state,Nfieldu,t,dt, system)

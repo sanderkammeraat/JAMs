@@ -23,7 +23,7 @@ function simulation()
 
     pair_forces = (soft_disk_force([1, 2],[1 2; 2 1]),periodic_chain_force(2,1,r*0,N+1,N+1+Nb))
 
-    size = [2*R+2*r,2*R+2*r,2*R+2*r];
+    size = [10*R+2*r,10*R+2*r,5*r];
     initial_field_state=[]
     field_forces = []
     field_updaters = []
@@ -32,7 +32,7 @@ function simulation()
     system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,r*4);
 
     #Run integration
-    sim = Euler_integrator(system,1e-1, 1e0, 1e10,5e0, 120,(plot_sized_points!,plot_directors!, plot_velocity_vectors!), 2); 
+    sim = Euler_integrator(system,1e-1, 1e5, 1e10,5e0, 120,(plot_sized_points!,plot_directors!, plot_velocity_vectors!), 2); 
     return sim
 
 end
