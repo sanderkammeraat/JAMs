@@ -15,7 +15,7 @@ include("FieldUpdaters.jl")
 include("LivePlottingFunctions.jl")
 
 
-function periodic!(p_i, systemsizes)
+@views function periodic!(p_i, systemsizes)
 
     for (i, xi) in pairs(p_i.x)
 
@@ -30,12 +30,12 @@ end
 
 
 
-function minimal_image_closest_bin_center!(field_indices,x, bin_centers,system_sizes,system_Periodic)
+@views function minimal_image_closest_bin_center!(field_indices,x, bin_centers,system_sizes,system_Periodic)
 
     
     for (i, xi) in pairs(x)
         d = @MVector zeros(length(x))
-        @views d= abs.( bin_centers[i].- x[i])
+         d= abs.( bin_centers[i].- x[i])
         # if system_Periodic
         #     d.=d .% system_sizes[i]
         # end
@@ -46,7 +46,7 @@ function minimal_image_closest_bin_center!(field_indices,x, bin_centers,system_s
 
 end
 
-function minimal_image_difference!(dx,xi, xj, system_sizes, system_Periodic)
+@views function minimal_image_difference!(dx,xi, xj, system_sizes, system_Periodic)
 
     
     for n in eachindex(xi)
@@ -125,7 +125,7 @@ end
 function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing, plot_functions=nothing,plotdim=nothing)
 
     if system.Periodic==false
-        print("System is set to non-periodic: you should make sure particles always stay in system sizes for correctly working cell lists")
+        print("System is set to non-periodic: you should make sure particles always stay in system sizes for correctly working cell lists. The program will catch this by throwing an error if a particle is detected outside the box.")
     end
 
     system, cells,cell_bin_centers,stencils = construct_cell_lists!(system)
@@ -172,7 +172,6 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
         for i in eachindex(new_particle_state)
             p_i = new_particle_state[i]
             p_i, cells=update_cells!(p_i, cells,cell_bin_centers, stencils,system)
-            cells = update_ghost_cells!(cells,system)
             new_particle_state[i]=p_i
         end
     #Now update fields
@@ -186,6 +185,7 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
             new_field_state[i] = field_i
                 
         end
+        cells = update_ghost_cells!(cells,system)
 
         current_particle_state = new_particle_state    
         current_field_state = new_field_state
@@ -431,7 +431,7 @@ function construct_cell_lists!(system)
         end
         stencils = [ @SVector [ni, nj, nk] for ni in -1:1 for nj in -1:1 for nk in -1:1]
     end
-    cells = update_ghost_cells!(cells,system)
+    @views cells = update_ghost_cells!(cells,system)
     return system, cells, cell_bin_centers, stencils
 end
 
@@ -452,95 +452,97 @@ function get_neighbours!(neighbours,p_i, cells, stencils)
     return neighbours
 end
 
-function update_cells!(p_i, cells, cell_bin_centers, stencils,system)
-
+@views function update_cells!(p_i, cells, cell_bin_centers, stencils,system)
     new_bin_location=@MVector zeros(Int,length(p_i.x))
     new_bin_location = minimal_image_closest_bin_center!(new_bin_location,p_i.x, cell_bin_centers,system.sizes,system.Periodic)
     if p_i.id in cells[new_bin_location...]
     else
+        #find which ghost cell direction needs to be changed
+
         #remove
         filter!(e->e≠p_i.id,cells[p_i.ci...])
         #add to correct lists
         p_i.ci.= new_bin_location
+
         cells[new_bin_location...] = append!(cells[new_bin_location...],p_i.id)
     end
     return p_i,cells
 end
 
-function update_ghost_cells!(cells,system)
+@views function update_ghost_cells!(cells,system)
     
     if system.Periodic
         dims = length(system.sizes)
         if dims==2
-            cells[1,:]=@view cells[end-1,:]
-            cells[end,:]=@view cells[2,:]
+            cells[1,:].= cells[end-1,:]
+            cells[end,:].= cells[2,:]
 
-            cells[:,1]=@view cells[:,end-1]
-            cells[:,end]=@view cells[:,2]
+            cells[:,1].= cells[:,end-1]
+            cells[:,end].= cells[:,2]
 
-            cells[1,1] = cells[end-1, end-1]
-            cells[1,end] = cells[end-1, 2]
+            cells[1,1] .= cells[end-1, end-1]
+            cells[1,end] .= cells[end-1, 2]
 
-            cells[end,1] = cells[2, end-1]
-            cells[end,end] = cells[2, 2]
+            cells[end,1] .= cells[2, end-1]
+            cells[end,end] .= cells[2, 2]
 
         end
 
         if dims==3
 
-            cells[1,:,:]=@view cells[end-1,:,:]
-            cells[end,:,:]=@view cells[2,:,:]
+            cells[1,:,:].= cells[end-1,:,:]
+            cells[end,:,:].= cells[2,:,:]
 
-            cells[:,1,:]=@view cells[:,end-1,:]
-            cells[:,end,:]=@view cells[:,2,:]
+            cells[:,1,:].=  cells[:,end-1,:]
+            cells[:,end,:].= cells[:,2,:]
 
-            cells[:,:,1]=@view cells[:,:,end-1]
-            cells[:,:,end]=@view cells[:,:,2]
+            cells[:,:,1].=  cells[:,:,end-1]
+            cells[:,:,end].=  cells[:,:,2]
 
             #set the rings
             #Write for three faces sharing a vertex, comment out duplicates, then do the remaining edges
             ##face 1
-            cells[1,:,1] =@view cells[end-1,:,end-1]
-            cells[1,:,end] =@view cells[end-1,:,2]
+            cells[1,:,1].= cells[end-1,:,end-1]
+            cells[1,:,end].= cells[end-1,:,2]
 
-            cells[1,1,:] =@view cells[end-1,end-1,:]
-            cells[1,end,:] =@view cells[end-1,2,:]
+            cells[1,1,:].= cells[end-1,end-1,:]
+            cells[1,end,:].= cells[end-1,2,:]
 
             ## face 2
 
-            cells[:,1,1] =@view cells[:,end-1, end-1]
-            cells[:,end,1] =@view cells[:,2,end-1]
+            cells[:,1,1].= cells[:,end-1, end-1]
+            cells[:,end,1].= cells[:,2,end-1]
 
             #cells[1,:,1] = cells[end-1,:,end-1]
-            cells[end,:,1] =@view cells[2,:,end-1]
+            cells[end,:,1].= cells[2,:,end-1]
 
             ## face 3
 
             #cells[1,1,:] = cells[end-1, end-1,:]
-            cells[end,1,:] =@view cells[2,end-1,:]
+            cells[end,1,:].= cells[2,end-1,:]
 
             #cells[:,1,1] = cells[:,end-1,end-1]
-            cells[:,1,end] =@view cells[:,end-1,2]
+            cells[:,1,end].= cells[:,end-1,2]
 
             #We are now at 9 of 12 edges
-            cells[end, end,:] =@view cells[2,2,:]
-            cells[end,:,end] =@view cells[2,:,2]
-            cells[:,end, end] =@view cells[:,2,2]
+            cells[end, end,:].= cells[2,2,:]
+            cells[end,:,end].= cells[2,:,2]
+            cells[:,end, end].= cells[:,2,2]
             #Done
 
             #set the 8 corner points
 
-            cells[1,1,1] =cells[end-1, end-1, end-1]
+            cells[1,1,1].=cells[end-1, end-1, end-1]
 
-            cells[end, 1, 1] =cells[2, end-1, end-1]
-            cells[1,1,end] =cells[end-1, end-1, 2]
-            cells[1,end,1] = cells[end-1,2,end-1]
+            cells[end, 1, 1] .=cells[2, end-1, end-1]
+            cells[1,1,end] .=cells[end-1, end-1, 2]
+            cells[1,end,1] .= cells[end-1,2,end-1]
 
-            cells[1, end, end] = cells[end-1, 2, 2]
-            cells[end, end, 1] = cells[2,2, end-1]
-            cells[end, 1, end] = cells[2, end-1, 2]
+            cells[1, end, end] .= cells[end-1, 2, 2]
+            cells[end, end, 1] .= cells[2,2, end-1]
+            cells[end, 1, end] .= cells[2, end-1, 2]
 
-            cells[end, end, end] = cells[2,2,2]
+            cells[end, end, end] .= cells[2,2,2]
 
         end
 
