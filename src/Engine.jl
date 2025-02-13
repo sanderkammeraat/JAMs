@@ -1,5 +1,4 @@
 
-using ProgressBars
 using StaticArrays
 using Observables
 using JLD2

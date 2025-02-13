@@ -17,10 +17,11 @@ See https://code.visualstudio.com/docs/languages/julia for detailed instructions
 -StaticArrays (for speedup for small vectors, e.g. position or force vectors)   
 -GLMakie (for plotting)  
 -Observables (for live plotting)  
--ProgressBars (for progressbar in integrator)  
 -Distributions (for noise and random initial positions)  
 -JLD2 (for saving/loading simulations: phase space trajectories + simulation settings)  
 -CodecZlib (for saving with compression)  
+
+The packages above can be installed in one go: by using the command: add StaticArrays GLMakie Observables Distributions JLD2 CodecZlib  
 
 Probably pre-installed:  
 -LinearAlgebra (for doing linear algebra)  
