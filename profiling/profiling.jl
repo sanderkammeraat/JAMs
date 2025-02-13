@@ -25,7 +25,7 @@ system =System(sizes, initial_particle_state,initial_field_state,external_forces
 end
 #Run integration
 function runsim(system)
-    Euler_integrator(system, 0.1, 1, 1e4,5,120);
+    Euler_integrator(system, 0.1, 1, 1e4);
 end
 
 runsim(system);

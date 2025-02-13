@@ -32,7 +32,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,1e-1, 1e5, 1e10, 1e1, 120,(plot_sized_points!, plot_directors!, plot_velocity_vectors!), 2); 
+    sim = Euler_integrator(system,1e-2, 1e5, 1e10, 1e2, 120,(plot_sized_points!, plot_directors!, plot_velocity_vectors!), 2); 
     return sim
 
 end

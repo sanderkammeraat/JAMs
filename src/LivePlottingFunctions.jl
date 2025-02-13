@@ -91,6 +91,9 @@ function plot_sized_points!(ax, cpsO, cfsO)
 
     return ax
 end
+
+
+
 function plot_disks!(ax, cpsO, cfsO)
 
 
@@ -210,5 +213,69 @@ function angle2range(angle)
     else
         return angle % (2*pi) + (2*pi)
     end
+
+end
+
+
+
+function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO,res=nothing)
+    GLMakie.activate!()
+    if !isnothing(res)
+        f = Figure(resolution=res)
+    else
+        f=Figure()
+    end
+    title = @lift("t = $($tO)")
+
+    if !isnothing(plotdim)
+        plotdim_set = plotdim
+    else
+        plotdim_set = length(system_sizes)
+
+    end
+
+    if plotdim_set==2
+        ax = Axis(f[1, 1], xlabel = "x", ylabel="y",  aspect =system_sizes[1]/system_sizes[2], title=title )
+        xlims!(ax, -system_sizes[1]/2, system_sizes[1]/2)
+        ylims!(ax,  -system_sizes[2]/2, system_sizes[2]/2)
+
+    elseif plotdim_set==3
+
+        ax = Axis3(f[1, 1], xlabel = "x", ylabel="y", zlabel="z",  aspect = (1,system_sizes[2]/system_sizes[1],system_sizes[3]/system_sizes[1]), title=title)
+        xlims!(ax,  -system_sizes[1]/2, system_sizes[1]/2)
+        ylims!(ax, -system_sizes[2]/2, system_sizes[2]/2)
+        zlims!(ax,  -system_sizes[3]/2, system_sizes[3]/2)
+
+    end
+    
+    for plot_function in plot_functions
+       ax=plot_function(ax,cpsO,cfsO)
+    end
+    display(f)
+    return f, ax
+end
+
+
+
+function make_movie(SIM, save_path, plot_functions, fps,plotdim=nothing)
+
+    mkpath(save_path)
+
+    cpsO = Observable(SIM.particle_states[1])
+
+    cfsO = Observable(SIM.field_states[1])
+
+    tO = Observable(SIM.tsax[1])
+
+    t_indices = range(1,length(SIM.tsax))
+
+    fig, ax = setup_system_plotting(SIM.system.sizes,plot_functions,plotdim ,cpsO,cfsO,tO,(500,500))
+    
+    record(fig, save_path, t_indices; framerate=fps, compression=30) do t_index 
+        cpsO[] = SIM.particle_states[t_index]
+        cfsO[] = SIM.field_states[t_index]
+        tO[] = SIM.tsax[t_index]
+    end
+
 
 end

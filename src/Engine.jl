@@ -13,7 +13,6 @@ include("DOFevolvers.jl")
 include("FieldUpdaters.jl")
 include("LivePlottingFunctions.jl")
 
-
 @views function periodic!(p_i, systemsizes)
 
     for (i, xi) in pairs(p_i.x)
@@ -143,10 +142,8 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
     
 
     current_particle_state = copy(system.initial_particle_state)
-    new_particle_state  = copy(system.initial_particle_state)
 
     current_field_state = copy(system.initial_field_state)
-    new_field_state  = copy(system.initial_field_state)
 
     if !isnothing(plot_functions)
         if fps!=0
@@ -160,34 +157,59 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
     #Loop over time
     for (n, t) in pairs(0:dt:t_stop)
         #Threads.@threads  
-        Threads.@threads  for i in eachindex(current_particle_state)
-            p_i = new_particle_state[i]
 
-            p_i, cells,new_field_state = particle_step!(i,p_i, current_particle_state,current_field_state, new_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils)
-            new_particle_state[i]=p_i
+        #Loop over particles and write generalized forces to p_i in place!
+        Threads.@threads for i in eachindex(current_particle_state)
+            p_i = current_particle_state[i]
+            p_i, cells,current_field_state = particle_step!(i,p_i, current_particle_state,current_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils)
+            current_particle_state[i]=p_i
+        end
+        #Only now evolve dofs of every particle
+
+        for i in eachindex(current_particle_state)
+            p_i = current_particle_state[i]
+            for dofevolver in system.dofevolvers
+                p_i=dofevolver(p_i, t, dt)
+            end
+            if system.Periodic
+                p_i=periodic!(p_i, system.sizes)
+        
+            else
+                check_outside_system(p_i,system.sizes)
+            end
+            current_particle_state[i] = p_i
         end
 
         #Updating the cell list is not threadsafe, hence put it outside the threaded loop
-        for i in eachindex(new_particle_state)
-            p_i = new_particle_state[i]
+        for i in eachindex(current_particle_state)
+
+            p_i = current_particle_state[i]
             p_i, cells=update_cells!(p_i, cells,cell_bin_centers, stencils,system)
-            new_particle_state[i]=p_i
+            current_particle_state[i]=p_i
         end
-    #Now update fields
+
+        #Field loop
         for i in eachindex(current_field_state)
 
-            field_i = new_field_state[i]
+            field_i = current_field_state[i]
 
-            field_i = field_step!(i, field_i,current_field_state,new_field_state,Nfieldu,t,dt, system)
+            field_i = field_step!(i, field_i,current_field_state,Nfieldu,t,dt, system)
 
-
-            new_field_state[i] = field_i
-                
+            current_field_state[i] = field_i
         end
+        #DOF evolver fields
+        for i in eachindex(current_field_state)
+
+            field_i = current_field_state[i]
+
+            for dofevolver in system.dofevolvers
+                field_i=dofevolver(field_i, t, dt)
+            end
+        end
+
+
         cells = update_ghost_cells!(cells,system)
 
-        current_particle_state = new_particle_state    
-        current_field_state = new_field_state
 
         save_state!(particle_states, current_particle_state, n, Tsave)
         save_state!(field_states, current_field_state, n, Tsave)
@@ -206,13 +228,13 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
     end
     return SIM(particle_states, field_states, tsax,dt, t_stop, system)
 end
-function particle_step!(i,p_i, current_particle_state,current_field_state, new_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils)
+function particle_step!(i,p_i, current_particle_state,current_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils)
     if Npair>0
         p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system,cells,stencils)
     end
 
     if Nfield>0
-        p_i, new_field_state = contribute_field_forces!(p_i, current_field_state, new_field_state, t, dt,system)
+        p_i, current_field_state = contribute_field_forces!(p_i, current_field_state, t, dt,system)
 
     end
 
@@ -220,18 +242,7 @@ function particle_step!(i,p_i, current_particle_state,current_field_state, new_f
         p_i=contribute_external_force!(p_i, t, dt, force)
     end
 
-    for dofevolver in system.dofevolvers
-        p_i=dofevolver(p_i, t, dt)
-    end
-
-    if system.Periodic
-        p_i=periodic!(p_i, system.sizes)
-
-    else
-        check_outside_system(p_i,system.sizes)
-    end
-
-    return p_i,cells, new_field_state
+    return p_i,cells, current_field_state
 end
 
 function check_outside_system(p_i, system_sizes)
@@ -243,18 +254,18 @@ function check_outside_system(p_i, system_sizes)
 
 end
 
-function field_step!(i, field_i,current_field_state,new_field_state,Nfieldu,t,dt, system)
+#currently not using current_field_state as there are currently no pair interactions betwen fields, but allow for the implementation.
+function field_step!(i, field_i,current_field_state,Nfieldu,t,dt, system)
     if Nfieldu>0
         for field_updater in system.field_updaters
             field_i=contribute_field_update!(field_i, t, dt, field_updater)
         end
     end
-    for dofevolver in system.dofevolvers
-        field_i=dofevolver(field_i, t, dt)
-    end
+
     return field_i
 
 end
+
 function save_state!(states, current_state, n, Tsave)
 
     if n%Tsave==0 && n>0
@@ -265,7 +276,7 @@ function save_state!(states, current_state, n, Tsave)
 
 end
 
-function contribute_field_forces!(p_i, current_field_state,new_field_state, t, dt,system)
+function contribute_field_forces!(p_i, current_field_state, t, dt,system)
     field_indices = @MVector zeros(Int,length(p_i.x))
     
 
@@ -275,10 +286,10 @@ function contribute_field_forces!(p_i, current_field_state,new_field_state, t, d
             
             field_indices = minimal_image_closest_bin_center!(field_indices, p_i.x, field_j.bin_centers, system.sizes, system.Periodic)
 
-            p_i, new_field_state[j] = contribute_field_force!(p_i, field_j, field_indices, t, dt, force)
+            p_i, current_field_state[j] = contribute_field_force!(p_i, field_j, field_indices, t, dt, force)
         end
     end
-    return p_i, new_field_state
+    return p_i, current_field_state
 end
 
 
@@ -312,68 +323,6 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cel
     return p_i
 end
 
-
-function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO,res=nothing)
-    GLMakie.activate!()
-    if !isnothing(res)
-        f = Figure(resolution=res)
-    else
-        f=Figure()
-    end
-    title = @lift("t = $($tO)")
-
-    if !isnothing(plotdim)
-        plotdim_set = plotdim
-    else
-        plotdim_set = length(system_sizes)
-
-    end
-
-    if plotdim_set==2
-        ax = Axis(f[1, 1], xlabel = "x", ylabel="y",  aspect =system_sizes[1]/system_sizes[2], title=title )
-        xlims!(ax, -system_sizes[1]/2, system_sizes[1]/2)
-        ylims!(ax,  -system_sizes[2]/2, system_sizes[2]/2)
-
-    elseif plotdim_set==3
-
-        ax = Axis3(f[1, 1], xlabel = "x", ylabel="y", zlabel="z",  aspect = (1,system_sizes[2]/system_sizes[1],system_sizes[3]/system_sizes[1]), title=title)
-        xlims!(ax,  -system_sizes[1]/2, system_sizes[1]/2)
-        ylims!(ax, -system_sizes[2]/2, system_sizes[2]/2)
-        zlims!(ax,  -system_sizes[3]/2, system_sizes[3]/2)
-
-    end
-    
-    for plot_function in plot_functions
-       ax=plot_function(ax,cpsO,cfsO)
-    end
-    display(f)
-    return f, ax
-end
-
-
-
-function make_movie(SIM, save_path, plot_functions, fps,plotdim=nothing)
-
-    mkpath(save_path)
-
-    cpsO = Observable(SIM.particle_states[1])
-
-    cfsO = Observable(SIM.field_states[1])
-
-    tO = Observable(SIM.tsax[1])
-
-    t_indices = range(1,length(SIM.tsax))
-
-    fig, ax = setup_system_plotting(SIM.system.sizes,plot_functions,plotdim ,cpsO,cfsO,tO,(500,500))
-    
-    record(fig, save_path, t_indices; framerate=fps, compression=30) do t_index 
-        cpsO[] = SIM.particle_states[t_index]
-        cfsO[] = SIM.field_states[t_index]
-        tO[] = SIM.tsax[t_index]
-    end
-
-
-end
 
 
 function construct_cell_lists!(system)

@@ -4,23 +4,23 @@ function simulation()
 
     external_forces = (ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,0.4),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
-    pair_forces = (chain_force(1,1e0,2),soft_disk_force(1,1e0))
+    pair_forces = [soft_disk_force(1,1), chain_force(1,1e-1,2)]
 
     #dofevolvers = [inertial_evolver!]
     dofevolvers = [overdamped_evolver!]
     N=20
     L=4 * N*1.
-    v0 =  0.2
+    v0 =  0.3
     Dr=0.01
     initial_state = [PolarParticle3d(1,1, 1, 1, 1,v0, Dr, [0 , -1,0],[0,0,0], [0,0,0],[0,0,0],normalize(rand(Normal(0, 1),3)).*[1,1,0],[0,0,0],[0,0,0])];
 
-    for i in 2:N-1
+    for i in 2:N
         
-        push!(initial_state, PolarParticle3d(i,1, 1, 1, 1,v0, Dr, [0 , -i*2,0],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
-        print(v0)
+        push!(initial_state, PolarParticle3d(i,1, 1, 1, 1,v0, Dr, [0 , -2*i+1,0],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
+        print(-2*i+1)
     end
 
-    size = [L,L,3.];
+    size = [2.5*L,2.5*L,4];
     initial_field_state=[]
     field_forces = []
     field_updaters = []
