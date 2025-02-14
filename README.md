@@ -1,4 +1,4 @@
-# JAMS: Simple proof-of-concept simulations of Active Matter in Julia.
+# JAMs: Simple proof-of-concept simulations of Active Matter in Julia.
 
 
 ![confined_self_align_soft_abps](https://github.com/user-attachments/assets/73d83dfb-de88-48e2-b186-7c6de5c93209)
