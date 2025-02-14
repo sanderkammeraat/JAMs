@@ -38,4 +38,4 @@ sim = simulation();
 
 @time simulation();
 
-make_snapshot(sim, "/Users/kammeraat/test_JAMS/snapshots/confined_self_align_soft_abps.png",(plot_disks_vx!,plot_directors!, plot_velocity_vectors!),2,2)
+make_snapshot(sim, "/Users/kammeraat/test_JAMS/snapshots/","confined_self_align_soft_abps.png",(plot_disks_vx!,plot_directors!, plot_velocity_vectors!),length(sim.tsax),2)

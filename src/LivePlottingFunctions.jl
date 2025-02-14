@@ -221,7 +221,7 @@ end
 function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO,res=nothing)
     GLMakie.activate!()
     if !isnothing(res)
-        f = Figure(resolution=res)
+        f = Figure(size=res)
     else
         f=Figure()
     end
@@ -257,7 +257,7 @@ end
 
 
 
-function make_movie(SIM, save_path, plot_functions, fps,plotdim=nothing)
+function make_movie(SIM, folder_path, file_name, plot_functions, fps,plotdim=nothing)
 
     mkpath(save_path)
 
@@ -271,7 +271,7 @@ function make_movie(SIM, save_path, plot_functions, fps,plotdim=nothing)
 
     fig, ax = setup_system_plotting(SIM.system.sizes,plot_functions,plotdim ,cpsO,cfsO,tO,(500,500))
     
-    record(fig, save_path, t_indices; framerate=fps, compression=30) do t_index 
+    record(fig, folder_path*file_name, t_indices; framerate=fps, compression=30) do t_index 
         cpsO[] = SIM.particle_states[t_index]
         cfsO[] = SIM.field_states[t_index]
         tO[] = SIM.tsax[t_index]
@@ -280,9 +280,9 @@ function make_movie(SIM, save_path, plot_functions, fps,plotdim=nothing)
 
 end
 
-function make_snapshot(SIM, save_path, plot_functions, frame_index,plotdim=nothing)
+function make_snapshot(SIM, folder_path, file_name, plot_functions, frame_index,plotdim=nothing)
 
-    mkpath(save_path)
+    mkpath(folder_path)
 
     cpsO = Observable(SIM.particle_states[frame_index])
 
@@ -292,7 +292,11 @@ function make_snapshot(SIM, save_path, plot_functions, frame_index,plotdim=nothi
 
     t_indices = range(1,length(SIM.tsax))
 
-    fig, ax = setup_system_plotting(SIM.system.sizes,plot_functions,plotdim ,cpsO,cfsO,tO,(500,500))
+    fig, ax = setup_system_plotting(SIM.system.sizes,plot_functions,plotdim ,cpsO,cfsO,tO,(1000,1000))
+
+    file_path = folder_path*file_name
+
+    save(file_path,fig)
 
 
 
