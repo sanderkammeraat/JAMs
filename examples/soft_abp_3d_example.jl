@@ -12,7 +12,7 @@ function simulation()
     dofevolvers =  [overdamped_evolver!]
 
     #Initialize state
-    N=100
+    N=1000
     L=20.
 
     poly = 0.2

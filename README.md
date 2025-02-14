@@ -20,8 +20,9 @@ See https://code.visualstudio.com/docs/languages/julia for detailed instructions
 -Distributions (for noise and random initial positions)  
 -JLD2 (for saving/loading simulations: phase space trajectories + simulation settings)  
 -CodecZlib (for saving with compression)  
+-ProgressMeter (for providing a progressbar, ETA and it/s)  
 
-The packages above can be installed in one go: by using the command: add StaticArrays GLMakie Observables Distributions JLD2 CodecZlib  
+The packages above can be installed in one go: by using the command: add StaticArrays GLMakie Observables Distributions JLD2 CodecZlib ProgressMeter  
 
 Probably pre-installed:  
 -LinearAlgebra (for doing linear algebra)  

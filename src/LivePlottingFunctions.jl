@@ -279,3 +279,21 @@ function make_movie(SIM, save_path, plot_functions, fps,plotdim=nothing)
 
 
 end
+
+function make_snapshot(SIM, save_path, plot_functions, frame_index,plotdim=nothing)
+
+    mkpath(save_path)
+
+    cpsO = Observable(SIM.particle_states[frame_index])
+
+    cfsO = Observable(SIM.field_states[frame_index])
+
+    tO = Observable(SIM.tsax[frame_index])
+
+    t_indices = range(1,length(SIM.tsax))
+
+    fig, ax = setup_system_plotting(SIM.system.sizes,plot_functions,plotdim ,cpsO,cfsO,tO,(500,500))
+
+
+
+end

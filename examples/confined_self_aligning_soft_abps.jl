@@ -29,7 +29,7 @@ function simulation()
     system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,2.5*r);
 
     #Run integration
-    sim = Euler_integrator(system,1e-1, 1e5, 1e10,5e0, 120,(plot_disks_vx!,plot_directors!, plot_velocity_vectors!), 2); 
+    sim = Euler_integrator(system,1e-1, 400, 2000,5e0, 120,(plot_disks_vx!,plot_directors!, plot_velocity_vectors!), 2); 
     return sim
 
 end
@@ -37,3 +37,5 @@ end
 sim = simulation();
 
 @time simulation();
+
+make_snapshot(sim, "/Users/kammeraat/test_JAMS/snapshots/confined_self_align_soft_abps.png",(plot_disks_vx!,plot_directors!, plot_velocity_vectors!),2,2)

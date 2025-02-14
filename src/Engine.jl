@@ -1,9 +1,8 @@
-
 using StaticArrays
 using Observables
 using JLD2
 using CodecZlib
-
+using ProgressMeter
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
 include("Particles.jl")
@@ -30,14 +29,11 @@ end
 
 @views function minimal_image_closest_bin_center!(field_indices,x, bin_centers,system_sizes,system_Periodic)
 
-    
+    d = @MVector zeros(length(x))
     for (i, xi) in pairs(x)
-        d = @MVector zeros(length(x))
-         d= abs.( bin_centers[i].- x[i])
-        # if system_Periodic
-        #     d.=d .% system_sizes[i]
-        # end
-        field_indices[i] = findmin(d)[2]
+        
+        d= abs.( bin_centers[i].- x[i])
+        field_indices[i] = argmin(d)
         
     end
     return field_indices
@@ -155,9 +151,8 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
     end
 
     #Loop over time
-    for (n, t) in pairs(0:dt:t_stop)
-        #Threads.@threads  
-
+    @showprogress dt = 1 desc="JAMming in progress..." showspeed=true for (n, t) in pairs(0:dt:t_stop)
+        #Threads.@threads 
         #Loop over particles and write generalized forces to p_i in place!
         Threads.@threads for i in eachindex(current_particle_state)
             p_i = current_particle_state[i]
@@ -166,7 +161,7 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
         end
         #Only now evolve dofs of every particle
 
-        for i in eachindex(current_particle_state)
+        Threads.@threads for i in eachindex(current_particle_state)
             p_i = current_particle_state[i]
             for dofevolver in system.dofevolvers
                 p_i=dofevolver(p_i, t, dt)
@@ -184,7 +179,7 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
         for i in eachindex(current_particle_state)
 
             p_i = current_particle_state[i]
-            p_i, cells=update_cells!(p_i, cells,cell_bin_centers, stencils,system)
+            p_i, cells=update_cells!(p_i, cells, cell_bin_centers, stencils,system)
             current_particle_state[i]=p_i
         end
 
@@ -402,7 +397,7 @@ end
 
 @views function update_cells!(p_i, cells, cell_bin_centers, stencils,system)
     new_bin_location=@MVector zeros(Int,length(p_i.x))
-    new_bin_location = minimal_image_closest_bin_center!(new_bin_location,p_i.x, cell_bin_centers,system.sizes,system.Periodic)
+    new_bin_location= minimal_image_closest_bin_center!(new_bin_location,p_i.x, cell_bin_centers,system.sizes,system.Periodic)
     if p_i.id in cells[new_bin_location...]
     else
         #find which ghost cell direction needs to be changed

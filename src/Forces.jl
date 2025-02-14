@@ -249,7 +249,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_disk_force
     f = @MVector zeros(length(dx))
         if dxn < d2R
 
-            @inbounds @views f.= force.karray[p_i.type,p_j.type] * (dxn-d2R) * dx/dxn
+            @views f.= force.karray[p_i.type,p_j.type] * (dxn-d2R) * dx/dxn
             p_i.f.+= f
         end
     end
@@ -291,20 +291,20 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_atre_type_
         bij = p_i.R+p_j.R
         f = @MVector zeros(length(dx))
         
-        @inbounds ϵ = force.ϵarray[p_i.type,p_j.type]::Float64
+        ϵ = force.ϵarray[p_i.type,p_j.type]::Float64
 
         r1 = (1+ϵ)*bij
 
         r2 = (1+2*ϵ)*bij
 
         if dxn <= r1
-            @inbounds k = force.karray[p_i.type,p_j.type]
+            k = force.karray[p_i.type,p_j.type]
 
             f.= k * (dxn-bij) * dx/dxn
             p_i.f.+= f
 
         elseif  r1<dxn<r2
-            @inbounds k = force.karray[p_i.type,p_j.type]
+            k = force.karray[p_i.type,p_j.type]
             f.=  k * (dxn-r2) * dx/dxn
 
             p_i.f.+= f
@@ -375,11 +375,11 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_
         y_index = field_indices[2]
         #print(x_index)
 
-        @inbounds p_i.f[1]+= p_i.zeta * (field_j.C[x_index, y_index]+force.v0offset) *cos(p_i.θ[1])
-        @inbounds p_i.f[2]+= p_i.zeta * (field_j.C[x_index, y_index]+force.v0offset) *sin(p_i.θ[1])
+        p_i.f[1]+= p_i.zeta * (field_j.C[x_index, y_index]+force.v0offset) *cos(p_i.θ[1])
+        p_i.f[2]+= p_i.zeta * (field_j.C[x_index, y_index]+force.v0offset) *sin(p_i.θ[1])
 
-        if @inbounds field_j.C[x_index, y_index]>0
-            @inbounds field_j.Cf[x_index, y_index]+=-force.consumption
+        if field_j.C[x_index, y_index]>0
+            field_j.Cf[x_index, y_index]+=-force.consumption
         end
     end
 
