@@ -8,7 +8,7 @@ function simulation()
 
     #dofevolvers = [inertial_evolver!]
     dofevolvers = [overdamped_evolver!]
-    N=1000
+    N=10000
     ϕ = 1.2
     r=1.
     R =  sqrt(N * r^2 / ϕ)
@@ -23,7 +23,7 @@ function simulation()
 
     pair_forces = (soft_disk_force([1, 2],[1 2; 2 1]),periodic_chain_force(2,1,r*0,N+1,N+1+Nb))
 
-    size = [4*R+2*r,4*R+2*r,2*r];
+    size = [3*R+2*r,3*R+2*r,r];
     initial_field_state=[]
     field_forces = []
     field_updaters = []

@@ -293,24 +293,23 @@ end
 function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cells,stencils)
     
     dx = @MVector zeros(Float64,length(p_i.x))
-    neighbours= Int64[]
-    get_neighbours!(neighbours,p_i,cells,stencils)
+    neighbours= get_neighbours(p_i,cells,stencils)
     if !isempty(neighbours)
 
         for n in neighbours
 
             if i!=n
-            p_j = current_particle_state[n]
+                p_j = current_particle_state[n]
 
-            dx = minimal_image_difference!(dx, p_i.x, p_j.x, system.sizes, system.Periodic)
+                dx = minimal_image_difference!(dx, p_i.x, p_j.x, system.sizes, system.Periodic)
 
-            dxn = norm(dx)
-            
-            if dxn<=system.rcut_pair_global
-                for force in system.pair_forces
-                    p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force)
+                dxn = norm(dx)
+                
+                if dxn<=system.rcut_pair_global
+                    for force in system.pair_forces
+                        p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force)
+                    end
                 end
-            end
 
             end
         end
@@ -378,20 +377,44 @@ function construct_cell_lists!(system)
     return system, cells, cell_bin_centers, stencils
 end
 
-function get_neighbours!(neighbours,p_i, cells, stencils)
-    candidate=@MVector zeros(Int64, length(p_i.ci))
+function get_neighbours(p_i, cells, stencils)
+    candidate_cell_ind=@MVector zeros(Int64, length(p_i.ci))
+    n=0
+    #First check number
     for stencil in stencils
 
-        for i in eachindex(candidate)
-            candidate[i]= p_i.ci[i] + stencil[i]
+        for i in eachindex(candidate_cell_ind)
+            candidate_cell_ind[i]= p_i.ci[i] + stencil[i]
         end
 
-        if !isempty(cells[candidate...])
-            for id in cells[candidate...]
-                push!(neighbours,id)
+        if !isempty(cells[candidate_cell_ind...])
+            for id in cells[candidate_cell_ind...]
+                #push!(neighbours,id)
+                n+=1
             end
         end
     end
+    #Then allocate
+    if n>0
+        neighbours = zeros(Int64, n)
+        m=1
+        for stencil in stencils
+
+            for i in eachindex(candidate_cell_ind)
+                candidate_cell_ind[i]= p_i.ci[i] + stencil[i]
+            end
+    
+            if !isempty(cells[candidate_cell_ind...])
+                for id in cells[candidate_cell_ind...]
+                    neighbours[m]=id
+                    m+=1
+                end
+            end
+        end
+    else
+        neighbours= Int64[]
+    end
+
     return neighbours
 end
 
@@ -407,7 +430,7 @@ end
         #add to correct lists
         p_i.ci.= new_bin_location
 
-        cells[new_bin_location...] = append!(cells[new_bin_location...],p_i.id)
+        push!(cells[new_bin_location...],p_i.id)
     end
     return p_i,cells
 end

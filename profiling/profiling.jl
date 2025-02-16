@@ -12,8 +12,8 @@ pair_forces = [soft_disk_force(1,1)]
 dofevolvers = [overdamped_evolver!]
 
 #Initialize state
-N=10000
-L=60000.
+N=1000
+L=300.
 initial_particle_state = [ PolarParticle2d(i,1,1,0.3,0.01,[rand(Uniform(0, L)) ,rand(Uniform(0, L))],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],1.,1.,[0.,0.],[0.,0.],[0,0]) for i=1:N];
 initial_field_state =[]
 field_forces =[]
@@ -23,9 +23,13 @@ sizes =  [L,L];
 
 system =System(sizes, initial_particle_state,initial_field_state,external_forces, pair_forces, field_forces, field_updaters,dofevolvers, true, 1e1);
 end
+
+#check integration
+Euler_integrator(system, 0.1, 1, 1e4,10,120,[plot_disks!]);
+
 #Run integration
 function runsim(system)
-    Euler_integrator(system, 0.1, 1, 1e4);
+    Euler_integrator(system, 0.1, 1, 1e4,10,120,[plot_disks!]);
 end
 
 runsim(system);
