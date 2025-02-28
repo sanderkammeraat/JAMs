@@ -8,7 +8,7 @@ function simulation()
 
     #dofevolvers = [inertial_evolver!]
     dofevolvers = [overdamped_evolver!]
-    N=5000
+    N=1000
     ϕ = 1.2
     r=1.
     R =  sqrt(N * r^2 / ϕ)
@@ -29,12 +29,13 @@ function simulation()
     system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,2.5*r);
 
     #Run integration
-    sim = Euler_integrator(system,1e-1, 400, 2000,5e0, 120,(plot_disks_vx!,plot_directors!, plot_velocity_vectors!), 2); 
+    sim = Euler_integrator(system,1e-1, 1e6, 2000,5e0, 120,(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), 2); 
     return sim
 
 end
 
 sim = simulation();
+
 
 @time simulation();
 

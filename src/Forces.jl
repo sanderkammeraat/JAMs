@@ -15,6 +15,20 @@ struct field_propulsion_force<:Force
     v0offset::Float64
     
 end
+struct field_propulsion_3d_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    consumption::Float64
+    v0offset::Float64
+    
+end
+
+struct external_harmonic_pinning_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    k::Float64
+    l::Float64
+    pins::Matrix{Float64}
+    
+end
 
 struct electrode_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
@@ -124,6 +138,14 @@ struct chain_force<:Force
     
 end
 
+
+struct spring_network_2d_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    l::Float64
+    k_network::Matrix{Float64}
+    
+end
+
 struct periodic_chain_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
     k::Float64
@@ -131,6 +153,20 @@ struct periodic_chain_force<:Force
     periodic_id_begin::Int64
     periodic_id_end::Int64
     
+end
+
+struct fluid_dipole_2d_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    α::Float64
+    l::Float64
+
+end
+
+struct fluid_dipole_3d_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    α::Float64
+    l::Float64
+
 end
 #Let's test the power of multiple dispatch
 
@@ -239,6 +275,20 @@ function contribute_external_force!(p_i, t, dt, force::external_friction_force)
     return p_i
 end
 
+function contribute_external_force!(p_i, t, dt, force::external_harmonic_pinning_force)
+    if p_i.type in force.ontypes
+        dxp = @MVector zeros(length(p_i.x))
+        dxp.=p_i.x - force.pins[p_i.id,:]
+        dxpn= norm(dxp)
+        if dxpn>0
+
+            p_i.f.+= - force.k * (dxpn-force.l) * dxp/dxpn
+        end
+    end
+    return p_i
+end
+
+
 
 
 
@@ -262,6 +312,14 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::chain_force)
         if p_j.id == p_i.id+1 || p_j.id == p_i.id-1
             p_i.f.+= force.k * (dxn-force.l) * dx/dxn
         end
+    end
+    return p_i
+
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::spring_network_2d_force)
+    if p_i.type in force.ontypes && p_j.type in force.ontypes
+        p_i.f.+= force.k_network[p_i.id,p_j.id] * (dxn-force.l) * dx/dxn
     end
     return p_i
 
@@ -369,6 +427,31 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::pairABP_force)
 
 end
 
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::fluid_dipole_2d_force)
+    
+    if p_i.type in force.ontypes && p_j.type in force.ontypes
+
+        p_i.f[1]+= -force.α * cos(p_j.θ[1]) * exp(-dxn/force.l)
+        p_i.f[2]+= -force.α * sin(p_j.θ[1]) * exp(-dxn/force.l)
+
+    end
+    return p_i
+
+
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::fluid_dipole_3d_force)
+    
+    if p_i.type in force.ontypes && p_j.type in force.ontypes
+
+        p_i.f.+= -force.α .* p_j.p .*1/dxn
+
+    end
+    return p_i
+
+
+end
+
 function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_propulsion_force)
     if p_i.type in force.ontypes && field_j.type in force.ontypes
         x_index = field_indices[1]
@@ -387,3 +470,20 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_
 
 end
 
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_propulsion_3d_force)
+    if p_i.type in force.ontypes && field_j.type in force.ontypes
+        x_index = field_indices[1]
+        y_index = field_indices[2]
+        #print(x_index)
+
+        p_i.f[1]+= p_i.zeta * (field_j.C[x_index, y_index]+force.v0offset) *p_i.p[1]
+        p_i.f[2]+= p_i.zeta * (field_j.C[x_index, y_index]+force.v0offset) *p_i.p[2]
+
+        if field_j.C[x_index, y_index]>0
+            field_j.Cf[x_index, y_index]+=-force.consumption
+        end
+    end
+
+    return p_i, field_j
+
+end

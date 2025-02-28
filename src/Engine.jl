@@ -221,7 +221,7 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
             end
         end
     end
-    return SIM(particle_states, field_states, tsax,dt, t_stop, system)
+    return SIM(particle_states, field_states, tsax,dt, t_stop, system);
 end
 function particle_step!(i,p_i, current_particle_state,current_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils)
     if Npair>0
@@ -294,7 +294,7 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cel
     
     dx = @MVector zeros(Float64,length(p_i.x))
     neighbours= get_neighbours(p_i,cells,stencils)
-    if !isempty(neighbours)
+    if !isnothing(neighbours)
 
         for n in neighbours
 
@@ -412,7 +412,7 @@ function get_neighbours(p_i, cells, stencils)
             end
         end
     else
-        neighbours= Int64[]
+        neighbours= nothing
     end
 
     return neighbours

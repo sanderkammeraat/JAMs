@@ -21,6 +21,31 @@ function plot_points!(ax, cpsO, cfsO)
     return ax
 end
 
+function plot_director_points!(ax, cpsO, cfsO)
+
+
+    x = @lift([p_i.x[1] for p_i in $cpsO])
+    y = @lift([p_i.x[2] for p_i in $cpsO])
+    
+
+    c = @lift([ p_i.id[1] for p_i in $cpsO])
+    if length(cpsO[][1].x)>2
+
+
+        
+        z = @lift([p_i.x[3] for p_i in $cpsO])
+        xpx = @lift([p_i.p[1]+p_i.x[1] for p_i in $cpsO])
+        ypy = @lift([p_i.p[2]+p_i.x[2] for p_i in $cpsO])
+
+        meshscatter!(ax,xpx,ypy,z, color=:red)
+
+    else
+        scatter!(ax,x,y, color=c)
+
+    end
+    return ax
+end
+
 function plot_field_magnitude!(ax, cpsO, cfsO)
     
     field_centers1 = @lift($(cfsO)[1].bin_centers[1])
@@ -109,6 +134,7 @@ function plot_disks!(ax, cpsO, cfsO)
     return ax
 end
 
+
 function plot_disks_vx!(ax, cpsO, cfsO)
 
 
@@ -120,6 +146,21 @@ function plot_disks_vx!(ax, cpsO, cfsO)
     
     s = @lift([2*p_i.R^2  for p_i in $cpsO])
     scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1,colorrange=(-0.05,0.05))
+
+    return ax
+end
+
+function plot_disks_orientation!(ax, cpsO, cfsO)
+
+
+    x = @lift([p_i.x[1] for p_i in $cpsO])
+    y = @lift([p_i.x[2] for p_i in $cpsO])
+
+    c = @lift([ angle(p_i.p[1]+1im*p_i.p[2]) for p_i in $cpsO])
+
+    
+    s = @lift([2*p_i.R^2  for p_i in $cpsO])
+    scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1,colormap=:hsv,colorrange=(-pi,pi))
 
     return ax
 end
@@ -259,7 +300,7 @@ end
 
 function make_movie(SIM, folder_path, file_name, plot_functions, fps,plotdim=nothing)
 
-    mkpath(save_path)
+    mkpath(folder_path)
 
     cpsO = Observable(SIM.particle_states[1])
 
