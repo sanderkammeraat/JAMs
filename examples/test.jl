@@ -15,7 +15,7 @@ function simulation()
     dofevolvers =  [inertial_evolver!]
 
     #Initialize state
-    N=200
+    N=2000
     L=80.
 
 
@@ -31,12 +31,12 @@ function simulation()
     field_updaters = []
 
 
-    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, true,L);
+    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, true,5.);
 
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system, 1e-3, 1e4, 1e5, 1e2, 120,[plot_sized_points!,plot_velocity_vectors!],3);
+    sim = Euler_integrator(system, 1e-2, 1e4, 1e5, 1e1, 120,[plot_sized_points!,plot_velocity_vectors!],3);
     return sim
 
 end
