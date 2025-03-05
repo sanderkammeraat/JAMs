@@ -64,7 +64,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,5e-2, 5e2, 1e1, 1e1, 120,(plot_disks_vp_phase_difference!, plot_directors!, plot_velocity_vectors!), 2); 
+    sim = Euler_integrator(system,5e-2, 5e2, 1e6, 1e1, 120,(plot_disks_orientation!, plot_directors!, plot_velocity_vectors!), 2); 
     return sim;
 
 end

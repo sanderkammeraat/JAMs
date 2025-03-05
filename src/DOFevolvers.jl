@@ -87,7 +87,7 @@ function overdamped_evolver!(p_i::ConfinedPolarParticle3d, t, dt)
 
     #evolve
     p_i.p .+= p_i.q * dt
-    p_i.p .=normalize(p_i.p)
+    #p_i.p .=normalize(p_i.p)
 
 
     #reinitialize

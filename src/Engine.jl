@@ -3,6 +3,7 @@ using Observables
 using JLD2
 using CodecZlib
 using ProgressMeter
+using DataFrames
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
 include("Particles.jl")
@@ -11,6 +12,7 @@ include("Forces.jl")
 include("DOFevolvers.jl")
 include("FieldUpdaters.jl")
 include("LivePlottingFunctions.jl")
+include("SaveFunctions.jl")
 
 @views function periodic!(p_i, systemsizes)
 
@@ -87,47 +89,50 @@ struct System{T0,T1, T2, T3, T4, T5, T6, T7}
 
 end
 
-struct SIM{T1, T2, T3, T4, T5}
-    particle_states::T1
-    field_states::T2
-    tsax::T3
-    dt::T4
-    t_stop::T5
+struct SIM{T1, T2, T3, T4}
+    final_particle_state::T1
+    final_field_state::T2
+    dt::T3
+    t_stop::T4
     system::System
 end
 
 
-function save_SIM(folder_path, file_name, sim)
+function Euler_integrator(system, dt, t_stop;  Tsave=nothing, save_functions=nothing, save_folder_path=nothing, Tplot=nothing, fps=nothing, plot_functions=nothing,plotdim=nothing)
 
 
-    mkpath(folder_path)
-    file_path = folder_path*file_name*".jld2"
+    integration_tax = 0:dt:t_stop
 
-    println(file_path)
-    jldsave(file_path, true; sim=sim)
-    return file_path
-end
+    if !isnothing(Tsave)
+        save_tax = [ integration_tax[n] for n in eachindex(integration_tax) if n%Tsave==0   ]
 
-function load_SIM(file_path)
-    sim_file = jldopen(file_path, "r");
-    sim = sim_file["sim"]
-    close(sim_file)
-    return sim
-end
+        #Prepare save folder
+        mkpath(save_folder_path)
+
+        JAMs_file_name = "JAMs_container.jld2"
+        
+        raw_data_file_name = "raw_data.jld2"
 
 
-function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing, plot_functions=nothing,plotdim=nothing)
+        #Store system in JAMS container
+        jldopen(save_folder_path*JAMs_file_name,"a+") do JAMs_file
+
+            JAMs_file["system"] = system
+
+            JAMs_file["integration_tax"] = integration_tax
+
+            JAMs_file["Tsave"] = Tsave
+
+            JAMs_file["save_tax"] = save_tax
+
+        end
+    end
 
     if system.Periodic==false
         print("System is set to non-periodic: you should make sure particles always stay in system sizes for correctly working cell lists. The program will catch this by throwing an error if a particle is detected outside the box.")
     end
 
     system, cells,cell_bin_centers,stencils = construct_cell_lists!(system)
-
-    particle_states = [copy(system.initial_particle_state)]
-    field_states = [copy(system.initial_field_state)]
-    tsax = [0.]
-
 
     Npair = length(system.pair_forces)
 
@@ -151,7 +156,7 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
     end
 
     #Loop over time
-    @showprogress dt = 1 desc="JAMming in progress..." showspeed=true for (n, t) in pairs(0:dt:t_stop)
+    @showprogress dt = 1 desc="JAMming in progress..." showspeed=true for (n, t) in pairs(integration_tax)
         #Threads.@threads 
         #Loop over particles and write generalized forces to p_i in place!
         Threads.@threads for i in eachindex(current_particle_state)
@@ -159,8 +164,34 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
             p_i, cells,current_field_state = particle_step!(i,p_i, current_particle_state,current_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils)
             current_particle_state[i]=p_i
         end
-        #Only now evolve dofs of every particle
 
+        #Field loop
+        for i in eachindex(current_field_state)
+
+            field_i = current_field_state[i]
+
+            field_i = field_step!(i, field_i,current_field_state,Nfieldu,t,dt, system)
+
+            current_field_state[i] = field_i
+        end
+
+        if !isnothing(Tsave) && !isnothing(save_functions)
+            if n%Tsave==0
+
+                jldopen(save_folder_path*raw_data_file_name,"a+") do raw_data_file
+
+            
+                    for save_function in save_functions
+
+                        save_function(raw_data_file,current_particle_state,current_field_state, n, Tsave, t)
+
+                    end
+
+                end
+            end
+        end
+
+        #Only now evolve dofs of every particle
         Threads.@threads for i in eachindex(current_particle_state)
             p_i = current_particle_state[i]
             for dofevolver in system.dofevolvers
@@ -183,15 +214,7 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
             current_particle_state[i]=p_i
         end
 
-        #Field loop
-        for i in eachindex(current_field_state)
 
-            field_i = current_field_state[i]
-
-            field_i = field_step!(i, field_i,current_field_state,Nfieldu,t,dt, system)
-
-            current_field_state[i] = field_i
-        end
         #DOF evolver fields
         for i in eachindex(current_field_state)
 
@@ -205,10 +228,6 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
 
         cells = update_ghost_cells!(cells,system)
 
-
-        save_state!(particle_states, current_particle_state, n, Tsave)
-        save_state!(field_states, current_field_state, n, Tsave)
-        save_state!(tsax,t, n, Tsave)
         
         if !isnothing(plot_functions)
             if fps!=0
@@ -220,8 +239,20 @@ function Euler_integrator(system, dt, t_stop,  Tsave, Tplot=nothing, fps=nothing
                 end
             end
         end
+
     end
-    return SIM(particle_states, field_states, tsax,dt, t_stop, system);
+
+    if !isnothing(Tsave)
+        jldopen(save_folder_path*JAMs_file_name,"a+") do JAMs_file
+
+            JAMs_file["final_particle_state"] = current_particle_state
+
+            JAMs_file["final_field_state"] = current_field_state
+
+        end
+    end
+
+    return SIM(current_particle_state, current_field_state,dt, t_stop, system);
 end
 function particle_step!(i,p_i, current_particle_state,current_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils)
     if Npair>0
@@ -261,15 +292,15 @@ function field_step!(i, field_i,current_field_state,Nfieldu,t,dt, system)
 
 end
 
-function save_state!(states, current_state, n, Tsave)
+# function save_state!(states, current_state, n, Tsave)
 
-    if n%Tsave==0 && n>0
-        states=push!(states,deepcopy(current_state))
+#     if n%Tsave==0 && n>0
+#         states=push!(states,deepcopy(current_state))
 
-    end
-    return states
+#     end
+#     return states
 
-end
+# end
 
 function contribute_field_forces!(p_i, current_field_state, t, dt,system)
     field_indices = @MVector zeros(Int,length(p_i.x))
@@ -412,7 +443,7 @@ function get_neighbours(p_i, cells, stencils)
             end
         end
     else
-        neighbours= nothing
+        neighbours = nothing
     end
 
     return neighbours
