@@ -31,7 +31,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system, 0.01, 1000, 100000) #, 10, 120,(plot_sized_points!, plot_directors!));
+    sim = Euler_integrator(system, 0.01, 1000) #, 10, 120,(plot_sized_points!, plot_directors!));
     return sim
 
 end

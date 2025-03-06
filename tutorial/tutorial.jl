@@ -85,7 +85,7 @@ save_functions=[save_2d_polar_θ!]
 #Also, we need to set a save_folder_path. It should end with a slash and  if the directory does not exist, it will automatically be created
 save_folder_path = "/Users/kammeraat/JAMs_tutorial/"
 
-# If we also want to plot in realtime the system, we supply even more optional arguments:
+# If we also want to plot in realtime the system, we need to supply even more optional arguments:
 
 Tplot = 10 # plot every 10 dt time steps
 fps = 60 #wait 1/60 before plotting the next frame
