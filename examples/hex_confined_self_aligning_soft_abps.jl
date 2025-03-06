@@ -13,7 +13,7 @@ function simulation()
 
     #First make stair
     
-    Nlin=70
+    Nlin=30
     Nrows = 2*Nlin
     initial_state = Union{PolarParticle3d,ConfinedPolarParticle3d}[]
 
@@ -92,7 +92,7 @@ function simulation()
     system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,2.5);
 
     #Run integration
-    sim = Euler_integrator(system,5e-2, 5e-2*1e3,Tsave=1, save_functions = [save_2d_polar!],save_folder_path="/Users/kammeraat/test_JAMS/test_save_2/")#,Tplot=1e0, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,5e-2, 5e-2*1e1,Tsave=1, save_functions = [save_2d_polar_p!],save_folder_path="/Users/kammeraat/test_JAMS/test_save_12/")#,Tplot=1e0, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 
 end
@@ -102,14 +102,21 @@ sim = simulation();
 
 @profview simulation()
 
-JAMs_container = jldopen("/Users/kammeraat/test_JAMS/test_save/JAMs_container.jld2","r")
+JAMs_container = jldopen("/Users/kammeraat/test_JAMS/test_save_8/JAMs_container.jld2","r")
 
-system = JAMs_container["system"]
+systeml = JAMs_container["system"]
 
-raw_data = jldopen("/Users/kammeraat/test_JAMS/test_save/raw_data.jld2","r")
+systeml.initial_particle_state.= JAMs_container["final_particle_state"]
+
+Euler_integrator(systeml,5e-2, 5e-2*1e1,Tplot=1e0, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
 
 
+f = jldopen("/Users/kammeraat/test_JAMS/test_save_9/raw_data.jld2","r")
+
+
+f["system"]
 
 @time simulation();
 
 make_snapshot(sim, "/Users/kammeraat/test_JAMS/snapshots/","confined_self_align_soft_abps.png",(plot_disks_vx!,plot_directors!, plot_velocity_vectors!),length(sim.tsax),2)
+

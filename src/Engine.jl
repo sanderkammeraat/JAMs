@@ -58,28 +58,53 @@ end
     end
     return dx
 end
-struct System{T0,T1, T2, T3, T4, T5, T6, T7}
+
+"""
+Description of the physical system in JAMs.
+
+sizes: Array containing the linear size of the system. 
+
+initial_particle_state: Array containing (struct instances of) particles
+
+initial_field_state: Array containing (struct instances of) fields
+
+external_forces: Array containing (struct instances of) forces that are calculated without information of the other particles or fields in the system.
+
+pair_forces: Array containing (struct instances of) forces between two particles
+
+field_forces: Array containing (struct instances of) forces acting on particles by a field
+
+field_updaters: Array containing (struct instances of) forces/update rules acting on the field
+
+dof_evolvers: Array containing (references to) functions that update the degrees of freedom of particles and fields
+
+periodic: Bool describing whether the system is spatially periodic of the system sizes.
+
+rcut_pair_global: Float setting the cutoff of all pair_forces and is used to generate cell lists.
+
+"""
+struct System{T1,T2, T3, T4, T5, T6, T7, T8}
 
     #Vector that determines the linear size of the system
-    sizes::T0
+    sizes::T1
 
     #Array containing particles in a specific state
-    initial_particle_state::T1
+    initial_particle_state::T2
 
     #Array containing fields in a specific state
-    initial_field_state::T2
+    initial_field_state::T3
 
     #Array of force functions:
-    external_forces::T3
+    external_forces::T4
 
-    pair_forces::T4
+    pair_forces::T5
 
-    field_forces::T5
+    field_forces::T6
 
-    field_updaters::T6
+    field_updaters::T7
     
     #Array of functions to evolve dof (and reinitialize forces)
-    dofevolvers::T7
+    dofevolvers::T8
 
     #Spatially periodic boundary conditions?
     Periodic::Bool
@@ -88,7 +113,7 @@ struct System{T0,T1, T2, T3, T4, T5, T6, T7}
     rcut_pair_global::Float64
 
 end
-
+#Output formatter to conveniently chain simulations in one .jl file without the need of intermediate saving to disk
 struct SIM{T1, T2, T3, T4}
     final_particle_state::T1
     final_field_state::T2
@@ -96,6 +121,77 @@ struct SIM{T1, T2, T3, T4}
     t_stop::T4
     system::System
 end
+function save_raw_force_data!(file, preamble, force)
+
+    force_name = string(nameof(typeof(force)))
+
+    field_names = fieldnames(typeof(force))
+
+    for field_name in field_names
+
+        name = string(field_name)
+        val = getfield(force, field_name)
+
+
+        file[preamble*force_name*"/"*name] = val
+
+    end
+
+    return file
+end
+
+function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_tax)
+
+    for force in system.external_forces
+
+        preamble = "system/forces/external_forces/"
+
+        save_raw_force_data!(file,preamble, force)
+
+    end
+    for force in system.pair_forces
+
+        preamble = "system/forces/pair_forces/"
+
+        save_raw_force_data!(file,preamble, force)
+
+    end
+    for force in system.field_forces
+
+        preamble = "system/forces/field_forces/"
+
+        save_raw_force_data!(file,preamble, force)
+
+    end
+    for fieldupdater in system.field_updaters
+
+        preamble = "system/field_updaters/"
+
+        save_raw_force_data!(file,preamble, fieldupdater)
+
+    end
+
+    for dofevolver in system.dofevolvers
+
+        dofevolver_name = string(nameof(dofevolver))
+        file["system/dofevolvers/"*dofevolver_name] = dofevolver_name
+    end
+
+
+    file["integration_info/integration_tax"] = collect(integration_tax)
+
+    file["integration_info/Tsave"] = Tsave
+
+    file["integration_info/save_tax"] = save_tax
+
+    file["integration_info/dt"] = dt
+
+    file["integration_info/t_stop"] = t_stop
+
+    return file
+
+end
+
 
 
 function Euler_integrator(system, dt, t_stop;  Tsave=nothing, save_functions=nothing, save_folder_path=nothing, Tplot=nothing, fps=nothing, plot_functions=nothing,plotdim=nothing)
@@ -104,32 +200,67 @@ function Euler_integrator(system, dt, t_stop;  Tsave=nothing, save_functions=not
     integration_tax = 0:dt:t_stop
 
     if !isnothing(Tsave)
-        save_tax = [ integration_tax[n] for n in eachindex(integration_tax) if n%Tsave==0   ]
+        save_tax = [ integration_tax[n] for n in eachindex(integration_tax) if (n-1)%Tsave==0 ]
 
         #Prepare save folder
+        #If folder already exists, simply returns folder path. If folder is not existing, it will create the (sub)folders and return the path
         mkpath(save_folder_path)
 
         JAMs_file_name = "JAMs_container.jld2"
         
         raw_data_file_name = "raw_data.jld2"
 
+        if isfile(save_folder_path*JAMs_file_name) || isfile(save_folder_path*raw_data_file_name)
+            error("JAMs: Specified save folder already contains JAMs file(s): " * JAMs_file_name * " and/or " * raw_data_file_name*" . JAMs aborted to prevent overwriting.")
+        end
 
-        #Store system in JAMS container
+        #Store system and integration info in JAMS container
         jldopen(save_folder_path*JAMs_file_name,"a+") do JAMs_file
 
             JAMs_file["system"] = system
 
-            JAMs_file["integration_tax"] = integration_tax
+            JAMs_file["integration_info/integration_tax"] = collect(integration_tax)
 
-            JAMs_file["Tsave"] = Tsave
+            JAMs_file["integration_info/dt"] = dt
 
-            JAMs_file["save_tax"] = save_tax
+            JAMs_file["integration_info/t_stop"] = t_stop
+
+            JAMs_file["integration_info/Tsave"] = Tsave
+
+            JAMs_file["integration_info/save_tax"] = save_tax
+
+
+            if !isnothing(save_functions)
+                JAMs_file["integration_info/save_functions"] = save_functions
+            end
+
+            if !isnothing(Tplot)
+
+                JAMs_file["integration_info/Tplot"] = Tplot
+
+                JAMs_file["integration_info/fps"] = fps
+
+                JAMs_file["integration_info/plot_functions"] = plot_functions
+
+                JAMs_file["integration_info/plotdim"] = plotdim
+
+
+            end
+            
+
 
         end
+        #Store similar info in raw_data container
+        jldopen(save_folder_path*raw_data_file_name,"a+") do raw_data_file
+
+            save_raw_metadata!(raw_data_file, system, integration_tax,dt, t_stop, Tsave,save_tax)
+
+        end
+   
     end
 
     if system.Periodic==false
-        print("System is set to non-periodic: you should make sure particles always stay in system sizes for correctly working cell lists. The program will catch this by throwing an error if a particle is detected outside the box.")
+        @warn ("JAMs: System is set to non-periodic: you should make sure particles always stay in system sizes for correctly working cell lists. The program will catch this by throwing an error if a particle is detected outside the box.")
     end
 
     system, cells,cell_bin_centers,stencils = construct_cell_lists!(system)
@@ -156,6 +287,8 @@ function Euler_integrator(system, dt, t_stop;  Tsave=nothing, save_functions=not
     end
 
     #Loop over time
+    #Variable to keep track of the number of frames saved
+    frame_counter = 1
     @showprogress dt = 1 desc="JAMming in progress..." showspeed=true for (n, t) in pairs(integration_tax)
         #Threads.@threads 
         #Loop over particles and write generalized forces to p_i in place!
@@ -176,18 +309,22 @@ function Euler_integrator(system, dt, t_stop;  Tsave=nothing, save_functions=not
         end
 
         if !isnothing(Tsave) && !isnothing(save_functions)
-            if n%Tsave==0
+            if (n-1)%Tsave==0
+                
+
 
                 jldopen(save_folder_path*raw_data_file_name,"a+") do raw_data_file
 
             
                     for save_function in save_functions
 
-                        save_function(raw_data_file,current_particle_state,current_field_state, n, Tsave, t)
+                        save_function(raw_data_file,current_particle_state,current_field_state, n, Tsave, t,frame_counter)
 
                     end
 
+
                 end
+                frame_counter+=1
             end
         end
 
@@ -231,7 +368,7 @@ function Euler_integrator(system, dt, t_stop;  Tsave=nothing, save_functions=not
         
         if !isnothing(plot_functions)
             if fps!=0
-                if n%Tplot==0
+                if (n-1)%Tplot==0
                     cpsO[] = current_particle_state
                     cfsO[]= current_field_state
                     tO[] = t
@@ -274,7 +411,7 @@ end
 function check_outside_system(p_i, system_sizes)
     for i in eachindex(p_i.x)
         if p_i.x[i]>system_sizes[i]/2 || p_i.x[i]<-system_sizes[i]/2
-            error("Particle outside simulation box. This invalidates cell lists. Suggested fix: make sure particles always stay inside system sizes by increasing the system size of the relevant dimension.")
+            error("JAMs: Particle outside simulation box. This invalidates cell lists. Suggested fix: make sure particles always stay inside system sizes by increasing the system size of the relevant dimension.")
         end
     end
 
@@ -292,15 +429,6 @@ function field_step!(i, field_i,current_field_state,Nfieldu,t,dt, system)
 
 end
 
-# function save_state!(states, current_state, n, Tsave)
-
-#     if n%Tsave==0 && n>0
-#         states=push!(states,deepcopy(current_state))
-
-#     end
-#     return states
-
-# end
 
 function contribute_field_forces!(p_i, current_field_state, t, dt,system)
     field_indices = @MVector zeros(Int,length(p_i.x))
