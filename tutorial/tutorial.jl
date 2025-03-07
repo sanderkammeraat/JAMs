@@ -5,7 +5,7 @@
 # Note: as of now, the code is not structured as a package with modules. This means that we will simply include the necessary files to make the custom structs and functions available.
 
 # Let's begin. We load in the the /src/Engine.jl file wich will subsequently load in the other files with particle definitions etc.:
-include("../src/Engine.jl")
+include(joinpath("..","src","Engine.jl"))
 
 # The basic idea of the JAMs workflow is to setup a (physical) system  and pass it to the integrator.
 # In JAMs the system should be a instance of the struct System (defined in Engine.jl).

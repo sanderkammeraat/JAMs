@@ -1,5 +1,4 @@
-include("../src/Engine.jl")
-
+include(joinpath("..","src","Engine.jl"))
 function simulation()
 
     external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_force(1,0.5),ABP_perpendicular_angular_noise(1,[0,0,1]))
