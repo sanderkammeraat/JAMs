@@ -1,3 +1,5 @@
+#Function to initialize unwrapping so user does not have to set the initial position vector twice (1 wrapped 2 unwrapped)
+
 
 
 function inertial_evolver!(p_i::Hexbug, t, dt)
@@ -6,6 +8,8 @@ function inertial_evolver!(p_i::Hexbug, t, dt)
     p_i.a .= p_i.f/p_i.m
 
     p_i.x .+= p_i.v * dt
+    p_i.xuw.+= p_i.v * dt
+
     p_i.v .+= p_i.a * dt
 
     p_i.p .+= p_i.q * dt
@@ -24,6 +28,8 @@ function inertial_evolver!(p_i::ChargedParticle3d, t, dt)
     p_i.a .= p_i.f/p_i.m
 
     p_i.x .+= p_i.v * dt
+    p_i.xuw .+= p_i.v * dt
+
     p_i.v .+= p_i.a * dt
 
     #reinitialize
@@ -35,6 +41,7 @@ function overdamped_evolver!(p_i::Hexbug, t, dt)
 
     #evolve
     p_i.x .+= p_i.v * dt
+    p_i.xuw.+= p_i.v * dt
     p_i.v .= p_i.f/p_i.zeta
 
     p_i.p .+= p_i.q * dt
@@ -49,10 +56,12 @@ function overdamped_evolver!(p_i::Hexbug, t, dt)
 end
 function inertial_evolver!(p_i::PolarParticle3d, t, dt)
 
+
     #evolve
     p_i.a .= p_i.f/p_i.m
 
     p_i.x .+= p_i.v * dt
+    p_i.xuw.+= p_i.v * dt
     p_i.v .+= p_i.a * dt
 
     p_i.p .+= p_i.q * dt
@@ -70,6 +79,7 @@ function overdamped_evolver!(p_i::PolarParticle3d, t, dt)
 
     #evolve
     p_i.x .+= p_i.v * dt
+    p_i.xuw.+= p_i.v * dt
     p_i.v .= p_i.f/p_i.zeta
 
     p_i.p .+= p_i.q * dt
@@ -85,9 +95,10 @@ end
 
 function overdamped_evolver!(p_i::ConfinedPolarParticle3d, t, dt)
 
+
     #evolve
     p_i.p .+= p_i.q * dt
-    p_i.p .=normalize(p_i.p)
+    #p_i.p .=normalize(p_i.p)
 
 
     #reinitialize
@@ -98,10 +109,11 @@ function overdamped_evolver!(p_i::ConfinedPolarParticle3d, t, dt)
 end
 
 function overdamped_evolver!(p_i::PolarParticle2d, t, dt)
-
-
     #Evolve
     p_i.x.+= p_i.v * dt
+    
+    p_i.xuw.+= p_i.v * dt
+
     p_i.v.= p_i.f/p_i.zeta
     p_i.θ.+= p_i.ω * dt
 
@@ -116,9 +128,10 @@ end
 function overdamped_evolver!(p_i::PolarParticle2dSave, t, dt)
 
 
+
     #Evolve
     p_i.x.+= p_i.v * dt
-    p_i.xs.+= p_i.v * dt
+    p_i.xuw.+= p_i.v * dt
     p_i.v.= p_i.f/p_i.zeta
     p_i.θ.+= p_i.ω * dt
 
@@ -139,6 +152,7 @@ function overdamped_evolver!(p_i::PolarParticle2dN, t, dt)
 
     #Evolve
     p_i.x.+= p_i.v * dt
+    p_i.xuw.+= p_i.v * dt
     p_i.v.= p_i.f/p_i.zeta
     p_i.θ.+= p_i.ω * dt
 
@@ -154,8 +168,10 @@ end
 
 function overdamped_evolver!(p_i::Swarmalator, t, dt)
 
+
     #Evolve
     p_i.x.+= p_i.v * dt
+    p_i.xuw.+= p_i.v * dt
     p_i.v.= p_i.f/p_i.zeta
     p_i.θ.+= p_i.ω * dt
 
@@ -172,6 +188,7 @@ end
 
 function overdamped_evolver!(p_i::VicsekParticle, t, dt)
 
+
     #Evolve
     #Process neighbour memory:
 
@@ -181,6 +198,7 @@ function overdamped_evolver!(p_i::VicsekParticle, t, dt)
 
     #
     p_i.x.+= p_i.v * dt
+    p_i.xuw.+= p_i.v * dt
     p_i.v.= p_i.f/p_i.zeta
     p_i.θ.= p_i.ω * dt
 
@@ -198,6 +216,7 @@ end
 
 function overdamped_evolver!(p_i::PolarParticle3dN, t, dt)
 
+
     #Evolve
     #Process neighbour memory:
 
@@ -207,6 +226,7 @@ function overdamped_evolver!(p_i::PolarParticle3dN, t, dt)
 
     #
     p_i.x.+= p_i.v * dt
+    p_i.xuw.+= p_i.v * dt
     p_i.v.= p_i.f/p_i.zeta
     p_i.p.+= p_i.q * dt
     p_i.p.=normalize(p_i.p)
@@ -224,6 +244,7 @@ end
 
 
 function overdamped_evolver!(field::FuelField2d, t, dt)
+    
 
     field.C.+= field.Cv*dt
 

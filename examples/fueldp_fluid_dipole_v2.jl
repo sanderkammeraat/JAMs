@@ -11,7 +11,7 @@ function simulation()
     N=1000
     ϕ = 0.2
     L =  sqrt(N *  π * 1^2 / ϕ)
-    initial_state = PolarParticle3d[ PolarParticle3d(i,1, 1, 1, 1, 0.3, 0.001, [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
+    initial_state = PolarParticle3d[ PolarParticle3d(i,1, 1, 1, 1, 0.3, 0.001, [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
 
     
     size = [L,L,2];
@@ -41,12 +41,10 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,5e-2, 2e2, 2e1, 2e1, 120,(plot_field_magnitude!,plot_disks!, plot_director_points!, plot_velocity_vectors!), 2); 
+    sim = Euler_integrator(system,5e-2, 2e2, Tplot= 2e1, fps=120, plot_functions=(plot_field_magnitude!,plot_disks!, plot_director_points!, plot_velocity_vectors!), plotdim=2); 
     return sim
 
 end
 
 
 sim = simulation()
-
-make_movie(sim, "/Users/kammeraat/test_JAMS/movies/","fueldp_fluid_dipole_tstop_1000.mp4",(plot_disks!, plot_directors!, plot_velocity_vectors!,plot_field_magnitude!),60,2)
