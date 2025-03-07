@@ -19,6 +19,7 @@ struct Hexbug<:Particle
     Dr::Float64
 
     x::MVector{3,Float64}
+    xuw::MVector{3,Float64}
     v::MVector{3,Float64}
     a::MVector{3,Float64}
 
@@ -39,6 +40,7 @@ struct ChargedParticle3d<:Particle
     Q::MVector{1,Float64}
 
     x::MVector{3,Float64}
+    xuw::MVector{3,Float64}
     v::MVector{3,Float64}
     a::MVector{3,Float64}
     f::MVector{3,Float64} #f->a->v->r
@@ -57,6 +59,7 @@ struct PolarParticle3d<:Particle
     Dr::Float64
 
     x::MVector{3,Float64}
+    xuw::MVector{3,Float64}
     v::MVector{3,Float64}
     a::MVector{3,Float64}
 
@@ -81,6 +84,7 @@ struct ConfinedPolarParticle3d<:Particle
     Dr::Float64
 
     x::MVector{3,Float64}
+    xuw::MVector{3,Float64}
     v::MVector{3,Float64}
     a::MVector{3,Float64}
 
@@ -103,6 +107,7 @@ struct PolarParticle2d<:Particle
     Dr::Float64
 
     x::MVector{2,Float64}
+    xuw::MVector{2,Float64}
     v::MVector{2,Float64}
     f::MVector{2,Float64} #f->v->r
 
@@ -124,7 +129,7 @@ struct PolarParticle2dSave<:Particle
     Dr::Float64
 
     x::MVector{2,Float64}
-    xs::MVector{2,Float64}
+    xuw::MVector{2,Float64}
     v::MVector{2,Float64}
     f::MVector{2,Float64} #f->v->r
 
@@ -149,6 +154,7 @@ struct PolarParticle2dN<:Particle
     Dr::Float64
 
     x::MVector{2,Float64}
+    xuw::MVector{2,Float64}
     v::MVector{2,Float64}
     f::MVector{2,Float64} #f->v->r
 
@@ -177,6 +183,7 @@ struct PolarParticle3dN<:Particle
     Dr::Float64
 
     x::MVector{3,Float64}
+    xuw::MVector{3,Float64}
     v::MVector{3,Float64}
     f::MVector{3,Float64} #f->v->r
 
@@ -205,6 +212,7 @@ struct Swarmalator<:Particle
     Dr::Float64
 
     x::MVector{2,Float64}
+    xuw::MVector{2,Float64}
     v::MVector{2,Float64}
     f::MVector{2,Float64} #f->v->r
 
@@ -233,6 +241,7 @@ struct VicsekParticle<:Particle
     Dr::Float64
 
     x::MVector{2,Float64}
+    xuw::MVector{2,Float64}
     v::MVector{2,Float64}
     f::MVector{2,Float64} #f->v->r
 

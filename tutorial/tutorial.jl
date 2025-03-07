@@ -36,9 +36,10 @@ field_updaters = []
 # Using rand(Uniform(-L/2,L/2), 2) we get two random numbers in a vector of size 2
 # Using rand(Uniform(-pi, pi)) we get a random angle for the director. Note that we put this between [] to allow it to be changed by the dof evolver
 # (fields to a struct are inmmutable, but if the field is an array, the elements in the array can be changed)
+# Note that the unwrapped coordinates in xuw are set automatically, so we can set them to 0. JAMs automatically sets the initial unwrapped coordinates equal to the initial wrapped coordinates
 Dr = 0.01
 v0 = 0.3
-initial_particle_state = [ PolarParticle2d(i,1,1,v0,Dr,rand(Uniform(-L/2,L/2), 2),[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],r,1.,[0.,0.],[0.,0.],[0,0]) for i=1:N]
+initial_particle_state = [ PolarParticle2d(i,1,1,v0,Dr,rand(Uniform(-L/2,L/2), 2),[0,0],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],r,1.,[0.,0.],[0.,0.],[0,0]) for i=1:N]
 
 #Now set up the particle forces 
 # The forces take in a type (Int64 or array of Int64 if on multiple particles) determining on what type of particles the force should act
@@ -110,14 +111,22 @@ final_particle_state = JAMs_container["final_particle_state"]
 
 raw_data = jldopen(save_folder_path*"raw_data.jld2","r")
 
-# As an example, let's get the x-coordinates of the particles in stored frame number 20 
+# As an example, let's get the x-coordinates of the particles in stored frame number 20. These coordinates are wrapped. 
 x_20 = raw_data["frames"]["20"]["x"]
+
+# If we want the unwrapped x-coordinates of the particles, we do
+x_20_uw = raw_data["frames"]["20"]["xuw"]
+
+
 
 # What is the actual time of this frame? (It is not 20! This is because frame 1 contains the info of t=0).
 t_20 = raw_data["frames"]["20"]["t"]
 
 #Note that the raw_data file also contains metadata, e.g. the forces and the field values used:
 soft_disk_stiffness = raw_data["system"]["forces"]["pair_forces"]["soft_disk_force"]["karray"]
+
+#Note that by current design, Dr and v0 are saved per particle
+v0s = raw_data["frames"]["1"]["v0"]
 
 
 

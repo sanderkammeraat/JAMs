@@ -70,14 +70,14 @@ function simulation()
 
         if types[i]==1
             
-            push!(initial_state, PolarParticle3d(id, types[i], 1, 1, Rs[i], 0.1, 0.01, [rand(Uniform(-2*R/3, 2*R/3)) , rand(Uniform(-2*R/3,2*R/3)),0],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
+            push!(initial_state, PolarParticle3d(id, types[i], 1, 1, Rs[i], 0.1, 0.01, [rand(Uniform(-2*R/3, 2*R/3)) , rand(Uniform(-2*R/3,2*R/3)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
             id+=1
         end
     end
     for i=1:N
 
         if types[i]==2
-            push!(initial_state,ConfinedPolarParticle3d(id,2, 1,1, Rs[i], 0, 0.01, [x[i] , y[i],0],[0,0,0], [0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]))
+            push!(initial_state,ConfinedPolarParticle3d(id,2, 1,1, Rs[i], 0, 0.01, [x[i] , y[i],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]))
             id+=1
         end
     end
@@ -92,7 +92,7 @@ function simulation()
     system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,2.5);
 
     #Run integration
-    sim = Euler_integrator(system,5e-2, 1e6, 1e6,1e1, 120,(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), 2); 
+    sim = Euler_integrator(system,5e-2, 1e6,Tplot=1e1, fps=120,plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 
 end
@@ -100,7 +100,3 @@ end
 
 sim = simulation();
 
-
-@time simulation();
-
-make_snapshot(sim, "/Users/kammeraat/test_JAMS/snapshots/","confined_self_align_soft_abps.png",(plot_disks_vx!,plot_directors!, plot_velocity_vectors!),length(sim.tsax),2)

@@ -30,6 +30,9 @@ print(x_20)
 x_20_slice = raw_data["frames"]["20"]["x"][()]
 print(x_20_slice)
 
+#To get the unwrapped coordinates, do 
+xuw_20_slice = raw_data["frames"]["20"]["xuw"][()]
+
 
 
 #And likewise the time of the this frame

@@ -41,7 +41,7 @@ function simulation()
     display(X)
     display(Y)
 
-    initial_state = PolarParticle3d[ PolarParticle3d(i,1, 1, 1, Rs[i], 0.1, 0.001, [X[i] , Y[i],0],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i in eachindex(X) ];
+    initial_state = PolarParticle3d[ PolarParticle3d(i,1, 1, 1, Rs[i], 0.1, 0.001, [X[i] , Y[i],0],[0,0,0],[0.,0.,0.], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i in eachindex(X) ];
 
     pins  = zeros(length(initial_state),3)
     for i=eachindex(initial_state)
@@ -64,12 +64,10 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,5e-2, 5e2, 1e6, 1e1, 120,(plot_disks_orientation!, plot_directors!, plot_velocity_vectors!), 2); 
+    sim = Euler_integrator(system,5e-2, 5e2, Tplot=1e1, fps=120,plot_functions=(plot_disks_orientation!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim;
 
 end
 
 
 sim = simulation()  
-
-make_movie(sim, "/Users/kammeraat/test_JAMS/movies/","triangular_lattice_save.mp4",(plot_disks_vp_phase_difference!, plot_directors!, plot_velocity_vectors!),60,2)

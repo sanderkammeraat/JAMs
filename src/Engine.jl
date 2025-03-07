@@ -27,6 +27,15 @@ include("SaveFunctions.jl")
     return p_i
 end
 
+#Initialize unwrapped coordinates to save the user the hassle to set equal to the initial wrapped coordinates
+function init_unwrap!(p_i, t)
+
+    if t==0
+        p_i.xuw.= copy(p_i.x)
+    end
+
+    return p_i
+end
 
 
 @views function minimal_image_closest_bin_center!(field_indices,x, bin_centers,system_sizes,system_Periodic)
@@ -294,6 +303,7 @@ function Euler_integrator(system, dt, t_stop;  Tsave=nothing, save_functions=not
         #Loop over particles and write generalized forces to p_i in place!
         Threads.@threads for i in eachindex(current_particle_state)
             p_i = current_particle_state[i]
+            p_i=init_unwrap!(p_i, t)
             p_i, cells,current_field_state = particle_step!(i,p_i, current_particle_state,current_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils)
             current_particle_state[i]=p_i
         end

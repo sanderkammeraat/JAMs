@@ -25,18 +25,16 @@ system =System(sizes, initial_particle_state,initial_field_state,external_forces
 end
 
 #check integration
-Euler_integrator(system, 0.1, 100000, 1e4,10,120,[plot_disks!]);
+Euler_integrator(system, 0.1,1,Tplot=10,fps=120, plot_functions=[plot_disks!]);
 
 #Run integration
 function runsim(system)
-    Euler_integrator(system, 0.1, 1, 1e4)#,10,120,[plot_disks!]);
+    Euler_integrator(system, 0.1, 1)
 end
 
 runsim(system);
 
 @time runsim(system);
-
-@report_opt runsim(system);
 
 @profview runsim(system);
 

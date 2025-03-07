@@ -14,10 +14,17 @@ function save_2d_polar_p!(file, current_particle_state, current_field_state, n, 
 
     file[preamble*"type"] = [p_i.type for p_i in current_particle_state]
 
+    file[preamble*"v0"] = [p_i.v0 for p_i in current_particle_state]
+
+    file[preamble*"Dr"] = [p_i.Dr for p_i in current_particle_state]
+
     file[preamble*"structtype"] = [string(nameof(typeof(p_i))) for p_i in current_particle_state]
 
     file[preamble*"x"] = [p_i.x[1] for p_i in current_particle_state]
     file[preamble*"y"] = [p_i.x[2] for p_i in current_particle_state]
+
+    file[preamble*"xuw"] = [p_i.xuw[1] for p_i in current_particle_state]
+    file[preamble*"yuw"] = [p_i.xuw[2] for p_i in current_particle_state]
 
     file[preamble*"vx"] = [p_i.v[1] for p_i in current_particle_state]
     file[preamble*"vy"] = [p_i.v[2] for p_i in current_particle_state]
@@ -46,10 +53,17 @@ function save_2d_polar_θ!(file, current_particle_state, current_field_state, n,
 
     file[preamble*"type"] = [p_i.type for p_i in current_particle_state]
 
+    file[preamble*"v0"] = [p_i.v0 for p_i in current_particle_state]
+
+    file[preamble*"Dr"] = [p_i.Dr for p_i in current_particle_state]
+
     file[preamble*"structtype"] = [string(nameof(typeof(p_i))) for p_i in current_particle_state]
 
     file[preamble*"x"] = [p_i.x[1] for p_i in current_particle_state]
     file[preamble*"y"] = [p_i.x[2] for p_i in current_particle_state]
+
+    file[preamble*"xuw"] = [p_i.xuw[1] for p_i in current_particle_state]
+    file[preamble*"yuw"] = [p_i.xuw[2] for p_i in current_particle_state]
 
     file[preamble*"vx"] = [p_i.v[1] for p_i in current_particle_state]
     file[preamble*"vy"] = [p_i.v[2] for p_i in current_particle_state]

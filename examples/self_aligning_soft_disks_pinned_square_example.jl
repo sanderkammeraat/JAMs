@@ -18,10 +18,10 @@ function simulation()
     poly=1e-4
     Rs = rand(Uniform(1-poly, 1+poly),N)
 
-    display(X)
-    display(Y)
+    #display(X)
+    #display(Y)
 
-    initial_state = PolarParticle3d[ PolarParticle3d(i,1, 1, 1, Rs[i], 0.02, 0.001, [X[i] , Y[i],0],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i in eachindex(X) ];
+    initial_state = PolarParticle3d[ PolarParticle3d(i,1, 1, 1, Rs[i], 0.02, 0.001, [X[i] , Y[i],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i in eachindex(X) ];
 
     pins  = zeros(length(initial_state),3)
     for i=eachindex(initial_state)
@@ -41,7 +41,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,1e-1, 1e6, 1e5, 5e0, 120,(plot_disks_orientation!, plot_directors!, plot_velocity_vectors!), 2); 
+    sim = Euler_integrator(system,1e-1, 1e6, Tplot=5e0, fps=120, plot_functions=(plot_disks_orientation!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 
 end
@@ -49,4 +49,3 @@ end
 
 sim = simulation()  
 
-make_movie(sim, "/Users/kammeraat/test_JAMS/movies/","square_lattice_v4.mp4",(plot_disks_orientation!, plot_directors!, plot_velocity_vectors!),60,2)

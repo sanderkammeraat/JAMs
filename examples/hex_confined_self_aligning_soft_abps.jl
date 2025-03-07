@@ -70,14 +70,14 @@ function simulation()
 
         if types[i]==1
             
-            push!(initial_state, PolarParticle3d(id, types[i], 1, 1, Rs[i], 0.01, 0.01, [x[i] , y[i],0],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
+            push!(initial_state, PolarParticle3d(id, types[i], 1, 1, Rs[i], 0.01, 0.01, [x[i] , y[i],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
             id+=1
         end
     end
     for i=1:N
 
         if types[i]==2
-            push!(initial_state,ConfinedPolarParticle3d(id,2, 1,1, Rs[i], 0, 0.01, [x[i] , y[i],0],[0,0,0], [0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]))
+            push!(initial_state,ConfinedPolarParticle3d(id,2, 1,1, Rs[i], 0, 0.01, [x[i] , y[i],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]))
             id+=1
         end
     end
@@ -99,24 +99,4 @@ end
 
 
 sim = simulation();
-
-@profview simulation()
-
-JAMs_container = jldopen("/Users/kammeraat/test_JAMS/test_save_8/JAMs_container.jld2","r")
-
-systeml = JAMs_container["system"]
-
-systeml.initial_particle_state.= JAMs_container["final_particle_state"]
-
-Euler_integrator(systeml,5e-2, 5e-2*1e1,Tplot=1e0, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
-
-
-f = jldopen("/Users/kammeraat/test_JAMS/test_save_9/raw_data.jld2","r")
-
-
-f["system"]
-
-@time simulation();
-
-make_snapshot(sim, "/Users/kammeraat/test_JAMS/snapshots/","confined_self_align_soft_abps.png",(plot_disks_vx!,plot_directors!, plot_velocity_vectors!),length(sim.tsax),2)
 

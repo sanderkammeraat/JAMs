@@ -12,11 +12,11 @@ function simulation()
     L=10
     v0 =  0.3
     Dr=0.001
-    initial_state = [PolarParticle3d(1,1, 1, 1, 1,v0, Dr, [0 , -1,0],[0,0,0], [0,0,0],[0,0,0],normalize(rand(Normal(0, 1),3)).*[1,1,0],[0,0,0],[0,0,0])];
+    initial_state = [PolarParticle3d(1,1, 1, 1, 1,v0, Dr, [0 , -1,0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize(rand(Normal(0, 1),3)).*[1,1,0],[0,0,0],[0,0,0])];
 
     for i in 2:N
         
-        push!(initial_state, PolarParticle3d(2,2, 1, 1, 1,v0, Dr, [0 , -2*i+1,0],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
+        push!(initial_state, PolarParticle3d(2,2, 1, 1, 1,v0, Dr, [0 , -2*i+1,0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
         print(-2*i+1)
     end
 
@@ -31,7 +31,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,1e-2, 1e5, 1e10, 5e1, 120,(plot_sized_points!, plot_directors!, plot_velocity_vectors!),2); 
+    sim = Euler_integrator(system,1e-2, 1e5, Tplot=5e1, fps=120,plot_functions=(plot_sized_points!, plot_directors!, plot_velocity_vectors!),plotdim=2); 
     return sim
 
 end

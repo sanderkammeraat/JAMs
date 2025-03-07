@@ -28,7 +28,7 @@ function simulation()
             
             id+=1
 
-            push!(initial_state,PolarParticle3d(id,1,1,1,1,0.01,0.01,[x[i],y[j],0],[0,0,0],[0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) )
+            push!(initial_state,PolarParticle3d(id,1,1,1,1,0.01,0.01,[x[i],y[j],0],[0.,0.,0.],[0,0,0],[0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) )
 
         end
 
@@ -62,7 +62,7 @@ function simulation()
     end
 
 
-    display(k_network)
+    #display(k_network)
 
     pair_forces = [spring_network_2d_force(1,lx, k_network)]
 
@@ -74,7 +74,7 @@ function simulation()
 
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, true,10.);
 
-    sim = Euler_integrator(system,1e-2, 1e5, 1e10, 5e1, 120,(plot_disks_vx!, plot_directors!, plot_velocity_vectors!), 2); 
+    sim = Euler_integrator(system,1e-2, 1e5, Tplot=5e1, fps=120, plot_functions=(plot_disks_vx!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
 end
 
 
