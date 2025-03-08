@@ -1,5 +1,4 @@
-include("../src/Engine.jl")
-using Random, Distributions
+include(joinpath("..","src","Engine.jl"))
 
 function simulation()
 

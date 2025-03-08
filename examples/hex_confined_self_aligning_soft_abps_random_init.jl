@@ -1,4 +1,4 @@
-include("../src/Engine.jl")
+include(joinpath("..","src","Engine.jl"))
 
 function simulation()
 
@@ -83,13 +83,13 @@ function simulation()
     end
 
 
-    size = [Nrows*l+2*l,Nrows*l+2*l,1];
+    sizes = [Nrows*l+2*l,Nrows*l+2*l,1];
     initial_field_state=[]
     field_forces = []
     field_updaters = []
 
 
-    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,2.5);
+    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,2.5);
 
     #Run integration
     sim = Euler_integrator(system,5e-2, 1e6,Tplot=1e1, fps=120,plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 

@@ -3,7 +3,6 @@ using Observables
 using JLD2
 using CodecZlib
 using ProgressMeter
-using DataFrames
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
 include("Particles.jl")
@@ -50,8 +49,8 @@ end
     return field_indices
 
 end
-
-@views function minimal_image_difference!(dx,xi, xj, system_sizes, system_Periodic)
+#dx is assumed to be pre-allocated
+function minimal_image_difference!(dx,xi, xj, system_sizes, system_Periodic)
 
     
     for n in eachindex(xi)
@@ -120,7 +119,6 @@ struct System{T1,T2, T3, T4, T5, T6, T7, T8}
 
     #Global cutoff for pairwise interactions
     rcut_pair_global::Float64
-
 end
 #Output formatter to conveniently chain simulations in one .jl file without the need of intermediate saving to disk
 struct SIM{T1, T2, T3, T4}
@@ -495,13 +493,19 @@ function construct_cell_lists!(system)
 
     Lx = system.sizes[1]
     Ly = system.sizes[2]
-    x_bin_centers = [-1e8]
+    #First and last bin center should be far outside the simulation box so a particle is never associated in a ghost cell
+    #via the minimal_image_closest_bin_center function. Note that system spans from -Li/2 to Li/2 so -Li should be
+    #safely outside reach both when using periodic boundary conditions
+    #or when using a finite system, because particle outside box will raise and error and  abort program
+    #In case system size is entered as Int64, without FLoat64 in front, the array will be typed as Int64,
+    # not allowing appending the  float values in the next line. Therefore declare type as Float64[].
+    x_bin_centers = Float64[-Lx]
     x_bin_centers = append!(x_bin_centers,range(start=-Lx/2, stop=Lx/2, step=lbin).+lbin/2)
-    x_bin_centers = append!(x_bin_centers,1e8)
+    x_bin_centers = append!(x_bin_centers,Lx)
 
-    y_bin_centers = [-1e8]
+    y_bin_centers = Float64[-Ly]
     y_bin_centers = append!(y_bin_centers,range(start=-Ly/2, stop=Ly/2, step=lbin).+lbin/2)
-    y_bin_centers = append!(y_bin_centers,1e8)
+    y_bin_centers = append!(y_bin_centers,Ly)
     nx = length(x_bin_centers)
     ny = length(y_bin_centers)
     if dim==2
@@ -523,9 +527,9 @@ function construct_cell_lists!(system)
 
     elseif dim==3
         Lz = system.sizes[3]
-        z_bin_centers = [-1e8]
+        z_bin_centers = Float64[-Lz]
         z_bin_centers = append!(z_bin_centers,range(start=-Lz/2, stop=Lz/2, step=lbin).+lbin/2)
-        z_bin_centers = append!(z_bin_centers,1e8)
+        z_bin_centers = append!(z_bin_centers,Lz)
         nz = length(z_bin_centers)
         cell_bin_centers = [x_bin_centers, y_bin_centers, z_bin_centers]
 
