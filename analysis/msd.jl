@@ -1,24 +1,22 @@
-include("../src/Engine.jl")
+include(joinpath("..","src","Engine.jl"))
 
 
-file_path = "/Users/kammeraat/test_JAMS/savedata/abps_sim_large_long.jld2"
+file_path = "/Users/kammeraat/test_JAMS/msd_analysis/raw_data.jld2"
 
-siml = load_SIM(file_path);
+f = jldopen(file_path, "r")
 
-particle_states = siml.particle_states
 
 #collect positions of particles
-Nt = length(particle_states)
-Np = length(particle_states[1])
+Nt = length(f["frames"])
+Np = length(f["frames"]["1"]["xuw"])
 r = zeros(Nt,Np, 2)
 
-@views for i in eachindex(particle_states)
+@views for frame in eachindex(f["frames"])
 
-    for j in 1:Np
-        r[i,j,:].=particle_states[i][j].xs
+    r[parse(Int, frame),:,1] = f["frames"][frame]["xuw"]
 
+    r[parse(Int, frame),:,2] = f["frames"][frame]["yuw"]
 
-    end
 end
 
 size(r)[1]
@@ -40,11 +38,11 @@ end
 msd = calculate_MSD(r)
 msd[3]
 
+begin
+fig= Figure()
+ax = Axis(fig[1,1],xscale=log10,yscale=log10)
 
-f= Figure()
-ax = Axis(f[1,1],xscale=log10,yscale=log10)
-ylims!(ax,1e0,1e3)
+plot!(ax,range(0,length(msd)-1)*f["integration_info"]["Tsave"]*f["integration_info"]["dt"],msd)
 
-plot!(ax,range(0,length(msd)-1),msd)
-
-display(f)
+display(fig)
+end

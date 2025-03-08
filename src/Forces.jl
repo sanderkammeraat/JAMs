@@ -98,6 +98,8 @@ struct soft_atre_type_force{T1, T2}
     
 end
 
+#Thanks to Julia's indexing system. karray can be a float or a 1-element vector if using only one type: type= 1
+# cf. b=[2] then b[1,1] = 2 or b=2 then also b[1,1]=2. Or karray is 2d array with different stifness between different types
 struct soft_disk_force{T1} <: Force
     ontypes::Union{Int64,Vector{Int64}}
     karray::T1

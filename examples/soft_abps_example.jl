@@ -1,5 +1,4 @@
 include(joinpath("..","src","Engine.jl"))
-
 function simulation()
 
     external_forces = [ABP_2d_propulsion_force(1), ABP_2d_angular_noise(1)]
@@ -16,7 +15,7 @@ function simulation()
     L=sqrt(N*pi/ϕ)
     poly = 15e-2
 
-    initial_state = [ PolarParticle2d(i,1,1,0.3,0.01,rand(Uniform(-L/2, L/2),2),[0,0],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],rand(Uniform(1-poly, 1+poly)),1.,[0.,0.],[0.,0.],[0,0]) for i=1:N];
+    initial_state = [ PolarParticle2d(i,1,1,0.3,0.1,rand(Uniform(-L/2, L/2),2),[0,0],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],rand(Uniform(1-poly, 1+poly)),1.,[0.,0.],[0.,0.],[0,0]) for i=1:N];
 
 
     size = [L,L];
@@ -30,12 +29,15 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system, 0.01,100, Tsave=100, save_functions=[save_2d_polar_θ!], save_folder_path="/Users/kammeraat/test_JAMs/prof/")#, Tplot = 100, fps=120, plot_functions=[plot_disks!]);
+    sim = Euler_integrator(system, 0.01,100, Tsave=nothing, save_functions=[save_2d_polar_θ!], save_folder_path="/Users/kammeraat/test_JAMs/soft_abps/")#, Tplot = 100, fps=120, plot_functions=[plot_disks!]);
     return sim
 end
 
-
 sim = simulation(); 
+
+@profview simulation()
+
+@report_opt simulation()
 
 f = jldopen("/Users/kammeraat/test_JAMS/profiling/raw_data.jld2","r")
 

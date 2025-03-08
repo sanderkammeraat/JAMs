@@ -1,10 +1,11 @@
 
 using StaticArrays
 
-# θ for polar angle in 2d, ω angular velocity
+# θ for polar angle in 2d, ω for angular velocity
 
-# p for polarity vector in 3d, q angular velocity
+# p for polarity vector in 3d, q for time derivative of p
 
+# The type field in the particle definitions must be set in increasing order, starting from 1.
 abstract type Particle end
 
 struct Hexbug<:Particle

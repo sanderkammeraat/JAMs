@@ -36,13 +36,17 @@ field_updaters = []
 # Using rand(Uniform(-L/2,L/2), 2) we get two random numbers in a vector of size 2
 # Using rand(Uniform(-pi, pi)) we get a random angle for the director. Note that we put this between [] to allow it to be changed by the dof evolver
 # (fields to a struct are inmmutable, but if the field is an array, the elements in the array can be changed)
+
 # Note that the unwrapped coordinates in xuw are set automatically, so we can set them to 0. JAMs automatically sets the initial unwrapped coordinates equal to the initial wrapped coordinates
+# The type in a particle struct allows forces to act on a subset of particles.
+# !! For as single particle type, type=1 must be used. If multiple types, start from 1 and use the next integer for a new type (e.g. 1 2 3 etc. and not 1 3 4) !!
+
 Dr = 0.01
 v0 = 0.3
 initial_particle_state = [ PolarParticle2d(i,1,1,v0,Dr,rand(Uniform(-L/2,L/2), 2),[0,0],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],r,1.,[0.,0.],[0.,0.],[0,0]) for i=1:N]
 
 #Now set up the particle forces 
-# The forces take in a type (Int64 or array of Int64 if on multiple particles) determining on what type of particles the force should act
+# The forces take in a type (Int64 or array of Int64 if on multiple particle types) determining on what type of particles the force should act on.
 # Note that we categorize noise as a force.
 external_forces = [ABP_2d_propulsion_force(1), ABP_2d_angular_noise(1)]
 
@@ -54,7 +58,7 @@ pair_forces = [soft_disk_force(1,1)]
 dofevolvers =  [overdamped_evolver!]
 
 
-# Let's make the system periodic (note the uncapitalized first letter)
+# Let's make the system periodic (note the uncapitalized first letter on the bool in Julia)
 Periodic= true
 
 # And set the cell lists cut off radius to be 2.5 times the radius of the particles
