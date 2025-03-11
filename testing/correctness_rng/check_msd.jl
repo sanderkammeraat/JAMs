@@ -1,4 +1,4 @@
-include(joinpath("..","src","Engine.jl"))
+include(joinpath(pwd(),"src","Engine.jl"))
 
 #Assuming that this folder contains an abp simulation
 folder_path = joinpath(pwd(), "testing", "correctness_rng")

@@ -40,9 +40,9 @@ save_folder_paths = []
 
 for (i, seed) in pairs(seeds)
 
-    save_folder_path_i = joinpath(pwd(),"testing","setting_seeds/","t_"*string(Threads.nthreads())*"_i_"*string(i))
+    save_folder_path_i = joinpath(pwd(),"testing","setting_seeds","t_"*string(Threads.nthreads())*"_i_"*string(i))
 
-    simulation(seed,save_folder_path_i*"/"); 
+    simulation(seed,save_folder_path_i); 
 
     push!(save_folder_paths,save_folder_path_i)
 
@@ -51,9 +51,7 @@ end
 xs = zeros(length(seeds))
 for (i, save_folder_path) in pairs(save_folder_paths)
 
-    file = jldopen(save_folder_path*"/raw_data.jld2", "r")
-
-    push!(seedsl, file["integration_info"]["master_seed"])
+    file = jldopen(joinpath(save_folder_path,"raw_data.jld2"), "r")
     xs[i] = file["frames"]["10"]["x"][4]
 end
 
@@ -64,17 +62,17 @@ end
 
 @assert xs[1]==xs[4]==xs[7]
 
-print(seedsl)
 
 end
 
+#Rerun previous code block with 4 threads and then run the 
+
 x1s = zeros(length(seeds))
 x4s = zeros(length(seeds))
-seedsl = []
 for (i, save_folder_path) in pairs(seeds)
 
-    file_t1 = jldopen(joinpath(pwd(),"testing","setting_seeds/","t_"*"1"*"_i_"*string(i))*"/raw_data.jld2", "r")
-    file_t4 = jldopen(joinpath(pwd(),"testing","setting_seeds/","t_"*"4"*"_i_"*string(i))*"/raw_data.jld2", "r")
+    file_t1 = jldopen(joinpath(pwd(),"testing","setting_seeds","t_"*"1"*"_i_"*string(i),"raw_data.jld2"), "r")
+    file_t4 = jldopen(joinpath(pwd(),"testing","setting_seeds","t_"*"4"*"_i_"*string(i),"raw_data.jld2"), "r")
 
     x1s[i] = file_t1["frames"]["10"]["x"][4]
 
@@ -92,18 +90,18 @@ print(x4s)
 
 #Test seed=nothing reproducibility
 
-f3 = jldopen(joinpath(pwd(),"testing","setting_seeds/","t_"*"1"*"_i_"*string(3))*"/raw_data.jld2", "r")
+f3 = jldopen(joinpath(pwd(),"testing","setting_seeds","t_"*"1"*"_i_"*string(3),"raw_data.jld2"), "r")
 seed_rep = f3["integration_info"]["master_seed"]
 
-seed_rep_jl = jldopen(joinpath(pwd(),"testing","setting_seeds/","t_"*"1"*"_i_"*string(3))*"/JAMs_container.jld2", "r")["integration_info"]["master_seed"]
+seed_rep_jl = jldopen(joinpath(pwd(),"testing","setting_seeds","t_"*"1"*"_i_"*string(3),"JAMs_container.jld2"), "r")["integration_info"]["master_seed"]
 
 @assert seed_rep == seed_rep_jl
 
-save_folder_path_3 = joinpath(pwd(),"testing","setting_seeds/","c_"*"1"*"_i_"*string(3))
+save_folder_path_3 = joinpath(pwd(),"testing","setting_seeds","c_"*"1"*"_i_"*string(3))
 
-simulation(seed_rep,save_folder_path_3*"/"); 
+simulation(seed_rep,save_folder_path_3); 
 
-c3 = jldopen(save_folder_path_3*"/raw_data.jld2","r")
+c3 = jldopen(joinpath(save_folder_path_3,"raw_data.jld2"),"r")
 
 
 f3["frames"]["10"]["x"][4]
