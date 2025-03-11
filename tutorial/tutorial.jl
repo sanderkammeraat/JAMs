@@ -88,7 +88,7 @@ Tsave = 10 # Save every 10 dt steps
 save_functions=[save_2d_polar_θ!]
 
 #Also, we need to set a save_folder_path. It should end with a slash and  if the directory does not exist, it will automatically be created
-save_folder_path = "/Users/kammeraat/JAMs_tutorial/"
+save_folder_path = pwd()
 
 # If we also want to plot in realtime the system, we need to supply even more optional arguments:
 
@@ -102,7 +102,7 @@ sim = Euler_integrator(system, 0.1, 100, Tsave=Tsave, save_functions=save_functi
 ############### LOADING data
 # The save folder should now contain two files. One is a JAMs_container. Loading it in Julia returns the Julia objects.
 # Let's load it (read-only mode "r")
-JAMs_container = jldopen(save_folder_path*"JAMs_container.jld2","r")
+JAMs_container = jldopen(joinpath(save_folder_path, "JAMs_container.jld2"),"r")
 
 #We can get the system struct from it (note that system includes the initial state)  by using:
 loaded_system = JAMs_container["system"]
@@ -113,7 +113,7 @@ final_particle_state = JAMs_container["final_particle_state"]
 
 #The data collected by the save_functions is stored in another file: raw_data.jld2. Which is also readable in e.g. python as it adheres to the hdf5 standard.
 
-raw_data = jldopen(save_folder_path*"raw_data.jld2","r")
+raw_data = jldopen(joinpath(save_folder_path, "raw_data.jld2"),"r")
 
 # As an example, let's get the x-coordinates of the particles in stored frame number 20. These coordinates are wrapped. 
 x_20 = raw_data["frames"]["20"]["x"]
@@ -132,24 +132,3 @@ soft_disk_stiffness = raw_data["system"]["forces"]["pair_forces"]["soft_disk_for
 #Note that by current design, Dr and v0 are saved per particle
 v0s = raw_data["frames"]["1"]["v0"]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-s

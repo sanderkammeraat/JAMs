@@ -6,6 +6,7 @@
 #Besides the standard packages,
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 
 #we will need the following python package to load in hdf5 files, which in our case just happens to have a .jld2  file extension.
@@ -14,7 +15,7 @@ import h5py
 #%%
 
 #Let's load in the file
-raw_data = h5py.File("/Users/kammeraat/JAMs_tutorial/raw_data.jld2")
+raw_data = h5py.File(os.path.join(os.getcwd(), "raw_data.jld2"))
 
 
 #And show what it contains
