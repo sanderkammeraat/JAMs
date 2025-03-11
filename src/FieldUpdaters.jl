@@ -14,7 +14,7 @@ struct EdgeSet<:FieldUpdater
 
 end
 
-function contribute_field_update!(field_i, t, dt, field_updater::PeriodicDiffusion)
+function contribute_field_update!(field_i, t, dt, field_updater::PeriodicDiffusion, rngs_fields)
  
     if field_i.type in field_updater.ontypes
     Cp0 = circshift(field_i.C, (1,0))
@@ -29,7 +29,7 @@ end
 
 
 
-function contribute_field_update!(field_i, t, dt, field_updater::EdgeSet)
+function contribute_field_update!(field_i, t, dt, field_updater::EdgeSet, rngs_fields)
 
     if field_i.type in field_updater.ontypes
     field_i.C[1,:].= field_updater.Cset

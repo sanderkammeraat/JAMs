@@ -1,4 +1,4 @@
-include(joinpath("..","src","Engine.jl"))
+include(joinpath(pwd(),"src","Engine.jl"))
 function simulation(seed,save_folder_path)
 
     external_forces = [ABP_2d_propulsion_force(1), ABP_2d_angular_noise(1)]
@@ -29,20 +29,86 @@ function simulation(seed,save_folder_path)
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system, 0.01,100,seed=seed,Tsave=100,save_functions=[save_2d_polar_θ!], save_folder_path=save_folder_path)#, Tplot = 100, fps=120, plot_functions=[plot_disks!]);
+    sim = Euler_integrator(system, 0.01,20,seed=seed,Tsave=100,save_functions=[save_2d_polar_θ!], save_folder_path=save_folder_path)#, Tplot = 100, fps=120, plot_functions=[plot_disks!]);
     return sim
 end
 #
-seed=1
-save_folder_path = joinpath(pwd(),"testing","setting_seeds","seed_"*string(seed))
 
-sim = simulation(seed,save_folder_path); 
+begin
+seeds = [1, 2, nothing, 1, 10000, 10000,1]
+save_folder_paths = []
+
+for (i, seed) in pairs(seeds)
+
+    save_folder_path_i = joinpath(pwd(),"testing","setting_seeds/","t_"*string(Threads.nthreads())*"_i_"*string(i))
+
+    simulation(seed,save_folder_path_i*"/"); 
+
+    push!(save_folder_paths,save_folder_path_i)
+
+end
+
+xs = zeros(length(seeds))
+for (i, save_folder_path) in pairs(save_folder_paths)
+
+    file = jldopen(save_folder_path*"/raw_data.jld2", "r")
+
+    push!(seedsl, file["integration_info"]["master_seed"])
+    xs[i] = file["frames"]["10"]["x"][4]
+end
 
 
-#Now load to check 
-f1 = jldopen(joinpath(save_folder_path,"raw_data.jld2"),"r")
+@assert xs[1]!=xs[2]
+
+@assert xs[1]!=xs[3]
+
+@assert xs[1]==xs[4]==xs[7]
+
+print(seedsl)
+
+end
+
+x1s = zeros(length(seeds))
+x4s = zeros(length(seeds))
+seedsl = []
+for (i, save_folder_path) in pairs(seeds)
+
+    file_t1 = jldopen(joinpath(pwd(),"testing","setting_seeds/","t_"*"1"*"_i_"*string(i))*"/raw_data.jld2", "r")
+    file_t4 = jldopen(joinpath(pwd(),"testing","setting_seeds/","t_"*"4"*"_i_"*string(i))*"/raw_data.jld2", "r")
+
+    x1s[i] = file_t1["frames"]["10"]["x"][4]
+
+    x4s[i] = file_t4["frames"]["10"]["x"][4]
+end
+
+@assert x1s[1]==x4s[1]
+
+@assert x1s[2]==x4s[2]
+
+@assert x1s[3]!=x4s[2]
+
+print(x1s)
+print(x4s)
+
+#Test seed=nothing reproducibility
+
+f3 = jldopen(joinpath(pwd(),"testing","setting_seeds/","t_"*"1"*"_i_"*string(3))*"/raw_data.jld2", "r")
+seed_rep = f3["integration_info"]["master_seed"]
+
+seed_rep_jl = jldopen(joinpath(pwd(),"testing","setting_seeds/","t_"*"1"*"_i_"*string(3))*"/JAMs_container.jld2", "r")["integration_info"]["master_seed"]
+
+@assert seed_rep == seed_rep_jl
+
+save_folder_path_3 = joinpath(pwd(),"testing","setting_seeds/","c_"*"1"*"_i_"*string(3))
+
+simulation(seed_rep,save_folder_path_3*"/"); 
+
+c3 = jldopen(save_folder_path_3*"/raw_data.jld2","r")
 
 
-x1 = f1["frames"]["100"]["x"][4]
+f3["frames"]["10"]["x"][4]
+c3["frames"]["10"]["x"][4]
+@assert f3["frames"]["10"]["x"][4] == c3["frames"]["10"]["x"][4]
 
-s1 = f1["integration_info"]["seed"]
+
+

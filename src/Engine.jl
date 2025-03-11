@@ -147,7 +147,7 @@ function save_raw_force_data!(file, preamble, force)
     return file
 end
 
-function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_tax, seed)
+function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_tax, master_seed)
 
     for force in system.external_forces
 
@@ -195,7 +195,7 @@ function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_t
 
     file["integration_info/t_stop"] = t_stop
 
-    file["integration_info/seed"] = seed
+    file["integration_info/master_seed"] = master_seed
 
     return file
 
@@ -215,6 +215,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     # This is because the number of tasks spawn, depend on the number of threads. 
     # For maximum consistency, use a single thread or keep using the same number of threads.
     if !isnothing(seed)
+        master_seed = seed
         Random.seed!(seed)
 
     else
@@ -222,6 +223,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     #Reset seed in case user used a specific seed for initial conditions
         Random.seed!()
         seed = rand(1:100000000000000000000000000000)
+        master_seed = seed
         Random.seed!(seed)
     end
     if !isnothing(Tsave)
@@ -254,7 +256,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
             JAMs_file["integration_info/save_tax"] = save_tax
 
-            JAMs_file["integration_info/seed"] = seed
+            JAMs_file["integration_info/master_seed"] = master_seed
 
             if !isnothing(save_functions)
                 JAMs_file["integration_info/save_functions"] = save_functions
@@ -279,7 +281,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         #Store similar info in raw_data container
         jldopen(save_folder_path*raw_data_file_name,"a+") do raw_data_file
 
-            save_raw_metadata!(raw_data_file, system, integration_tax,dt, t_stop, Tsave,save_tax,seed)
+            save_raw_metadata!(raw_data_file, system, integration_tax,dt, t_stop, Tsave,save_tax,master_seed)
 
         end
    
@@ -300,8 +302,13 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     
 
     current_particle_state = copy(system.initial_particle_state)
-
     current_field_state = copy(system.initial_field_state)
+
+    rngs_fields = [Xoshiro(master_seed+i) for i in eachindex(current_field_state)]
+
+    #Assuming number of fields stay constant
+    rngs_particles = [Xoshiro(length(current_field_state)+master_seed+i) for i in eachindex(current_particle_state)]
+
 
     if !isnothing(plot_functions)
         if fps!=0
@@ -321,7 +328,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         Threads.@threads for i in eachindex(current_particle_state)
             p_i = current_particle_state[i]
             p_i=init_unwrap!(p_i, t)
-            p_i, cells,current_field_state = particle_step!(i,p_i, current_particle_state,current_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils)
+            p_i, cells,current_field_state = particle_step!(i,p_i, current_particle_state,current_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
             current_particle_state[i]=p_i
         end
 
@@ -330,7 +337,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
             field_i = current_field_state[i]
 
-            field_i = field_step!(i, field_i,current_field_state,Nfieldu,t,dt, system)
+            field_i = field_step!(i, field_i,current_field_state,Nfieldu,t,dt, system, rngs_fields)
 
             current_field_state[i] = field_i
         end
@@ -418,18 +425,18 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
     return SIM(current_particle_state, current_field_state,dt, t_stop, system);
 end
-function particle_step!(i,p_i, current_particle_state,current_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils)
+function particle_step!(i,p_i, current_particle_state,current_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
     if Npair>0
-        p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system,cells,stencils)
+        p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system,cells,stencils,rngs_particles)
     end
 
     if Nfield>0
-        p_i, current_field_state = contribute_field_forces!(p_i, current_field_state, t, dt,system)
+        p_i, current_field_state = contribute_field_forces!(p_i, current_field_state, t, dt,system,rngs_particles)
 
     end
 
     for force in system.external_forces
-        p_i=contribute_external_force!(p_i, t, dt, force)
+        p_i=contribute_external_force!(p_i, t, dt, force,rngs_particles)
     end
 
     return p_i,cells, current_field_state
@@ -445,10 +452,10 @@ function check_outside_system(p_i, system_sizes)
 end
 
 #currently not using current_field_state as there are currently no pair interactions betwen fields, but allow for the implementation.
-function field_step!(i, field_i,current_field_state,Nfieldu,t,dt, system)
+function field_step!(i, field_i,current_field_state,Nfieldu,t,dt, system, rngs_fields)
     if Nfieldu>0
         for field_updater in system.field_updaters
-            field_i=contribute_field_update!(field_i, t, dt, field_updater)
+            field_i=contribute_field_update!(field_i, t, dt, field_updater, rngs_fields)
         end
     end
 
@@ -457,7 +464,7 @@ function field_step!(i, field_i,current_field_state,Nfieldu,t,dt, system)
 end
 
 
-function contribute_field_forces!(p_i, current_field_state, t, dt,system)
+function contribute_field_forces!(p_i, current_field_state, t, dt,system, rngs_particles)
     field_indices = @MVector zeros(Int,length(p_i.x))
     
 
@@ -467,7 +474,7 @@ function contribute_field_forces!(p_i, current_field_state, t, dt,system)
             
             field_indices = minimal_image_closest_bin_center!(field_indices, p_i.x, field_j.bin_centers, system.sizes, system.Periodic)
 
-            p_i, current_field_state[j] = contribute_field_force!(p_i, field_j, field_indices, t, dt, force)
+            p_i, current_field_state[j] = contribute_field_force!(p_i, field_j, field_indices, t, dt, force,rngs_particles)
         end
     end
     return p_i, current_field_state
@@ -476,7 +483,7 @@ end
 
 
 
-function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cells,stencils)
+function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cells,stencils,rngs_particles)
     
     dx = @MVector zeros(Float64,length(p_i.x))
     neighbours= get_neighbours(p_i,cells,stencils)
@@ -493,7 +500,7 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cel
                 
                 if dxn<=system.rcut_pair_global
                     for force in system.pair_forces
-                        p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force)
+                        p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force,rngs_particles)
                     end
                 end
 
