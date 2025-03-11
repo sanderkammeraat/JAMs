@@ -122,28 +122,7 @@ struct PolarParticle2d<:Particle
     fpas::MVector{2,Float64}
     ci::MVector{2,Int64}
 end
-struct PolarParticle2dSave<:Particle
-    id::Int64
-    type::Int64
-    m::Float64 #mass, only used icw intertial integrators
-    v0::Float64
-    Dr::Float64
 
-    x::MVector{2,Float64}
-    xuw::MVector{2,Float64}
-    v::MVector{2,Float64}
-    f::MVector{2,Float64} #f->v->r
-
-    θ::MVector{1,Float64}
-    ω::MVector{1,Float64}
-
-    R::Float64
-
-    zeta::Float64 #Friction coefficient, only used icw overdamped integrators
-    fact::MVector{2,Float64}
-    fpas::MVector{2,Float64}
-    ci::MVector{2,Int64}
-end
 
 struct PolarParticle2dN<:Particle
     id::Int64

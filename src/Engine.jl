@@ -147,7 +147,7 @@ function save_raw_force_data!(file, preamble, force)
     return file
 end
 
-function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_tax)
+function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_tax, seed)
 
     for force in system.external_forces
 
@@ -195,17 +195,35 @@ function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_t
 
     file["integration_info/t_stop"] = t_stop
 
+    file["integration_info/seed"] = seed
+
     return file
 
 end
 
 
 
-function Euler_integrator(system, dt, t_stop;  Tsave=nothing, save_functions=nothing, save_folder_path=nothing, Tplot=nothing, fps=nothing, plot_functions=nothing,plotdim=nothing)
+function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_functions=nothing, save_folder_path=nothing, Tplot=nothing, fps=nothing, plot_functions=nothing,plotdim=nothing)
 
 
     integration_tax = 0:dt:t_stop
 
+    #This is really amazing: Julia rng is dependent on the task spawn structure, NOT on the 
+    # parallel executation schedule, see https://julialang.org/blog/2021/11/julia-1.7-highlights/#new_rng_reproducible_rng_in_tasks
+    # for more info, so this makes the program, even with mulitithreading and dynamic thread scheduling reproducible!
+    # !!However, it *does* depend on the number of threads, see https://github.com/JuliaLang/julia/issues/49064 !!
+    # This is because the number of tasks spawn, depend on the number of threads. 
+    # For maximum consistency, use a single thread or keep using the same number of threads.
+    if !isnothing(seed)
+        Random.seed!(seed)
+
+    else
+    #Otherwise generate one for reproducibility
+    #Reset seed in case user used a specific seed for initial conditions
+        Random.seed!()
+        seed = rand(1:100000000000000000000000000000)
+        Random.seed!(seed)
+    end
     if !isnothing(Tsave)
         save_tax = [ integration_tax[n] for n in eachindex(integration_tax) if (n-1)%Tsave==0 ]
 
@@ -236,6 +254,7 @@ function Euler_integrator(system, dt, t_stop;  Tsave=nothing, save_functions=not
 
             JAMs_file["integration_info/save_tax"] = save_tax
 
+            JAMs_file["integration_info/seed"] = seed
 
             if !isnothing(save_functions)
                 JAMs_file["integration_info/save_functions"] = save_functions
@@ -260,7 +279,7 @@ function Euler_integrator(system, dt, t_stop;  Tsave=nothing, save_functions=not
         #Store similar info in raw_data container
         jldopen(save_folder_path*raw_data_file_name,"a+") do raw_data_file
 
-            save_raw_metadata!(raw_data_file, system, integration_tax,dt, t_stop, Tsave,save_tax)
+            save_raw_metadata!(raw_data_file, system, integration_tax,dt, t_stop, Tsave,save_tax,seed)
 
         end
    
@@ -338,17 +357,17 @@ function Euler_integrator(system, dt, t_stop;  Tsave=nothing, save_functions=not
 
         #Only now evolve dofs of every particle
         Threads.@threads for i in eachindex(current_particle_state)
-            p_i = current_particle_state[i]
-            for dofevolver in system.dofevolvers
-                p_i=dofevolver(p_i, t, dt)
-            end
-            if system.Periodic
-                p_i=periodic!(p_i, system.sizes)
-        
-            else
-                check_outside_system(p_i,system.sizes)
-            end
-            current_particle_state[i] = p_i
+                p_i = current_particle_state[i]
+                for dofevolver in system.dofevolvers
+                    p_i=dofevolver(p_i, t, dt)
+                end
+                if system.Periodic
+                    p_i=periodic!(p_i, system.sizes)
+            
+                else
+                    check_outside_system(p_i,system.sizes)
+                end
+                current_particle_state[i] = p_i
         end
 
         #Updating the cell list is not threadsafe, hence put it outside the threaded loop
