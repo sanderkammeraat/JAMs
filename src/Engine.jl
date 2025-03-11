@@ -210,10 +210,8 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
     #This is really amazing: Julia rng is dependent on the task spawn structure, NOT on the 
     # parallel executation schedule, see https://julialang.org/blog/2021/11/julia-1.7-highlights/#new_rng_reproducible_rng_in_tasks
-    # for more info, so this makes the program, even with mulitithreading and dynamic thread scheduling reproducible!
-    # !!However, it *does* depend on the number of threads, see https://github.com/JuliaLang/julia/issues/49064 !!
-    # This is because the number of tasks spawn, depend on the number of threads. 
-    # For maximum consistency, use a single thread or keep using the same number of threads.
+    # for more info, so this makes the program, even with mulitithreading and dynamic thread scheduling reproducible if we create a rng for every particle and field!
+    # See for info https://github.com/JuliaLang/julia/issues/49064 !!
     if !isnothing(seed)
         master_seed = seed
         Random.seed!(seed)
