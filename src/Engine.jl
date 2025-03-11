@@ -217,12 +217,12 @@ function Euler_integrator(system, dt, t_stop;  Tsave=nothing, save_functions=not
         
         raw_data_file_name = "raw_data.jld2"
 
-        if isfile(save_folder_path*JAMs_file_name) || isfile(save_folder_path*raw_data_file_name)
-            error("JAMs: Specified save folder already contains JAMs file(s): " * JAMs_file_name * " and/or " * raw_data_file_name*" . JAMs aborted to prevent overwriting.")
+        if isfile(joinpath(save_folder_path, JAMs_file_name)) || isfile(joinpath(save_folder_path, raw_data_file_name))
+            error("JAMs: Specified save folder already contains JAMs file(s): " * JAMs_file_name * " and/or " * raw_data_file_name*". JAMs aborted to prevent overwriting.")
         end
 
         #Store system and integration info in JAMS container
-        jldopen(save_folder_path*JAMs_file_name,"a+") do JAMs_file
+        jldopen(joinpath(save_folder_path, JAMs_file_name),"a+") do JAMs_file
 
             JAMs_file["system"] = system
 
@@ -258,7 +258,7 @@ function Euler_integrator(system, dt, t_stop;  Tsave=nothing, save_functions=not
 
         end
         #Store similar info in raw_data container
-        jldopen(save_folder_path*raw_data_file_name,"a+") do raw_data_file
+        jldopen(joinpath(save_folder_path, raw_data_file_name),"a+") do raw_data_file
 
             save_raw_metadata!(raw_data_file, system, integration_tax,dt, t_stop, Tsave,save_tax)
 
@@ -321,7 +321,7 @@ function Euler_integrator(system, dt, t_stop;  Tsave=nothing, save_functions=not
                 
 
 
-                jldopen(save_folder_path*raw_data_file_name,"a+") do raw_data_file
+                jldopen(joinpath(save_folder_path, raw_data_file_name),"a+") do raw_data_file
 
             
                     for save_function in save_functions
@@ -388,7 +388,7 @@ function Euler_integrator(system, dt, t_stop;  Tsave=nothing, save_functions=not
     end
 
     if !isnothing(Tsave)
-        jldopen(save_folder_path*JAMs_file_name,"a+") do JAMs_file
+        jldopen(joinpath(save_folder_path, JAMs_file_name),"a+") do JAMs_file
 
             JAMs_file["final_particle_state"] = current_particle_state
 
