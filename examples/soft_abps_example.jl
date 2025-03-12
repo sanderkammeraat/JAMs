@@ -10,7 +10,7 @@ function simulation()
     dofevolvers =  [overdamped_evolver!]
 
     #Initialize state
-    N=1000
+    N=10000
     ϕ = 0.9
     L=sqrt(N*pi/ϕ)
     poly = 15e-2
@@ -29,7 +29,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system, 0.01,1e4, Tplot = 100, fps=120, plot_functions=[plot_disks!]);
+    sim = Euler_integrator(system, 0.01,100, Tplot = 100, fps=120, plot_functions=[plot_disks!]);
     return sim
 end
 #
