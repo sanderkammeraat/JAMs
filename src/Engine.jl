@@ -311,8 +311,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     #Assuming number of fields stay constant
     rngs_particles = [Xoshiro(length(current_field_state)+master_seed+i) for i in eachindex(current_particle_state)]
 
-
-    if !isnothing(plot_functions)
+    if !isnothing(Tplot)
         if fps!=0
             cpsO = Observable(current_particle_state)
             cfsO = Observable(current_field_state)
@@ -406,7 +405,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         cells = update_ghost_cells!(cells,system)
 
         
-        if !isnothing(plot_functions)
+        if !isnothing(Tplot)
             if fps!=0
                 if (n-1)%Tplot==0
                     cpsO[] = current_particle_state
