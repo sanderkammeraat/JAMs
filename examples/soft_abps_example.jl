@@ -11,12 +11,12 @@ function simulation()
 
     #Initialize state
     N=10000
-    ϕ = 0.9
+    ϕ = 0.8
     L=sqrt(N*pi/ϕ)
     poly = 15e-2
     seed = 1
     Random.seed!(seed)
-    initial_state = [ PolarParticle2d(i,1,1,0.3,0.1,rand(Uniform(-L/2, L/2),2),[0,0],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],rand(Uniform(1-poly, 1+poly)),1.,[0.,0.],[0.,0.],[0,0]) for i=1:N];
+    initial_state = [ PolarParticle2d(i,1,1,0.3,0.01,rand(Uniform(-L/2, L/2),2),[0,0],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],rand(Uniform(1-poly, 1+poly)),1.,[0.,0.],[0.,0.],[0,0]) for i=1:N];
 
     size = [L,L];
     initial_field_state=[]
@@ -29,7 +29,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system, 0.01,100, Tplot = 100, fps=120, plot_functions=[plot_disks!]);
+    sim = Euler_integrator(system, 0.01,100, seed=2, Tplot = 100, fps=120, plot_functions=[plot_disks!, plot_directors!, plot_velocity_vectors!]);
     return sim
 end
 #

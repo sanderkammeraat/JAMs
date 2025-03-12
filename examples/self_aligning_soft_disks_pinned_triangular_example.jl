@@ -34,6 +34,7 @@ function simulation()
 
 
     N = length(X)
+    print(N)
     poly=1e-4
     Rs = rand(Uniform(1-poly, 1+poly),N)
 

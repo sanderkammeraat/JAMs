@@ -66,15 +66,15 @@ function simulation()
 
     pair_forces = [spring_network_2d_force(1,lx, k_network)]
 
-    sizes = [3*findmax(x)[1],3*findmax(y)[1],2];
+    sizes = [3*findmax(x)[1],3*findmax(y)[1],1.];
     initial_field_state=[]
     field_forces = []
     field_updaters = []
 
 
-    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, true,10.);
+    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, true,2.);
 
-    sim = Euler_integrator(system,1e-2, 1e5, Tplot=5e1, fps=120, plot_functions=(plot_disks_vx!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-2, 1e5, Tplot=5e1, fps=120, plot_functions=(plot_disks_orientation!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
 end
 
 

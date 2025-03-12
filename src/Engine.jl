@@ -39,12 +39,12 @@ end
 
 @views function minimal_image_closest_bin_center!(field_indices,x, bin_centers,system_sizes,system_Periodic)
 
-    d = @MVector zeros(length(x))
     for (i, xi) in pairs(x)
-        
-        d= abs.( bin_centers[i].- x[i])
-        field_indices[i] = argmin(d)
-        
+
+        di = abs.( bin_centers[i].- x[i])
+        field_indices[i] = argmin(di)
+
+   
     end
     return field_indices
 
@@ -326,11 +326,21 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         Threads.@threads for i in eachindex(current_particle_state)
             p_i = current_particle_state[i]
             p_i=init_unwrap!(p_i, t)
-            p_i, cells,current_field_state = particle_step!(i,p_i, current_particle_state,current_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
+            p_i = particle_step!(i,p_i, current_particle_state,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
             current_particle_state[i]=p_i
         end
 
-        #Field loop
+
+        #Threadsafe field forces
+        if Nfield>0
+            for i in eachindex(current_particle_state)
+                p_i = current_particle_state[i]
+                p_i, current_field_state = contribute_field_forces!(p_i, current_field_state, t, dt,system,rngs_particles)
+                current_particle_state[i]=p_i
+            end
+        end
+
+        #Field update loop
         for i in eachindex(current_field_state)
 
             field_i = current_field_state[i]
@@ -362,27 +372,21 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
         #Only now evolve dofs of every particle
         Threads.@threads for i in eachindex(current_particle_state)
-                p_i = current_particle_state[i]
-                for dofevolver in system.dofevolvers
-                    p_i=dofevolver(p_i, t, dt)
-                end
-                if system.Periodic
-                    p_i=periodic!(p_i, system.sizes)
-            
-                else
-                    check_outside_system(p_i,system.sizes)
-                end
-                current_particle_state[i] = p_i
-        end
-
-        #Updating the cell list is not threadsafe, hence put it outside the threaded loop
-        for i in eachindex(current_particle_state)
-
             p_i = current_particle_state[i]
-            p_i, cells=update_cells!(p_i, cells, cell_bin_centers, stencils,system)
-            current_particle_state[i]=p_i
+            for dofevolver in system.dofevolvers
+                p_i=dofevolver(p_i, t, dt)
+            end
+            if system.Periodic
+                p_i=periodic!(p_i, system.sizes)
+        
+            else
+                check_outside_system(p_i,system.sizes)
+            end
+            current_particle_state[i] = p_i
         end
 
+
+        current_particle_state,cells = update_cells!(current_particle_state, cells, cell_bin_centers,system)
 
         #DOF evolver fields
         for i in eachindex(current_field_state)
@@ -423,21 +427,16 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
     return SIM(current_particle_state, current_field_state,dt, t_stop, system);
 end
-function particle_step!(i,p_i, current_particle_state,current_field_state,Npair, Nfield,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
+function particle_step!(i,p_i, current_particle_state,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
     if Npair>0
         p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system,cells,stencils,rngs_particles)
-    end
-
-    if Nfield>0
-        p_i, current_field_state = contribute_field_forces!(p_i, current_field_state, t, dt,system,rngs_particles)
-
     end
 
     for force in system.external_forces
         p_i=contribute_external_force!(p_i, t, dt, force,rngs_particles)
     end
 
-    return p_i,cells, current_field_state
+    return p_i
 end
 
 function check_outside_system(p_i, system_sizes)
@@ -523,13 +522,14 @@ function construct_cell_lists!(system)
     #or when using a finite system, because particle outside box will raise and error and  abort program
     #In case system size is entered as Int64, without FLoat64 in front, the array will be typed as Int64,
     # not allowing appending the  float values in the next line. Therefore declare type as Float64[].
-    x_bin_centers = Float64[-Lx]
+    # +lbin incase lbin is larger than one of the system sizes
+    x_bin_centers = Float64[-Lx-lbin]
     x_bin_centers = append!(x_bin_centers,range(start=-Lx/2, stop=Lx/2, step=lbin).+lbin/2)
-    x_bin_centers = append!(x_bin_centers,Lx)
+    x_bin_centers = append!(x_bin_centers,Lx+lbin)
 
-    y_bin_centers = Float64[-Ly]
+    y_bin_centers = Float64[-Ly-lbin]
     y_bin_centers = append!(y_bin_centers,range(start=-Ly/2, stop=Ly/2, step=lbin).+lbin/2)
-    y_bin_centers = append!(y_bin_centers,Ly)
+    y_bin_centers = append!(y_bin_centers,Ly+lbin)
     nx = length(x_bin_centers)
     ny = length(y_bin_centers)
     if dim==2
@@ -551,9 +551,9 @@ function construct_cell_lists!(system)
 
     elseif dim==3
         Lz = system.sizes[3]
-        z_bin_centers = Float64[-Lz]
+        z_bin_centers = Float64[-Lz-lbin]
         z_bin_centers = append!(z_bin_centers,range(start=-Lz/2, stop=Lz/2, step=lbin).+lbin/2)
-        z_bin_centers = append!(z_bin_centers,Lz)
+        z_bin_centers = append!(z_bin_centers,Lz+lbin)
         nz = length(z_bin_centers)
         cell_bin_centers = [x_bin_centers, y_bin_centers, z_bin_centers]
 
@@ -562,6 +562,7 @@ function construct_cell_lists!(system)
 
             cell_indices=@MVector zeros(Int,length(p_i.x))
             cell_indices = minimal_image_closest_bin_center!(cell_indices,p_i.x, cell_bin_centers,system.sizes,system.Periodic)
+            
 
             #push!(Int64[id for id in  cells[cell_indices][1]]))
             cells[cell_indices...]= append!(cells[cell_indices...],p_i.id)
@@ -571,6 +572,7 @@ function construct_cell_lists!(system)
         stencils = [ @SVector [ni, nj, nk] for ni in -1:1 for nj in -1:1 for nk in -1:1]
     end
     @views cells = update_ghost_cells!(cells,system)
+
     return system, cells, cell_bin_centers, stencils
 end
 
@@ -615,22 +617,49 @@ function get_neighbours(p_i, cells, stencils)
     return neighbours
 end
 
-@views function update_cells!(p_i, cells, cell_bin_centers, stencils,system)
-    new_bin_location=@MVector zeros(Int,length(p_i.x))
-    new_bin_location= minimal_image_closest_bin_center!(new_bin_location,p_i.x, cell_bin_centers,system.sizes,system.Periodic)
-    if p_i.id in cells[new_bin_location...]
-    else
-        #find which ghost cell direction needs to be changed
 
-        #remove
-        filter!(e->e≠p_i.id,cells[p_i.ci...])
-        #add to correct lists
-        p_i.ci.= new_bin_location
+function find_new_bin_locations(current_particle_state, cell_bin_centers,system)
 
-        push!(cells[new_bin_location...],p_i.id)
+    #Collect old locations to preallocate for new one
+    new_bin_locations = [ copy(p_i.ci) for p_i in current_particle_state]
+
+
+    #Find new locations in parallel
+    Threads.@threads for i in eachindex(current_particle_state)
+        p_i = current_particle_state[i]
+        minimal_image_closest_bin_center!(new_bin_locations[i],p_i.x, cell_bin_centers,system.sizes,system.Periodic)
+
     end
-    return p_i,cells
+
+    return new_bin_locations
+
 end
+
+function update_cells!(current_particle_state, cells, cell_bin_centers,system)
+
+    new_bin_locations=find_new_bin_locations(current_particle_state, cell_bin_centers,system)
+
+    #Updating the cell list is not threadsafe, hence put it outside the threaded loop
+    #The cell list update must come *after* the DOF evolving of particles!
+    for i in eachindex(current_particle_state)
+
+        p_i = current_particle_state[i]
+        new_bin_location = new_bin_locations[i]
+        if p_i.id in cells[new_bin_location...]
+        else
+            #remove
+            filter!(e->e≠p_i.id,cells[p_i.ci...])
+            #add to correct lists
+            p_i.ci.= new_bin_location
+
+            push!(cells[new_bin_location...],p_i.id)
+        end
+        current_particle_state[i] = p_i
+    end
+    return current_particle_state,cells
+end
+
+
 
 @views function update_ghost_cells!(cells,system)
     

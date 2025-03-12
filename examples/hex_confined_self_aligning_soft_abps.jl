@@ -92,11 +92,13 @@ function simulation()
     system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,2.5);
 
     #Run integration
-    sim = Euler_integrator(system,5e-2, 5e-2*1e3,Tsave=nothing, save_functions = [save_2d_polar_p!],save_folder_path="/Users/kammeraat/test_JAMS/test_save_12/",Tplot=1e0, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,5e-2, 5e-2*1e5,Tsave=nothing, save_functions = [save_2d_polar_p!],save_folder_path="/Users/kammeraat/test_JAMS/test_save_12/",Tplot=1e0, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 
 end
 
 
 sim = simulation();
+
+@profview simulation()
 
