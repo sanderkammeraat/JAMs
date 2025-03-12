@@ -10,7 +10,11 @@ include("Fields.jl")
 include("Forces.jl")
 include("DOFevolvers.jl")
 include("FieldUpdaters.jl")
-include("LivePlottingFunctions.jl")
+try # using try-catch to avoid error when there is not DISPLAY
+    include("LivePlottingFunctions.jl")
+catch LoadError
+    @warn "Cannot load \"LivePlottingFunctions.jl\"."
+end
 include("SaveFunctions.jl")
 
 @views function periodic!(p_i, systemsizes)
