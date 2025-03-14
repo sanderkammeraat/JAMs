@@ -342,7 +342,7 @@ function make_movie(SIM, folder_path, file_name, plot_functions, fps,plotdim=not
 
     fig, ax = setup_system_plotting(SIM.system.sizes,plot_functions,plotdim ,cpsO,cfsO,tO,(500,500))
     
-    record(fig, folder_path*file_name, t_indices; framerate=fps, compression=30) do t_index 
+    record(fig, joinpath(folder_path,file_name), t_indices; framerate=fps, compression=30) do t_index 
         cpsO[] = SIM.particle_states[t_index]
         cfsO[] = SIM.field_states[t_index]
         tO[] = SIM.tsax[t_index]
@@ -365,7 +365,7 @@ function make_snapshot(SIM, folder_path, file_name, plot_functions, frame_index,
 
     fig, ax = setup_system_plotting(SIM.system.sizes,plot_functions,plotdim ,cpsO,cfsO,tO,(1000,1000))
 
-    file_path = folder_path*file_name
+    file_path = joinpath(folder_path,file_name)
 
     save(file_path,fig)
 

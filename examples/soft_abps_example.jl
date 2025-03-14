@@ -11,7 +11,7 @@ function simulation()
 
     #Initialize state
     N=10000
-    ϕ = 0.8
+    ϕ = 0.9
     L=sqrt(N*pi/ϕ)
     poly = 15e-2
     seed = 1
@@ -29,7 +29,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system, 0.01,100, seed=2, Tplot = 100, fps=120, plot_functions=[plot_disks!, plot_directors!, plot_velocity_vectors!]);
+    sim = Euler_integrator(system, 0.1,1e8, seed=2, Tsave = nothing, save_folder_path=joinpath(pwd(), "prof_soft_abps"), save_functions=[save_2d_polar_θ!],Tplot = 10000, fps=120, plot_functions=[plot_disks!, plot_directors!, plot_velocity_vectors!]);
     return sim
 end
 #

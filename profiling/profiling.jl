@@ -5,12 +5,10 @@ external_forces =  (ABP_2d_propulsion_force(1), ABP_2d_angular_noise(1))
 
 pair_forces = [soft_disk_force(1,1)]
 
-
-
 dofevolvers = [overdamped_evolver!]
 
 #Initialize state
-N=1000
+N=10000
 ϕ = 0.9
 L=sqrt(N*pi/ϕ)
 seed = 33
@@ -30,7 +28,7 @@ Euler_integrator(system, 0.1,1,seed=33,Tplot=10,fps=120, plot_functions=[plot_di
 
 #Run integration
 function runsim(system)
-    Euler_integrator(system, 0.01, 10,seed=33)
+    Euler_integrator(system, 0.01, 0.1,seed=33)
 end
 
 runsim(system);
@@ -38,4 +36,6 @@ runsim(system);
 @time runsim(system);
 
 @profview runsim(system);
+
+@profview_allocs runsim(system);
 

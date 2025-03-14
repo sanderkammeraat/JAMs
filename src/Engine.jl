@@ -3,6 +3,7 @@ using Observables
 using JLD2
 using CodecZlib
 using ProgressMeter
+using Polyester
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
 include("Particles.jl")
@@ -623,14 +624,19 @@ end
 
 function find_new_bin_locations(current_particle_state, cell_bin_centers,system)
 
+    lbin = system.rcut_pair_global
+
     #Collect old locations to preallocate for new one
-    new_bin_locations = [ copy(p_i.ci) for p_i in current_particle_state]
-
-
-    #Find new locations in parallel
+    new_bin_locations = [copy(p_i.ci) for p_i in current_particle_state]
     Threads.@threads for i in eachindex(current_particle_state)
+
         p_i = current_particle_state[i]
-        minimal_image_closest_bin_center!(new_bin_locations[i],p_i.x, cell_bin_centers,system.sizes,system.Periodic)
+
+        for j in eachindex(p_i.ci)
+
+            new_bin_locations[i][j]+= round(Int64, (p_i.x[j] - cell_bin_centers[j][p_i.ci[j]])/lbin )
+
+        end
 
     end
 

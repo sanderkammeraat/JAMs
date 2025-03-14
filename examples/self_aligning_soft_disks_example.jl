@@ -3,7 +3,7 @@ include(joinpath("..","src","Engine.jl"))
 
 function simulation()
 
-    external_forces = (ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,0.1),ABP_perpendicular_angular_noise(1,[0,0,1]))
+    external_forces = (ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,1),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
     pair_forces = [soft_disk_force(1,1)]
 
@@ -31,9 +31,10 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,1e-1, 1e5, Tplot=5e0, fps=120, plot_functions=(plot_disks!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-1, 1e5, Tplot=10, fps=120, plot_functions=(plot_disks!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 
 end
 
 sim = simulation()
+
