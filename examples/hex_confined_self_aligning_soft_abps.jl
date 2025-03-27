@@ -1,8 +1,25 @@
+
+using ArgParse
+simargs = ArgParseSettings()
+
+@add_arg_table simargs begin
+    "--unit_self_alignment", "-J"
+        arg_type=Float64
+
+
+    "--rotational_diffusion", "-D"
+        arg_type=Float64
+
+end
+
+parsed_params = parse_args(simargs)
 include(joinpath("..","src","Engine.jl"))
 
-function simulation()
 
-    external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,1),ABP_perpendicular_angular_noise(1,[0,0,1]))
+
+function simulation(J, Dr)
+
+    external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
     pair_forces = [soft_disk_force([1, 2],[1. 1.; 1. 1.])]
 
@@ -70,7 +87,7 @@ function simulation()
 
         if types[i]==1
             
-            push!(initial_state, PolarParticle3d([id], [types[i]], [1], [1], [Rs[i]], [0.01], [0.01], [x[i] , y[i],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
+            push!(initial_state, PolarParticle3d([id], [types[i]], [1], [1], [Rs[i]], [0.01], [Dr], [x[i] , y[i],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
             id+=1
         end
     end
@@ -92,12 +109,15 @@ function simulation()
     system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,2.5);
 
     #Run integration
-    sim = Euler_integrator(system,5e-2, 5e-2*1e5,Tsave=nothing, save_functions = [save_2d_polar_p!],save_folder_path="/Users/kammeraat/test_JAMS/test_save_12/",Tplot=1e0, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-2, 1e-2*1e5,Tsave=100, save_functions = [save_2d_polar_p!],save_folder_path=joinpath(homedir(),"sa","test","J_$J", "Dr_$Dr"),Tplot=1e2, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 
 end
 
+J=parsed_params["unit_self_alignment"]
+Dr= parsed_params["rotational_diffusion"]
 
-sim = simulation();
-@profview simulation()
+
+sim = simulation(J,Dr);
+#@profview simulation()
 
