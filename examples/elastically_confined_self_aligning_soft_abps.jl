@@ -11,13 +11,13 @@ function simulation()
     ϕ = 0.2
     r=1.
     R =  sqrt(N * r^2 / ϕ)
-    initial_state = [ PolarParticle3d(i, 1, 1, 1, r, 0.1, 0.08, [rand(Uniform(-2*R/3, 2*R/3)) , rand(Uniform(-2*R/3,2*R/3)),0],[0,0,0],[0.,0.,0.], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
+    initial_state = [ PolarParticle3d([i], [1], [1], [1], [r], [0.1], [0.08], [rand(Uniform(-2*R/3, 2*R/3)) , rand(Uniform(-2*R/3,2*R/3)),0],[0,0,0],[0.,0.,0.], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
     Nb = floor(2*pi*R/(2*r))
     print(Nb)
     j=1
     for i in N+1:N+1+Nb-1
 
-        push!(initial_state,PolarParticle3d(i,2, 1,1, r, 0, 0.01, [R*cos(2*pi/Nb*j) , R*sin(2*pi/Nb*j),0],[0,0,0],[0.,0.,0.], [0,0,0],[0,0,0],push!(normalize(rand(Normal(0),2)),0).*[1,1,0],[0,0,0],[0,0,0]))
+        push!(initial_state,PolarParticle3d([i],[2], [1],[1], [r], [0], [0.01], [R*cos(2*pi/Nb*j) , R*sin(2*pi/Nb*j),0],[0,0,0],[0.,0.,0.], [0,0,0],[0,0,0],push!(normalize(rand(Normal(0),2)),0).*[1,1,0],[0,0,0],[0,0,0]))
         j+=1
     end
 

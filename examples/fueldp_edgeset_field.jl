@@ -1,5 +1,4 @@
 include(joinpath("..","src","Engine.jl"))
-using Random, Distributions
 
 function simulation()
 
@@ -21,7 +20,7 @@ function simulation()
     poly = 0.0000002
 
 
-    initial_particle_state = [ PolarParticle2d(i,1,1,0.0,0.0001,[rand(Uniform(-Li, Li)) ,rand(Uniform(-Li,Li))],[0.,0.],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],rand(Uniform(1-poly, 1+poly)),1.,[0.,0.],[0.,0.],[0,0]) for i=1:N];
+    initial_particle_state = [ PolarParticle2d([i],[1],[1],[0.0],[0.0001],[rand(Uniform(-Li, Li)) ,rand(Uniform(-Li,Li))],[0.,0.],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],rand(Uniform(1-poly, 1+poly),1),[1.],[0.,0.],[0.,0.],[0,0]) for i=1:N];
     
     size = [Lx,Ly];
 

@@ -4,7 +4,7 @@ function simulation()
 
     external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,1),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
-    pair_forces = [soft_disk_force([1, 2],[1 1; 1 1])]
+    pair_forces = [soft_disk_force([1, 2],[1. 1.; 1. 1.])]
 
 
     #dofevolvers = [inertial_evolver!]
@@ -13,7 +13,7 @@ function simulation()
 
     #First make stair
     
-    Nlin=30
+    Nlin=4
     Nrows = 2*Nlin
     initial_state = Union{PolarParticle3d,ConfinedPolarParticle3d}[]
 
@@ -60,7 +60,7 @@ function simulation()
     N = length(x)
 
 
-    poly=15e-2
+    poly=0.15e-2
     Rs = rand(Uniform((1-poly)*r, (1+poly)*r),N)
 
     initial_state = Union{PolarParticle3d,ConfinedPolarParticle3d}[]
@@ -70,14 +70,14 @@ function simulation()
 
         if types[i]==1
             
-            push!(initial_state, PolarParticle3d(id, types[i], 1, 1, Rs[i], 0.01, 0.01, [x[i] , y[i],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
+            push!(initial_state, PolarParticle3d([id], [types[i]], [1], [1], [Rs[i]], [0.01], [0.01], [x[i] , y[i],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
             id+=1
         end
     end
     for i=1:N
 
         if types[i]==2
-            push!(initial_state,ConfinedPolarParticle3d(id,2, 1,1, Rs[i], 0, 0.01, [x[i] , y[i],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]))
+            push!(initial_state,ConfinedPolarParticle3d([id],[2], [1],[1], [Rs[i]], [0], [0.01], [x[i] , y[i],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]))
             id+=1
         end
     end
@@ -99,6 +99,5 @@ end
 
 
 sim = simulation();
-
 @profview simulation()
 

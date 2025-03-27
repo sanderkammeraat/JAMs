@@ -43,7 +43,7 @@ field_updaters = []
 
 Dr = 0.01
 v0 = 0.3
-initial_particle_state = [ PolarParticle2d(i,1,1,v0,Dr,rand(Uniform(-L/2,L/2), 2),[0,0],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],r,1.,[0.,0.],[0.,0.],[0,0]) for i=1:N]
+initial_particle_state = [ PolarParticle2d([i],[1],[1],[v0],[Dr],rand(Uniform(-L/2,L/2), 2),[0,0],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[r],[1.],[0.,0.],[0.,0.],[0,0]) for i=1:N]
 
 #Now set up the particle forces 
 # The forces take in a type (Int64 or array of Int64 if on multiple particle types) determining on what type of particles the force should act on.

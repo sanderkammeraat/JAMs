@@ -70,14 +70,14 @@ function simulation()
 
         if types[i]==1
             
-            push!(initial_state, PolarParticle3d(id, types[i], 1, 1, Rs[i], 0.1, 0.01, [rand(Uniform(-2*R/3, 2*R/3)) , rand(Uniform(-2*R/3,2*R/3)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
+            push!(initial_state, PolarParticle3d([id], [types[i]], [1], [1], [Rs[i]], [0.1], [0.01], [rand(Uniform(-2*R/3, 2*R/3)) , rand(Uniform(-2*R/3,2*R/3)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
             id+=1
         end
     end
     for i=1:N
 
         if types[i]==2
-            push!(initial_state,ConfinedPolarParticle3d(id,2, 1,1, Rs[i], 0, 0.01, [x[i] , y[i],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]))
+            push!(initial_state,ConfinedPolarParticle3d([id],[2], [1],[1], [Rs[i]], [0], [0.01], [x[i] , y[i],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]))
             id+=1
         end
     end

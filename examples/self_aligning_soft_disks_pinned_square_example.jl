@@ -21,7 +21,7 @@ function simulation()
     #display(X)
     #display(Y)
 
-    initial_state = PolarParticle3d[ PolarParticle3d(i,1, 1, 1, Rs[i], 0.04, 0.001, [X[i] , Y[i],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i in eachindex(X) ];
+    initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [Rs[i]], [0.04], [0.001], [X[i] , Y[i],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i in eachindex(X) ];
 
     pins  = zeros(length(initial_state),3)
     for i=eachindex(initial_state)

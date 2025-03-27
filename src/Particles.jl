@@ -10,14 +10,14 @@ abstract type Particle end
 
 struct Hexbug<:Particle
 
-    id::Int64
-    type::Int64
-    m::Float64
-    zeta::Float64
+    id::MVector{1,Int64}
+    type::MVector{1,Int64}
+    m::MVector{1,Float64}
+    zeta::MVector{1,Float64}
     
-    k::Float64
-    v0::Float64
-    Dr::Float64
+    k::MVector{1,Float64}
+    v0::MVector{1,Float64}
+    Dr::MVector{1,Float64}
 
     x::MVector{3,Float64}
     xuw::MVector{3,Float64}
@@ -33,11 +33,11 @@ struct Hexbug<:Particle
 
 end
 struct ChargedParticle3d<:Particle
-    id::Int64
-    type::Int64
-    m::Float64
-    zeta::Float64
-    R::Float64
+    id::MVector{1,Int64}
+    type::MVector{1,Int64}
+    m::MVector{1,Float64}
+    zeta::MVector{1,Float64}
+    R::MVector{1,Float64}
     Q::MVector{1,Float64}
 
     x::MVector{3,Float64}
@@ -50,14 +50,14 @@ struct ChargedParticle3d<:Particle
 end
 struct PolarParticle3d<:Particle
 
-    id::Int64
-    type::Int64
-    m::Float64
-    zeta::Float64
-    R::Float64
+    id::MVector{1,Int64}
+    type::MVector{1,Int64}
+    m::MVector{1,Float64}
+    zeta::MVector{1,Float64}
+    R::MVector{1,Float64}
     
-    v0::Float64
-    Dr::Float64
+    v0::MVector{1,Float64}
+    Dr::MVector{1,Float64}
 
     x::MVector{3,Float64}
     xuw::MVector{3,Float64}
@@ -75,14 +75,14 @@ end
 
 struct ConfinedPolarParticle3d<:Particle
 
-    id::Int64
-    type::Int64
-    m::Float64
-    zeta::Float64
-    R::Float64
+    id::MVector{1,Int64}
+    type::MVector{1,Int64}
+    m::MVector{1,Float64}
+    zeta::MVector{1,Float64}
+    R::MVector{1,Float64}
     
-    v0::Float64
-    Dr::Float64
+    v0::MVector{1,Float64}
+    Dr::MVector{1,Float64}
 
     x::MVector{3,Float64}
     xuw::MVector{3,Float64}
@@ -101,11 +101,11 @@ end
 
 #Defining a particle requires a class with particle properties
 struct PolarParticle2d<:Particle
-    id::Int64
-    type::Int64
-    m::Float64 #mass, only used icw intertial integrators
-    v0::Float64
-    Dr::Float64
+    id::MVector{1,Int64}
+    type::MVector{1,Int64}
+    m::MVector{1,Float64} #mass, only used icw intertial integrators
+    v0::MVector{1,Float64}
+    Dr::MVector{1,Float64}
 
     x::MVector{2,Float64}
     xuw::MVector{2,Float64}
@@ -115,9 +115,9 @@ struct PolarParticle2d<:Particle
     θ::MVector{1,Float64}
     ω::MVector{1,Float64}
 
-    R::Float64
+    R::MVector{1,Float64}
 
-    zeta::Float64 #Friction coefficient, only used icw overdamped integrators
+    zeta::MVector{1,Float64} #Friction coefficient, only used icw overdamped integrators
     fact::MVector{2,Float64}
     fpas::MVector{2,Float64}
     ci::MVector{2,Int64}
@@ -125,13 +125,13 @@ end
 
 
 struct PolarParticle2dN<:Particle
-    id::Int64
-    type::Int64
-    R::Float64
-    k::Float64
+    id::MVector{1,Int64}
+    type::MVector{1,Int64}
+    R::MVector{1,Float64}
+    k::MVector{1,Float64}
 
-    v0::Float64
-    Dr::Float64
+    v0::MVector{1,Float64}
+    Dr::MVector{1,Float64}
 
     x::MVector{2,Float64}
     xuw::MVector{2,Float64}
@@ -146,21 +146,21 @@ struct PolarParticle2dN<:Particle
     fn::MVector{2,Float64}
     
 
-    zeta::Float64 #Friction coefficient, only used icw overdamped integrators
+    zeta::MVector{1,Float64} #Friction coefficient, only used icw overdamped integrators
     fact::MVector{2,Float64}
     fpas::MVector{2,Float64}
     ci::MVector{2,Int64}
 end
 
 struct PolarParticle3dN<:Particle
-    id::Int64
-    type::Int64
+    id::MVector{1,Int64}
+    type::MVector{1,Int64}
 
     #particle radius
-    R::Float64
-    k::Float64
-    v0::Float64
-    Dr::Float64
+    R::MVector{1,Float64}
+    k::MVector{1,Float64}
+    v0::MVector{1,Float64}
+    Dr::MVector{1,Float64}
 
     x::MVector{3,Float64}
     xuw::MVector{3,Float64}
@@ -177,27 +177,27 @@ struct PolarParticle3dN<:Particle
     
     
 
-    zeta::Float64 #Friction coefficient, only used icw overdamped integrators
+    zeta::MVector{1,Float64} #Friction coefficient, only used icw overdamped integrators
     fact::MVector{3,Float64}
     fpas::MVector{3,Float64}
     ci::MVector{3,Int64}
 end
 
 struct Swarmalator<:Particle
-    id::Int64
-    type::Int64
+    id::MVector{1,Int64}
+    type::MVector{1,Int64}
 
 
-    v0::Float64
-    Dr::Float64
+    v0::MVector{1,Float64}
+    Dr::MVector{1,Float64}
 
     x::MVector{2,Float64}
     xuw::MVector{2,Float64}
     v::MVector{2,Float64}
     f::MVector{2,Float64} #f->v->r
 
-    R::Float64
-    k::Float64
+    R::MVector{1,Float64}
+    k::MVector{1,Float64}
 
 
     θ::MVector{1,Float64}
@@ -206,7 +206,7 @@ struct Swarmalator<:Particle
     ϕ::MVector{1,Float64}
     ψ::MVector{1,Float64}
 
-    zeta::Float64 #Friction coefficient, only used icw overdamped integrators
+    zeta::MVector{1,Float64} #Friction coefficient, only used icw overdamped integrators
     fact::MVector{2,Float64}
     fpas::MVector{2,Float64}
     ci::MVector{2,Int64}
@@ -214,11 +214,11 @@ end
 
 
 struct VicsekParticle<:Particle
-    id::Int64
-    type::Int64
+    id::MVector{1,Int64}
+    type::MVector{1,Int64}
 
-    v0::Float64
-    Dr::Float64
+    v0::MVector{1,Float64}
+    Dr::MVector{1,Float64}
 
     x::MVector{2,Float64}
     xuw::MVector{2,Float64}
@@ -232,7 +232,7 @@ struct VicsekParticle<:Particle
     n::MVector{1,Int64}
     ωn::MVector{1,Float64}
 
-    zeta::Float64 #Friction coefficient, only used icw overdamped integrators
+    zeta::MVector{1,Float64} #Friction coefficient, only used icw overdamped integrators
     fact::MVector{2,Float64}
     fpas::MVector{2,Float64}
     ci::MVector{2,Int64}

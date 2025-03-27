@@ -62,7 +62,7 @@ function plot_type_points!(ax, cpsO, cfsO)
     x = @lift([p_i.x[1] for p_i in $cpsO])
     y = @lift([p_i.x[2] for p_i in $cpsO])
 
-    c = @lift([ p_i.type for p_i in $cpsO])
+    c = @lift([ p_i.type[1] for p_i in $cpsO])
     if length(cpsO[][1].x)>2
         
         z = @lift([p_i.x[3] for p_i in $cpsO])
@@ -103,13 +103,13 @@ function plot_sized_points!(ax, cpsO, cfsO)
         
         z = @lift([p_i.x[3] for p_i in $cpsO])
 
-        R = @lift([p_i.R for p_i in $cpsO])
+        R = @lift([p_i.R[1] for p_i in $cpsO])
 
         meshscatter!(ax,x,y,z, color=c, markersize =R, transparency=true)
 
 
     else
-        s = @lift([2*p_i.R^2  for p_i in $cpsO])
+        s = @lift([2*p_i.R[1]^2  for p_i in $cpsO])
         scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
 
     end
@@ -128,7 +128,7 @@ function plot_disks!(ax, cpsO, cfsO)
     c = @lift([ p_i.id[1] for p_i in $cpsO])
 
     
-    s = @lift([2*p_i.R^2  for p_i in $cpsO])
+    s = @lift([2*p_i.R[1]^2  for p_i in $cpsO])
     scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
 
     return ax
@@ -144,7 +144,7 @@ function plot_disks_uw!(ax, cpsO, cfsO)
     c = @lift([ p_i.id[1] for p_i in $cpsO])
 
     
-    s = @lift([2*p_i.R^2  for p_i in $cpsO])
+    s = @lift([2*p_i.R[1]^2  for p_i in $cpsO])
     scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
 
     return ax
@@ -159,7 +159,7 @@ function plot_disks_vx!(ax, cpsO, cfsO)
     c = @lift([ p_i.v[1] for p_i in $cpsO])
 
     
-    s = @lift([2*p_i.R^2  for p_i in $cpsO])
+    s = @lift([2*p_i.R[1]^2  for p_i in $cpsO])
     scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1,colorrange=(-0.05,0.05))
 
     return ax
@@ -174,7 +174,7 @@ function plot_disks_orientation!(ax, cpsO, cfsO)
     c = @lift([ angle(p_i.p[1]+1im*p_i.p[2]) for p_i in $cpsO])
 
     
-    s = @lift([2*p_i.R^2  for p_i in $cpsO])
+    s = @lift([2*p_i.R[1]^2  for p_i in $cpsO])
     scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1,colormap=:hsv,colorrange=(-pi,pi))
 
     return ax
@@ -189,7 +189,7 @@ function plot_disks_vp_phase_difference!(ax, cpsO, cfsO)
     c = @lift([ angle( exp(1im* (angle(p_i.v[1]+1im*p_i.v[2]) - angle(p_i.p[1]+1im*p_i.p[2])) ) )  for p_i in $cpsO])
 
     
-    s = @lift([2*p_i.R^2  for p_i in $cpsO])
+    s = @lift([2*p_i.R[1]^2  for p_i in $cpsO])
     scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1,colormap=:hsv,colorrange=(-pi,pi))
 
     return ax
@@ -201,7 +201,7 @@ function plot_type_sized_points!(ax, cpsO, cfsO)
     x = @lift([p_i.x[1] for p_i in $cpsO])
     y = @lift([p_i.x[2] for p_i in $cpsO])
 
-    c = @lift([ p_i.type for p_i in $cpsO])
+    c = @lift([ p_i.type[1] for p_i in $cpsO])
 
     
 
@@ -215,7 +215,7 @@ function plot_type_sized_points!(ax, cpsO, cfsO)
 
 
     else
-        s = @lift([2*p_i.R^2  for p_i in $cpsO])
+        s = @lift([2*p_i.R[1]^2  for p_i in $cpsO])
         scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
 
     end
@@ -290,7 +290,7 @@ end
 
 
 function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO,res=nothing)
-    GLMakie.activate!()
+    GLMakie.activate!(; focus_on_show=true, title= "GLMakie: JAMs simulation")
     if !isnothing(res)
         f = Figure(size=res)
     else
@@ -327,48 +327,3 @@ function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO
 end
 
 
-
-function make_movie(SIM, folder_path, file_name, plot_functions, fps,plotdim=nothing)
-
-    mkpath(folder_path)
-
-    cpsO = Observable(SIM.particle_states[1])
-
-    cfsO = Observable(SIM.field_states[1])
-
-    tO = Observable(SIM.tsax[1])
-
-    t_indices = range(1,length(SIM.tsax))
-
-    fig, ax = setup_system_plotting(SIM.system.sizes,plot_functions,plotdim ,cpsO,cfsO,tO,(500,500))
-    
-    record(fig, joinpath(folder_path,file_name), t_indices; framerate=fps, compression=30) do t_index 
-        cpsO[] = SIM.particle_states[t_index]
-        cfsO[] = SIM.field_states[t_index]
-        tO[] = SIM.tsax[t_index]
-    end
-
-
-end
-
-function make_snapshot(SIM, folder_path, file_name, plot_functions, frame_index,plotdim=nothing)
-
-    mkpath(folder_path)
-
-    cpsO = Observable(SIM.particle_states[frame_index])
-
-    cfsO = Observable(SIM.field_states[frame_index])
-
-    tO = Observable(SIM.tsax[frame_index])
-
-    t_indices = range(1,length(SIM.tsax))
-
-    fig, ax = setup_system_plotting(SIM.system.sizes,plot_functions,plotdim ,cpsO,cfsO,tO,(1000,1000))
-
-    file_path = joinpath(folder_path,file_name)
-
-    save(file_path,fig)
-
-
-
-end

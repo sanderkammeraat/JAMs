@@ -189,7 +189,7 @@ function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_t
     end
 
 
-    file["integration_info/integration_tax"] = collect(integration_tax)
+    file["integration_info/integration_tax"] = integration_tax
 
     file["integration_info/Tsave"] = Tsave
 
@@ -210,7 +210,9 @@ end
 function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_functions=nothing, save_folder_path=nothing, Tplot=nothing, fps=nothing, plot_functions=nothing,plotdim=nothing)
 
 
-    integration_tax = 0:dt:t_stop
+    integration_tax = collect(0:dt:t_stop)
+
+
 
     #This is really amazing: Julia rng is dependent on the task spawn structure, NOT on the 
     # parallel executation schedule, see https://julialang.org/blog/2021/11/julia-1.7-highlights/#new_rng_reproducible_rng_in_tasks
@@ -229,6 +231,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         Random.seed!(seed)
     end
     if !isnothing(Tsave)
+        save_nax = [n for n in eachindex(integration_tax) if (n-1)%Tsave==0]
         save_tax = [ integration_tax[n] for n in eachindex(integration_tax) if (n-1)%Tsave==0 ]
 
         #Prepare save folder
@@ -248,7 +251,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
             JAMs_file["system"] = system
 
-            JAMs_file["integration_info/integration_tax"] = collect(integration_tax)
+            JAMs_file["integration_info/integration_tax"] = integration_tax
 
             JAMs_file["integration_info/dt"] = dt
 
@@ -280,6 +283,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
 
         end
+
         #Store similar info in raw_data container
         jldopen(joinpath(save_folder_path, raw_data_file_name),"a+") do raw_data_file
 
@@ -287,6 +291,12 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
         end
    
+    end
+
+    if !isnothing(Tsave)
+        n_final_save = save_nax[end]
+    else
+        n_final_save = length(integration_tax)
     end
 
     if system.Periodic==false
@@ -306,6 +316,10 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     current_particle_state = copy(system.initial_particle_state)
     current_field_state = copy(system.initial_field_state)
 
+    #We do not really care that  it is a shallow copy, we will properly set it at the end. We need to prepare it as variables that exist outside the for loop over time.
+    final_particle_state = copy(system.initial_particle_state)
+    final_field_state = copy(system.initial_field_state)
+
     rngs_fields = [Xoshiro(master_seed+i) for i in eachindex(current_field_state)]
 
     #Assuming number of fields stay constant
@@ -319,6 +333,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
             f, ax = setup_system_plotting(system.sizes,plot_functions, plotdim,cpsO,cfsO,tO)
         end
     end
+
 
     #Loop over time
     #Variable to keep track of the number of frames saved
@@ -355,23 +370,35 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
         if !isnothing(Tsave) && !isnothing(save_functions)
             if (n-1)%Tsave==0
-                
-
 
                 jldopen(joinpath(save_folder_path, raw_data_file_name),"a+") do raw_data_file
-
-            
+ 
                     for save_function in save_functions
 
-                        save_function(raw_data_file,current_particle_state,current_field_state, n, Tsave, t,frame_counter)
-
+                        raw_data_file=save_function(raw_data_file,current_particle_state,current_field_state, n, Tsave, t,frame_counter)
+                        
                     end
-
-
                 end
+
                 frame_counter+=1
             end
         end
+        #Save the states before the final dof step
+
+        if n==n_final_save
+            if !isnothing(Tsave)
+                jldopen(joinpath(save_folder_path, JAMs_file_name),"a+") do JAMs_file
+
+                    JAMs_file["final_particle_state"] = current_particle_state
+        
+                    JAMs_file["final_field_state"] = current_field_state
+        
+                end
+            end
+            final_particle_state = deepcopy(current_particle_state)
+            final_field_state = deepcopy(current_field_state)
+        end
+
 
         #Only now evolve dofs of every particle
         Threads.@threads for i in eachindex(current_particle_state)
@@ -417,19 +444,12 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         end
 
     end
-
-    if !isnothing(Tsave)
-        jldopen(joinpath(save_folder_path, JAMs_file_name),"a+") do JAMs_file
-
-            JAMs_file["final_particle_state"] = current_particle_state
-
-            JAMs_file["final_field_state"] = current_field_state
-
-        end
-    end
-
-    return SIM(current_particle_state, current_field_state,dt, t_stop, system);
+    return SIM(final_particle_state, final_field_state, dt, t_stop, system);
 end
+
+
+
+
 function particle_step!(i,p_i, current_particle_state,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
     if Npair>0
         p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system,cells,stencils,rngs_particles)
@@ -545,7 +565,7 @@ function construct_cell_lists!(system)
             cell_indices = minimal_image_closest_bin_center!(cell_indices,p_i.x, cell_bin_centers,system.sizes,system.Periodic)
 
             #push!(Int64[id for id in  cells[cell_indices][1]]))
-            cells[cell_indices...]= append!(cells[cell_indices...],p_i.id)
+            cells[cell_indices...]= append!(cells[cell_indices...],p_i.id[1])
             p_i.ci.= cell_indices
 
         end
@@ -568,7 +588,7 @@ function construct_cell_lists!(system)
             
 
             #push!(Int64[id for id in  cells[cell_indices][1]]))
-            cells[cell_indices...]= append!(cells[cell_indices...],p_i.id)
+            cells[cell_indices...]= append!(cells[cell_indices...],p_i.id[1])
             p_i.ci.= cell_indices
 
         end
@@ -653,14 +673,14 @@ function update_cells!(current_particle_state, cells, cell_bin_centers,system)
 
         p_i = current_particle_state[i]
         new_bin_location = new_bin_locations[i]
-        if p_i.id in cells[new_bin_location...]
+        if p_i.id[1] in cells[new_bin_location...]
         else
             #remove
-            filter!(e->e≠p_i.id,cells[p_i.ci...])
+            filter!(e->e≠p_i.id[1],cells[p_i.ci...])
             #add to correct lists
             p_i.ci.= new_bin_location
 
-            push!(cells[new_bin_location...],p_i.id)
+            push!(cells[new_bin_location...],p_i.id[1])
         end
         current_particle_state[i] = p_i
     end

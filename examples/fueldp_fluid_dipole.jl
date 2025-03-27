@@ -21,7 +21,7 @@ function simulation()
     poly = 0.0000002
 
 
-    initial_particle_state = [ PolarParticle2d(i,1,1,0.0,0.0001,[rand(Uniform(-L/2, L/2)) ,rand(Uniform(-L/2,L/2))],[0.,0.],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],1,rand(Uniform(1-poly, 1+poly)),[0.,0.],[0.,0.],[0,0]) for i=1:N];
+    initial_particle_state = [ PolarParticle2d([i],[1],[1],[0.0],[0.0001],[rand(Uniform(-L/2, L/2)) ,rand(Uniform(-L/2,L/2))],[0.,0.],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[1],rand(Uniform(1-poly, 1+poly),1),[0.,0.],[0.,0.],[0,0]) for i=1:N];
     
     size = [Lx,Ly];
 

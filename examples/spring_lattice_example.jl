@@ -28,7 +28,7 @@ function simulation()
             
             id+=1
 
-            push!(initial_state,PolarParticle3d(id,1,1,1,1,0.01,0.01,[x[i],y[j],0],[0.,0.,0.],[0,0,0],[0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) )
+            push!(initial_state,PolarParticle3d([id],[1],[1],[1],[1],[0.01],[0.01],[x[i],y[j],0],[0.,0.,0.],[0,0,0],[0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) )
 
         end
 

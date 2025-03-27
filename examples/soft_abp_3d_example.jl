@@ -18,7 +18,7 @@ function simulation()
     poly = 0.2
 
     
-    initial_state = [ PolarParticle3dN(i,1,rand(Uniform(1-poly, 1+poly)),1,0.1,0.01, rand(Uniform(-L/2, L/2),3),[0.,0.,0.],[0.,0.,0.],[0.,0.,0.],normalize(rand(Normal(0, 1),3)),[0,0,0],[0.],[0,0,0],1,[0.,0.,0.],[0.,0,0.],[0,0,0]) for i=1:N];
+    initial_state = [ PolarParticle3dN([i],[1],rand(Uniform(1-poly, 1+poly),1),[1],[0.1],[0.01], rand(Uniform(-L/2, L/2),3),[0.,0.,0.],[0.,0.,0.],[0.,0.,0.],normalize(rand(Normal(0, 1),3)),[0,0,0],[0.],[0,0,0],[1],[0.,0.,0.],[0.,0,0.],[0,0,0]) for i=1:N];
     
     size = [L,L,L];
     initial_field_state=[]

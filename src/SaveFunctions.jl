@@ -4,21 +4,22 @@
 function save_2d_polar_p!(file, current_particle_state, current_field_state, n, Tsave, t,framecounter)
 
     preamble = "frames/"*string(framecounter)*"/"
+    
 
 
     file[preamble*"n"] = n
 
     file[preamble*"t"] = t
 
-    file[preamble*"id"] = [p_i.id for p_i in current_particle_state]
+    file[preamble*"id"] = [p_i.id[1] for p_i in current_particle_state]
 
-    file[preamble*"type"] = [p_i.type for p_i in current_particle_state]
+    file[preamble*"type"] = [p_i.type[1] for p_i in current_particle_state]
 
-    file[preamble*"v0"] = [p_i.v0 for p_i in current_particle_state]
+    file[preamble*"v0"] = [p_i.v0[1] for p_i in current_particle_state]
 
-    file[preamble*"Dr"] = [p_i.Dr for p_i in current_particle_state]
+    file[preamble*"Dr"] = [p_i.Dr[1] for p_i in current_particle_state]
 
-    file[preamble*"R"] = [p_i.R for p_i in current_particle_state]
+    file[preamble*"R"] = [p_i.R[1] for p_i in current_particle_state]
 
     file[preamble*"structtype"] = [string(nameof(typeof(p_i))) for p_i in current_particle_state]
 
@@ -51,15 +52,15 @@ function save_2d_polar_θ!(file, current_particle_state, current_field_state, n,
 
     file[preamble*"t"] = t
 
-    file[preamble*"id"] = [p_i.id for p_i in current_particle_state]
+    file[preamble*"id"] = [p_i.id[1] for p_i in current_particle_state]
 
-    file[preamble*"type"] = [p_i.type for p_i in current_particle_state]
+    file[preamble*"type"] = [p_i.type[1] for p_i in current_particle_state]
 
-    file[preamble*"v0"] = [p_i.v0 for p_i in current_particle_state]
+    file[preamble*"v0"] = [p_i.v0[1] for p_i in current_particle_state]
 
-    file[preamble*"Dr"] = [p_i.Dr for p_i in current_particle_state]
+    file[preamble*"Dr"] = [p_i.Dr[1] for p_i in current_particle_state]
 
-    file[preamble*"R"] = [p_i.R for p_i in current_particle_state]
+    file[preamble*"R"] = [p_i.R[1] for p_i in current_particle_state]
 
     file[preamble*"structtype"] = [string(nameof(typeof(p_i))) for p_i in current_particle_state]
 

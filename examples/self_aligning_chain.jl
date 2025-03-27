@@ -12,11 +12,11 @@ function simulation()
     L=4 * N*1.
     v0 =  0.3
     Dr=0.01
-    initial_state = [PolarParticle3d(1,1, 1, 1, 1,v0, Dr, [0 , -1,0],[0,0,0],[0.,0.,0.], [0,0,0],[0,0,0],normalize(rand(Normal(0, 1),3)).*[1,1,0],[0,0,0],[0,0,0])];
+    initial_state = [PolarParticle3d([1],[1], [1], [1], [1],[v0], [Dr], [0 , -1,0],[0,0,0],[0.,0.,0.], [0,0,0],[0,0,0],normalize(rand(Normal(0, 1),3)).*[1,1,0],[0,0,0],[0,0,0])];
 
     for i in 2:N
         
-        push!(initial_state, PolarParticle3d(i,1, 1, 1, 1,v0, Dr, [0 , -2*i+1,0],[0,0,0],[0.,0.,0.], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
+        push!(initial_state, PolarParticle3d([i],[1], [1], [1], [1],[v0], [Dr], [0 , -2*i+1,0],[0,0,0],[0.,0.,0.], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
         print(-2*i+1)
     end
 

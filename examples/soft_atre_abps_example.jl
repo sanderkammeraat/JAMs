@@ -23,9 +23,9 @@ function simulation()
 
     fr = 0.2
 
-    initial_state = [ PolarParticle2dN(i,1,rand(Uniform(1-poly, 1+poly)),1.,v0,Dr,rand(Uniform(-L/2*fr, L/2*fr),2),[0.,0.],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[0.],[0.,0.],1,[0.,0.],[0.,0.],[0,0]) for i=1:N1];
+    initial_state = [ PolarParticle2dN([i],[1],rand(Uniform(1-poly, 1+poly),1),[1.],[v0],[Dr],rand(Uniform(-L/2*fr, L/2*fr),2),[0.,0.],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[0.],[0.,0.],[1],[0.,0.],[0.,0.],[0,0]) for i=1:N1];
     for i in N1+1:N1+N2
-        push!(initial_state,PolarParticle2dN(i,2,rand(Uniform(1-poly, 1+poly)),1.,v0,Dr,rand(Uniform(-L/2*fr, L/2*fr),2),[0.,0.],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[0.],[0.,0.],1,[0.,0.],[0.,0.],[0,0]))
+        push!(initial_state,PolarParticle2dN([i],[2],rand(Uniform(1-poly, 1+poly),1),[1.],[v0],[Dr],rand(Uniform(-L/2*fr, L/2*fr),2),[0.,0.],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],[0.],[0.,0.],[1],[0.,0.],[0.,0.],[0,0]))
     end
 
     size = [L,L];

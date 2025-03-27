@@ -23,7 +23,7 @@ function simulation()
     R = 1
 
     
-    initial_state = [ ChargedParticle3d(i,1,0.1,1,R,[1.], [rand(Uniform(-L/4, L/4)),rand(Uniform(-L/4, L/4)),rand(Uniform(-d/4, d/4))],[0.,0.,0.],[0.,0.,0.],[0.,0.,0.],[0,0,0],[0,0,0]) for i=1:N];
+    initial_state = [ ChargedParticle3d([i],[1],[0.1],[1],[R],[1.], [rand(Uniform(-L/4, L/4)),rand(Uniform(-L/4, L/4)),rand(Uniform(-d/4, d/4))],[0.,0.,0.],[0.,0.,0.],[0.,0.,0.],[0,0,0],[0,0,0]) for i=1:N];
     
     size = [L,L,3*d];
     initial_field_state=[]
