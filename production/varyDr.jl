@@ -1,23 +1,27 @@
 
+
+#Run this script with one thread from terminal, n will run the different parameter space points over n cores
 using ArgParse
+using Distributed
 simargs = ArgParseSettings()
 
 @add_arg_table simargs begin
-    "--unit_self_alignment", "-J"
-        arg_type=Float64
-
-
-    "--rotational_diffusion", "-D"
-        arg_type=Float64
+    "--ncores", "-n"
+        arg_type=Int64
 
 end
 
 parsed_params = parse_args(simargs)
-include(joinpath("..","src","Engine.jl"))
+n=parsed_params["ncores"]
+
+addprocs(n)
+
+
+@everywhere include(joinpath("..","src","Engine.jl"))
 
 
 
-function simulation(J, Dr)
+@everywhere function simulation(J, Dr,save_folder_path)
 
     external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
@@ -109,16 +113,22 @@ function simulation(J, Dr)
     system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,2.5);
 
     #Run integration
-    sim = Euler_integrator(system,1e-2, 1e-2*1e5,Tsave=100, save_functions = [save_2d_polar_p!],save_folder_path=joinpath(homedir(),"sa","test","J_$J", "Dr_$Dr"),Tplot=1e2, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-2, 2e3,Tsave=100, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,Tplot=1e2, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 
 end
 
-J=parsed_params["unit_self_alignment"]
-Dr= parsed_params["rotational_diffusion"]
 
 
 
-sim = simulation(J,Dr);
-#@profview simulation()
+Drs = [0.001, 0.01, 0.1, 1]
+J=1
 
+@sync @distributed for Dr in Drs
+
+    display("Running")
+
+    save_folder_path = joinpath(homedir(),"sa","test","J_$J", "Dr_$Dr");
+
+    sim = simulation(J,Dr, save_folder_path);
+end
