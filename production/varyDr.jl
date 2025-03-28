@@ -19,8 +19,6 @@ addprocs(n)
 
 @everywhere include(joinpath("..","src","Engine.jl"))
 
-
-
 @everywhere function simulation(J, Dr,save_folder_path)
 
     external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
@@ -113,7 +111,7 @@ addprocs(n)
     system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,2.5);
 
     #Run integration
-    sim = Euler_integrator(system,1e-2, 2e3,Tsave=100, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,Tplot=1e2, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-2, 5e3,Tsave=100,Tplot=100, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 
 end
@@ -121,14 +119,15 @@ end
 
 
 
-Drs = [0.001, 0.01, 0.1, 1]
+Drs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.]
 J=1
 
 @sync @distributed for Dr in Drs
 
     display("Running")
 
-    save_folder_path = joinpath(homedir(),"sa","test","J_$J", "Dr_$Dr");
+    save_folder_path = joinpath("/","data1","kammeraat","sa","varyDr","J_$J", "Dr_$Dr");
+    print(save_folder_path)
 
     sim = simulation(J,Dr, save_folder_path);
 end
