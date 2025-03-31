@@ -1,14 +1,12 @@
 
 include(joinpath("..","src","Engine.jl"))
+include("AnalysisFunctions.jl")
 using GLMakie
 
 function make_movie(raw_data_file,save_folder)
     save_tax = raw_data_file["integration_info"]["save_tax"]
 
     J = raw_data_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
-
-    
-    
 
     frame_numbers = 1:1:length(save_tax)
 
@@ -75,7 +73,7 @@ function make_movie(raw_data_file,save_folder)
 
     display(f)
 
-    record(f, joinpath(base_folder,save_folder,"simulation_Dr_$(Dr)_J_$(J).mp4"), frame_numbers; visible=true) do i 
+    record(f, joinpath(save_folder,"Dr_$(Dr)_J_$(J).mp4"), frame_numbers; visible=true) do i 
 
         stri = string(i)
         t[] = frames[stri]["t"]
@@ -101,26 +99,32 @@ function make_movie(raw_data_file,save_folder)
     end
 end
 
-function main(base_folder)
+function main(base_folder, animation_base_folder; raw_data_file_name="raw_data.jld2")
 
+    tree = construct_folder_tree_param_param_seed(base_folder)
+
+    for (param1, subdict) in tree
     
+        for (param2, seeddict) in subdict
+    
+            for (seed, seedpath) in  seeddict
+    
+                    raw_data_file_path = joinpath(seedpath, raw_data_file_name)
+    
+                    save_folder = joinpath( mkpath(joinpath(animation_base_folder,param1, param2,seed)))
+    
+                    raw_data_file = jldopen( raw_data_file_path, "r" )
 
-
-    subfolders = filter!(e->e!=".DS_Store", readdir(base_folder))
-
-    @showprogress dt = 1 desc="Animating in progress..." showspeed=true for subfolder in subfolders
-
-        folder_path = joinpath(base_folder, subfolder)
-        raw_data_file = jldopen( joinpath(folder_path, "raw_data.jld2"), "r" )
-
-        make_movie(raw_data_file,folder_path)
-        close(raw_data_file)
-
-    end
+                    make_movie(raw_data_file,save_folder)
+                    close(raw_data_file)    
+            end
+        end
+    end 
 end
 
 #base_folder = joinpath("/data1","kammeraat", "sa", "varyDr","J_1")
 
-base_folder = joinpath(homedir(), "sa", "varyJ","Dr_0.01")
-main(base_folder)
+base_folder = joinpath(homedir(), "sa", "varyJ","simdata")
+animation_base_folder = joinpath(homedir(), "sa", "varyJ","movies")
+main(base_folder, animation_base_folder)
 
