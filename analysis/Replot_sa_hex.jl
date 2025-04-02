@@ -1,7 +1,9 @@
 
 include(joinpath("..","src","Engine.jl"))
 include("AnalysisFunctions.jl")
+include("AnalysisPipeline.jl")
 using GLMakie
+GLMakie.activate!()
 
 function make_movie(raw_data_file,save_folder)
     save_tax = raw_data_file["integration_info"]["save_tax"]
@@ -52,11 +54,23 @@ function make_movie(raw_data_file,save_folder)
 
     #directors
     cp = @lift( angle.($px+1im*$py) )
-    arrows!(ax, x,y, px,py , color=cp,  colormap=:hsv,colorrange=(-pi,pi))
+
+    
+
+
+    #arrows!(ax, x,y, px,py , color=cp,  colormap=:hsv,colorrange=(-pi,pi))
 
     #velocity vectors
     cv = @lift( angle.($vx+1im*$vy) )
-    arrows!(ax, x,y, vx,vy , color=cv,  colormap=:hsv,colorrange=(-pi,pi))
+
+    vp_x = @lift( cos.($cp-$cv))
+
+    vp_y = @lift( sin.($cp-$cv) )
+
+    #arrows!(ax, x,y, vx,vy , color=cv,  colormap=:hsv,colorrange=(-pi,pi))
+
+
+    arrows!(ax, x,y, vp_x,vp_y , color=cv,  colormap=:hsv,colorrange=(-pi,pi))
 
     plotpx = @lift(scaleup.*$(px)[type.==1]) 
     plotpy = @lift(scaleup.*$(py)[type.==1]) 
@@ -73,7 +87,7 @@ function make_movie(raw_data_file,save_folder)
 
     display(f)
 
-    record(f, joinpath(save_folder,"Dr_$(Dr)_J_$(J).mp4"), frame_numbers; visible=true) do i 
+    record(f, joinpath(save_folder,"vp_Dr_$(Dr)_J_$(J).mp4"), frame_numbers; visible=true) do i 
 
         stri = string(i)
         t[] = frames[stri]["t"]
@@ -105,18 +119,22 @@ function main(base_folder, animation_base_folder; raw_data_file_name="raw_data.j
 
     for (param1, subdict) in tree
     
-        for (param2, seeddict) in subdict
-    
-            for (seed, seedpath) in  seeddict
-    
-                    raw_data_file_path = joinpath(seedpath, raw_data_file_name)
-    
-                    save_folder = joinpath( mkpath(joinpath(animation_base_folder,param1, param2,seed)))
-    
-                    raw_data_file = jldopen( raw_data_file_path, "r" )
+        @showprogress for (param2, seeddict) in subdict
 
-                    make_movie(raw_data_file,save_folder)
-                    close(raw_data_file)    
+            print(param1)
+            if param1=="Dr_1.0" && param2=="J_0.0"
+    
+                for (seed, seedpath) in  seeddict
+        
+                        raw_data_file_path = joinpath(seedpath, raw_data_file_name)
+        
+                        save_folder = joinpath( mkpath(joinpath(animation_base_folder,param1, param2,seed)))
+        
+                        raw_data_file = jldopen( raw_data_file_path, "r" )
+
+                        make_movie(raw_data_file,save_folder)
+                        close(raw_data_file)    
+                end
             end
         end
     end 
@@ -124,7 +142,7 @@ end
 
 #base_folder = joinpath("/data1","kammeraat", "sa", "varyDr","J_1")
 
-base_folder = joinpath(homedir(), "sa", "varyJ","simdata")
-animation_base_folder = joinpath(homedir(), "sa", "varyJ","movies")
+base_folder = joinpath(homedir(), "sa", "vary_J_Dr","simdata")
+animation_base_folder = joinpath(homedir(), "sa", "vary_J_Dr","movies_vp")
 main(base_folder, animation_base_folder)
 
