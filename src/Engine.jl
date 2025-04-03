@@ -207,7 +207,7 @@ end
 
 
 
-function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_functions=nothing, save_folder_path=nothing, Tplot=nothing, fps=nothing, plot_functions=nothing,plotdim=nothing)
+function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_functions=nothing, save_folder_path=nothing, save_tag=nothing, Tplot=nothing, fps=nothing, plot_functions=nothing,plotdim=nothing)
 
 
     integration_tax = collect(0:dt:t_stop)
@@ -238,9 +238,15 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         #If folder already exists, simply returns folder path. If folder is not existing, it will create the (sub)folders and return the path
         mkpath(save_folder_path)
 
-        JAMs_file_name = "JAMs_container.jld2"
-        
-        raw_data_file_name = "raw_data.jld2"
+        if isnothing(save_tag)
+            JAMs_file_name = "JAMs_container.jld2"
+            
+            raw_data_file_name = "raw_data.jld2"
+        else
+            JAMs_file_name = save_tag * "_"* "JAMs_container.jld2"
+            
+            raw_data_file_name = save_tag * "_"*"raw_data.jld2"
+        end
 
         if isfile(joinpath(save_folder_path, JAMs_file_name)) || isfile(joinpath(save_folder_path, raw_data_file_name))
             error("JAMs: Specified save folder already contains JAMs file(s): " * JAMs_file_name * " and/or " * raw_data_file_name*". JAMs aborted to prevent overwriting.")
