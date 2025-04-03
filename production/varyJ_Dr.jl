@@ -39,7 +39,7 @@ addprocs(n)
     xs = []
     ys = []
     r=1.0
-    l = 2# 2*r
+    l = 2* sqrt(pi*sqrt(3)/(6*ϕ))# 2*r
 
     typess = []
 

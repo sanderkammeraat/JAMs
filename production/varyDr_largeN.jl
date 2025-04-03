@@ -39,7 +39,8 @@ addprocs(n)
     xs = []
     ys = []
     r=1.0
-    l = 2# 2*r
+    ϕ=1.
+    l = 2* sqrt(pi*sqrt(3)/(6*ϕ))# 2*r
 
     typess = []
 
@@ -119,7 +120,7 @@ addprocs(n)
 end
 
 
-#simulation(0, 0.01,1, ""; Tsave=nothing, Tplot=100)
+simulation(0, 0.01,1, ""; Tsave=nothing, Tplot=100)
 
 
 Drs = [0., 0.01, 0.1, 1, 10] 
