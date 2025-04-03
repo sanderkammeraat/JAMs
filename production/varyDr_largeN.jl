@@ -122,8 +122,8 @@ end
 #simulation(0, 0.01,1, ""; Tsave=nothing, Tplot=100)
 
 
-Drs = [0.01, 0.1, 1, 10] 
-Js=[0.0]
+Drs = [0., 0.01, 0.1, 1, 10] 
+Js=[0.1, 1.]
 
 seeds = reshape( collect(1:length(Drs)*length(Js)), (length(Drs),length(Js)) )
 
@@ -137,7 +137,7 @@ for j in eachindex(Js)
 
         display("Running")
 
-        save_folder_path = joinpath(homedir(),"sa","vary_Dr_largeN","simdata", "J_$J","Dr_$Dr","seed_$seed");
+        save_folder_path = joinpath(homedir(),"sa","vary_J_Dr_largeN","simdata", "J_$J","Dr_$Dr","seed_$seed");
         print(save_folder_path)
 
         sim = simulation(J,Dr,seed, save_folder_path);

@@ -38,7 +38,7 @@ function make_movie(raw_data_file,save_folder)
     Np = length(frames["1"]["x"])
     scaleup = maximum(frames["1"]["R"])+maximum(frames["1"]["x"])
     #Setup figure
-    f = Figure();
+    f = Figure(size=(1000,3000));
     ax = Axis(f[1,1], aspect=DataAspect(),title = @lift("t = $(round($t, digits = 1)), Dr=$Dr, J=$J "), xlabel="x", ylabel="y");
 
     ax2 = Axis(f[1,2],title = @lift("t = $(round($t, digits = 1)), Dr=$Dr, J=$J "), xlabel="t", ylabel="std(px), mean(px)");
@@ -58,7 +58,7 @@ function make_movie(raw_data_file,save_folder)
     
 
 
-    #arrows!(ax, x,y, px,py , color=cp,  colormap=:hsv,colorrange=(-pi,pi))
+    arrows!(ax, x,y, px,py , color=cp,  colormap=:hsv,colorrange=(-pi,pi))
 
     #velocity vectors
     cv = @lift( angle.($vx+1im*$vy) )
@@ -67,10 +67,10 @@ function make_movie(raw_data_file,save_folder)
 
     vp_y = @lift( sin.($cp-$cv) )
 
-    #arrows!(ax, x,y, vx,vy , color=cv,  colormap=:hsv,colorrange=(-pi,pi))
+    arrows!(ax, x,y, vx,vy , color=cv,  colormap=:hsv,colorrange=(-pi,pi))
 
 
-    arrows!(ax, x,y, vp_x,vp_y , color=cv,  colormap=:hsv,colorrange=(-pi,pi))
+    #arrows!(ax, x,y, vp_x,vp_y , color=cv,  colormap=:hsv,colorrange=(-pi,pi))
 
     plotpx = @lift(scaleup.*$(px)[type.==1]) 
     plotpy = @lift(scaleup.*$(py)[type.==1]) 
@@ -81,13 +81,15 @@ function make_movie(raw_data_file,save_folder)
     lines!(ax2, t_stdp)
 
     lines!(ax2, t_mp)
+
+    colsize!(f.layout, 1, Relative(2/3))
     ylims!(ax2, (-1,1))
 
 
 
     display(f)
 
-    record(f, joinpath(save_folder,"vp_Dr_$(Dr)_J_$(J).mp4"), frame_numbers; visible=true) do i 
+    record(f, joinpath(save_folder,"Dr_$(Dr)_J_$(J).mp4"), frame_numbers; visible=false) do i 
 
         stri = string(i)
         t[] = frames[stri]["t"]
@@ -122,7 +124,7 @@ function main(base_folder, animation_base_folder; raw_data_file_name="raw_data.j
         @showprogress for (param2, seeddict) in subdict
 
             print(param1)
-            if param1=="Dr_1.0" && param2=="J_0.0"
+            #if param1=="Dr_1.0" && param2=="J_0.0"
     
                 for (seed, seedpath) in  seeddict
         
@@ -135,14 +137,14 @@ function main(base_folder, animation_base_folder; raw_data_file_name="raw_data.j
                         make_movie(raw_data_file,save_folder)
                         close(raw_data_file)    
                 end
-            end
+            #end
         end
     end 
 end
 
 #base_folder = joinpath("/data1","kammeraat", "sa", "varyDr","J_1")
 
-base_folder = joinpath(homedir(), "sa", "vary_J_Dr","simdata")
-animation_base_folder = joinpath(homedir(), "sa", "vary_J_Dr","movies_vp")
+base_folder = joinpath(homedir(), "sa", "vary_J_Dr_largeN","simdata")
+animation_base_folder = joinpath(homedir(), "sa", "vary_J_Dr_largeN","movies")
 main(base_folder, animation_base_folder)
 
