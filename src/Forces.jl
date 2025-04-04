@@ -19,7 +19,6 @@ struct field_propulsion_3d_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
     consumption::Float64
     v0offset::Float64
-    
 end
 
 struct external_harmonic_pinning_force<:Force
@@ -58,6 +57,11 @@ end
 struct external_friction_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
     γ::Float64
+end
+
+struct thermal_translational_noise<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    Dt_vector::MVector{3,Float64}
 end
 
 struct ABP_perpendicular_angular_noise<:Force
@@ -189,6 +193,18 @@ function contribute_external_force!(p_i, t, dt, force::ABP_2d_angular_noise,rngs
 
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
     p_i.ω.+= ω*sqrt(dt)/dt
+    end
+    return p_i
+end
+
+function contribute_external_force!(p_i, t, dt, force::thermal_translational_noise,rngs_particles)
+
+    if p_i.type[1] in force.ontypes
+        for i in eachindex(p_i.f)
+            η = sqrt(2*force.Dt_vector[i])*rand(rngs_particles[p_i.id[1]], Normal(0, 1))
+            #compensate for the dt from the dof evolver, can be changed if the evolver also changes
+            p_i.f[i]+= η*sqrt(dt)/dt
+        end
     end
     return p_i
 end

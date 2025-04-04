@@ -39,6 +39,7 @@ addprocs(n)
     xs = []
     ys = []
     r=1.0
+    ϕ=1.
     l = 2* sqrt(pi*sqrt(3)/(6*ϕ))# 2*r
 
     typess = []
@@ -132,7 +133,7 @@ seeds = reshape( collect(1:length(Drs)*length(Js)), (length(Drs),length(Js)) )
 
         display("Running")
 
-        save_folder_path = joinpath(homedir(),"sa","phi_1","N_19","vary_J_Dr","simdata","Dr_$Dr", "J_$J","seed_$seed");
+        save_folder_path = joinpath(homedir(),"sa","phi_1","Nlin_4","vary_J_Dr","simdata", "J_$J","Dr_$Dr","seed_$seed");
         print(save_folder_path)
 
         sim = simulation(J,Dr,seed, save_folder_path);

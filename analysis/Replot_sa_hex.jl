@@ -144,7 +144,7 @@ end
 
 #base_folder = joinpath("/data1","kammeraat", "sa", "varyDr","J_1")
 
-base_folder = joinpath(homedir(), "sa", "vary_J_Dr_largeN","simdata")
-animation_base_folder = joinpath(homedir(), "sa", "vary_J_Dr_largeN","movies")
+base_folder = joinpath(homedir(), "sa","phi_1", "Nlin_4", "vary_J_Dr","simdata")
+animation_base_folder = joinpath(homedir(), "sa","phi_1", "Nlin_4", "vary_J_Dr","movies")
 main(base_folder, animation_base_folder)
 
