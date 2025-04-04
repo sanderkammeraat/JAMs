@@ -19,7 +19,7 @@ addprocs(n)
 
 @everywhere function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing)
 
-    external_forces =[thermal_translational_noise(1,1e-4.*[1.,1.,0])]
+    external_forces =[thermal_translational_noise(1, 0 .*[1.,1.,0])]
 
     pair_forces = [soft_disk_force([1, 2],[1. 1.; 1. 1.])]
     #dofevolvers = [inertial_evolver!]
@@ -74,9 +74,10 @@ addprocs(n)
 
     poly=0.15
     Rs = rand(Uniform((1-poly)*r, (1+poly)*r),N)
-
-    println(mean(Rs))
-
+    while mean(Rs)<1 || mean(Rs)>1+ 1e-2
+        Rs = rand(Uniform((1-poly)*r, (1+poly)*r),N)
+        println(mean(Rs))
+    end
 
     initial_state = Union{PolarParticle3d,ConfinedPolarParticle3d}[]
     id=1
@@ -145,7 +146,7 @@ end
 end
 
 rx_result= relaxation_step("",Tsave=nothing, Tplot=100)
-self_aligning_step(rx_result,1, 0.01,1, ""; Tsave=nothing, Tplot=100)
+self_aligning_step(rx_result,0.8, 0.01,1, ""; Tsave=nothing, Tplot=100)
 
 
 Drs = [0., 0.01, 0.1, 1, 10] 
