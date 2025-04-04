@@ -2,10 +2,10 @@ include(joinpath("..","src","Engine.jl"))
 include("AnalysisPipeline.jl")
 
 
+base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
+analysis_base_folder = joinpath(base_folder, "analysis")
 
-analysis_base_folder = joinpath(homedir(),"sa", "vary_J_Dr", "analysis")
-
-plot_base_folder = mkpath(joinpath(homedir(),"sa", "vary_J_Dr", "plots")) 
+plot_base_folder = mkpath(joinpath(base_folder, "plots")) 
 
 tree = construct_folder_tree_param_param_seed(analysis_base_folder)
 
@@ -146,6 +146,7 @@ function plot_dis_projections(seed,seedanalysis_file)
     J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
     v0 = seedanalysis_file["v0"]
     dis_projs = seedanalysis_file["dis_projs"]
+    ωs = sqrt.(seedanalysis_file["modes"]["eigvals"])
     t = seedanalysis_file["integration_info"]["save_tax"]
     ax = Axis(f[1,1], xlabel="mode number", ylabel="dis_proj^2", title="J=$J, Dr=$Dr", yscale=log10)
     scatter!(ax, mean(dis_projs.^2, dims=2)[:,1], color=:blue)
@@ -167,7 +168,7 @@ function plot_ω_dis_projections(seed,seedanalysis_file)
 
     t = seedanalysis_file["integration_info"]["save_tax"]
     ax = Axis(f[1,1], xlabel="ω", ylabel="dis_proj^2", title="J=$J, Dr=$Dr", yscale=log10)
-    lines!(ax,ωs, mean(dis_projs[:,500:end].^2, dims=2)[:,1], color=:blue)
+    scatter!(ax,ωs, mean(dis_projs[:,500:end].^2, dims=2)[:,1], color=:blue)
 
     display(f)
 

@@ -120,16 +120,15 @@ addprocs(n)
 end
 
 
-simulation(0, 0.01,1, ""; Tsave=nothing, Tplot=100)
+#simulation(0, 0.01,1, ""; Tsave=nothing, Tplot=100)
 
 
 Drs = [0., 0.01, 0.1, 1, 10] 
-Js=[0.1, 1.]
+Js=[0., 0.1, 1.]
 
 seeds = reshape( collect(1:length(Drs)*length(Js)), (length(Drs),length(Js)) )
 
-for j in eachindex(Js)
-    @sync @distributed for i in eachindex(Drs)
+@sync @distributed for (i,j ) in collect(Iterators.product(eachindex(Drs),eachindex(Js)))
 
         J = Js[j]
         Dr = Drs[i]
@@ -138,9 +137,8 @@ for j in eachindex(Js)
 
         display("Running")
 
-        save_folder_path = joinpath(homedir(),"sa","vary_J_Dr_largeN","simdata", "J_$J","Dr_$Dr","seed_$seed");
+        save_folder_path = joinpath("/data1/kammeraat","sa","phi_1", "Nlin_20","vary_J_Dr","simdata", "J_$J","Dr_$Dr","seed_$seed");
         print(save_folder_path)
 
         sim = simulation(J,Dr,seed, save_folder_path);
-    end
 end

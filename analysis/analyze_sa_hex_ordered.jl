@@ -4,9 +4,11 @@ include(joinpath("..","src","Engine.jl"))
 include("AnalysisPipeline.jl")
 include("AnalysisFunctions.jl")
 
-raw_data_base_folder = joinpath(homedir(),"sa", "vary_J_Dr", "simdata")
+base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr"
 
-analysis_base_folder = mkpath(joinpath(homedir(),"sa", "vary_J_Dr", "analysis"))
+raw_data_base_folder = joinpath(base_folder, "simdata")
+
+analysis_base_folder = mkpath(joinpath(base_folder, "analysis"))
 
 #Make tree to navigate simulation data folder structure
 tree = construct_folder_tree_param_param_seed(raw_data_base_folder)
@@ -145,7 +147,7 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
 
 end
 
-run_serial_analysis_param1_param2_seed(tree, analyze_single_seed_inner!, analysis_base_folder, overwrite=true)
+run_multithreaded_analysis_param1_param2_seed(tree, analyze_single_seed_inner!, analysis_base_folder, overwrite=true)
 
 #original = jldopen( joinpath(raw_data_base_folder,"Dr_0.01","J_0.0","seed_1",raw_data_file_name ), "r")
 #test = jldopen( joinpath(analysis_base_folder,"Dr_0.01","J_0.0","seed_1.jld2"), "r")

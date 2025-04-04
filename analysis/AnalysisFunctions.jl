@@ -84,7 +84,7 @@ function u_ij_2(i,j,r_ij_0_norm, k, R,type)
     end
 end
 
-function construct_M_ij(i,j,x,y, k, R,type)
+@views function construct_M_ij(i,j,x,y, k, R,type)
 
     M_ij= zeros(2,2)
 
@@ -103,7 +103,7 @@ end
 
 
 # Actual D construction
-function construct_D(x0,y0, k, R, type)
+@views function construct_D(x0,y0, k, R, type)
 
     M=zeros(2*length(x0), 2*length(x0))
 
@@ -138,7 +138,7 @@ function diagonalize_D(D)
 end
 
 
-function project_on_eigvecs(eigvecs, xinterior, yinterior)
+@views function project_on_eigvecs(eigvecs, xinterior, yinterior)
 
     Neigvecs = size(eigvecs)[2]
     Nt = size(xinterior)[2]
@@ -147,7 +147,7 @@ function project_on_eigvecs(eigvecs, xinterior, yinterior)
 
     @showprogress desc="Projection on eigvecs" showspeed=true for i in 1:Nt
 
-        @views for j in 1:Neigvecs
+         for j in 1:Neigvecs
              projs[j,i] =  project_on_eigvec(eigvecs[:,j], xinterior[:,i], yinterior[:,i])
 
         end
@@ -158,7 +158,7 @@ function project_on_eigvecs(eigvecs, xinterior, yinterior)
     return projs
 end
 
-function project_on_eigvec(eigvec, xi, yi)
+@views function project_on_eigvec(eigvec, xi, yi)
 
     xy_zip = collect(Iterators.flatten(zip(xi, yi)))
     proj = sum( xy_zip .* eigvec)
