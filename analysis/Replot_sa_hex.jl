@@ -5,7 +5,7 @@ include("AnalysisPipeline.jl")
 using GLMakie
 GLMakie.activate!()
 
-function make_movie(raw_data_file,save_folder)
+@views function make_movie(raw_data_file,save_folder)
     save_tax = raw_data_file["integration_info"]["save_tax"]
 
     J = raw_data_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
@@ -38,7 +38,7 @@ function make_movie(raw_data_file,save_folder)
     Np = length(frames["1"]["x"])
     scaleup = maximum(frames["1"]["R"])+maximum(frames["1"]["x"])
     #Setup figure
-    f = Figure(size=(2000,2000));
+    f = Figure()#Figure(size=(2000,2000));
     ax = Axis(f[1,1], aspect=DataAspect(),title = @lift("t = $(round($t, digits = 1)), Dr=$Dr, J=$J "), xlabel="x", ylabel="y");
 
     ax2 = Axis(f[1,2],title = @lift("t = $(round($t, digits = 1)), Dr=$Dr, J=$J "), xlabel="t", ylabel="std(px), mean(px)");
@@ -142,7 +142,9 @@ function main(base_folder, animation_base_folder; raw_data_file_name="raw_data.j
     end 
 end
 
-base_folder = joinpath("/data1","kammeraat", "sa", "phi_1","Nlin_20","vary_J_Dr")
+#base_folder = joinpath("/data1","kammeraat", "sa", "phi_1","Nlin_20","vary_J_Dr")
+
+base_folder = joinpath(homedir(), "sa", "phi_1","Nlin_4","vary_J_Dr")
 
 #base_folder = joinpath(homedir(), "sa", "vary_J_Dr_largeN","simdata")
 animation_base_folder = joinpath(base_folder,"movies")
