@@ -1,4 +1,5 @@
 using StaticArrays
+using SparseArrays
 using Observables
 using JLD2
 using CodecZlib
@@ -88,14 +89,14 @@ field_forces: Array containing (struct instances of) forces acting on particles 
 
 field_updaters: Array containing (struct instances of) forces/update rules acting on the field
 
-dof_evolvers: Array containing (references to) functions that update the degrees of freedom of particles and fields
+dofevolvers: Array containing (struct instances of) evolvers that update the degrees of freedom of particles and fields
 
 periodic: Bool describing whether the system is spatially periodic of the system sizes.
 
 rcut_pair_global: Float setting the cutoff of all pair_forces and is used to generate cell lists.
 
 """
-struct System{T1,T2, T3, T4, T5, T6, T7, T8}
+struct System{T1,T2, T3, T4, T5, T6, T7, T8, T9}
 
     #Vector that determines the linear size of the system
     sizes::T1
@@ -116,7 +117,9 @@ struct System{T1,T2, T3, T4, T5, T6, T7, T8}
     field_updaters::T7
     
     #Array of functions to evolve dof (and reinitialize forces)
-    dofevolvers::T8
+    local_dofevolvers::T8
+
+    global_dofevolvers::T9
 
     #Spatially periodic boundary conditions?
     Periodic::Bool
@@ -182,12 +185,17 @@ function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_t
 
     end
 
-    for dofevolver in system.dofevolvers
+    for dofevolver in system.local_dofevolvers
 
         dofevolver_name = string(nameof(dofevolver))
-        file["system/dofevolvers/"*dofevolver_name] = dofevolver_name
+        file["system/local_dofevolvers/"*dofevolver_name] = dofevolver_name
     end
 
+    for dofevolver in system.global_dofevolvers
+
+        dofevolver_name = string(nameof(dofevolver))
+        file["system/global_dofevolvers/"*dofevolver_name] = dofevolver_name
+    end
 
     file["integration_info/integration_tax"] = integration_tax
 
@@ -407,11 +415,24 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
 
         #Only now evolve dofs of every particle
+        #Local
         Threads.@threads for i in eachindex(current_particle_state)
             p_i = current_particle_state[i]
-            for dofevolver in system.dofevolvers
-                p_i=dofevolver(p_i, t, dt)
+            for dofevolver in system.local_dofevolvers
+                p_i=evolve_locally!(p_i, t, dt, dofevolver)
             end
+        end
+        #Or global
+
+        for dofevolver in system.global_dofevolvers
+            current_particle_state,current_field_state =evolve_globally!(current_particle_state, current_field_state, system, cells, stencils, dt, dofevolver)
+        end
+
+        #Perform checks
+        Threads.@threads for i in eachindex(current_particle_state)
+            p_i = current_particle_state[i]
+
+            #apply periodic boundary conditions
             if system.Periodic
                 p_i=periodic!(p_i, system.sizes)
         
