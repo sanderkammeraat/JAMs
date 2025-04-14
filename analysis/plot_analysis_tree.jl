@@ -3,6 +3,9 @@ include("AnalysisPipeline.jl")
 
 
 base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
+
+base_folder = joinpath(homedir(), "sa", "phi_1", "Nlin_4", "vary_J_Dr")
+
 analysis_base_folder = joinpath(base_folder, "analysis")
 
 plot_base_folder = mkpath(joinpath(base_folder, "plots")) 
@@ -215,68 +218,54 @@ function collect_params(seed,seedanalysis_file)
     Dr = seedanalysis_file["Dr"]
     J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
     t = seedanalysis_file["integration_info"]["save_tax"]
-    push!(Drs, Dr)
-    push!(Js, J)
+    if Dr>0 && J>0
+        push!(Drs, Dr)
+        push!(Js, J)
+        t_transient = 500
 
-    push!(ϕms, mean(seedanalysis_file["mean_ϕ"][t .> 500]))
+        push!(ϕms, mean(seedanalysis_file["mean_ϕ"][t .> t_transient]))
 
-    push!(ψms, mean(seedanalysis_file["ψ"][t .> 500]))
+        push!(ψms, mean(seedanalysis_file["ψ"][t .> t_transient]))
 
-    push!(ψmstds, std(seedanalysis_file["ψ"][t .> 500]))
+        push!(ψmstds, std(seedanalysis_file["ψ"][t .> t_transient]))
 
-    push!(Kms, mean(seedanalysis_file["K"][t .> 500]))
+        push!(Kms, mean(seedanalysis_file["K"][t .> t_transient]))
 
-    push!(Kmstds, std(seedanalysis_file["K"][t .> 500]))
-
+        push!(Kmstds, std(seedanalysis_file["K"][t .> t_transient]))
+    end
 end
 
 acces_param1_param2_seedanalysis(tree, [collect_params])
 
-f = Figure();
-ax = Axis(f[1,1], xlabel="Dr", ylabel="J", xscale=log10);
-hm=heatmap!(Drs, Js, ϕms)
-
-Colorbar(f[:, end+1], hm,label=" ⟨ ⟨ϕ⟩ ⟩")
-
-scatter!(ax, Drs, Js, color=:white, strokecolor=:black, strokewidth=1)
-
-display(f);
-save(joinpath(plot_base_folder,"mean2_phi_Dr_J.pdf"),f)
-
-f = Figure();
-ax = Axis(f[1,1], xlabel="Dr", ylabel="J", xscale=log10);
-hm=heatmap!(Drs, Js, abs.(ϕms))
-
-Colorbar(f[:, end+1], hm,label=" |⟨ ⟨ϕ⟩ ⟩|")
-
-scatter!(ax, Drs, Js, color=:white, strokecolor=:black, strokewidth=1)
-
-display(f);
-save(joinpath(plot_base_folder,"abs_mean2_phi_Dr_J.pdf"),f)
+function Dr_J_heatmap(Drs, Js, vals, cbarlabel, save_path)
 
 
-f = Figure();
-ax = Axis(f[1,1], xlabel="Dr", ylabel="J", xscale=log10);
-hm=heatmap!(Drs, Js, ψms)
+    f = Figure();
+    ax = Axis(f[1,1], xlabel="log10(Dr)", ylabel="log10(J)");
 
-Colorbar(f[:, end+1], hm,label=" ⟨ ψ(t) ≡ 1/N |∑ e^(iϕ)| ⟩_t ")
+    hm=heatmap!(ax,log10.(Drs), log10.(Js), vals)
 
-scatter!(ax, Drs, Js, color=:white, strokecolor=:black, strokewidth=1)
+    Colorbar(f[:, end+1], hm,label=cbarlabel)
 
-display(f);
-save(joinpath(plot_base_folder,"mean_psi_Dr_J.pdf"),f)
+    scatter!(ax, log10.(Drs), log10.(Js), color=:white, strokecolor=:black, strokewidth=1)
+
+    display(f);
+
+    save(save_path,f)
+end
+
+save_path = joinpath(plot_base_folder,"phi_Dr_J.pdf")
+Dr_J_heatmap(Drs, Js, ϕms, "⟨ ⟨ϕ⟩ ⟩", save_path)
+
+save_path = joinpath(plot_base_folder,"abs_phi_Dr_J.pdf")
+Dr_J_heatmap(Drs, Js, abs.(ϕms), "|⟨ ⟨ϕ⟩ ⟩|", save_path)
 
 
-f = Figure();
-ax = Axis(f[1,1], xlabel="Dr", ylabel="J", xscale=log10);
-hm=heatmap!(Drs, Js, Kms)
+save_path = joinpath(plot_base_folder,"psi_Dr_J.pdf")
+Dr_J_heatmap(Drs, Js, ψms, "⟨ ψ(t) ≡ 1/N |∑ e^(iϕ)| ⟩_t ", save_path)
 
-Colorbar(f[:, end+1], hm,label=" ⟨ K(t) ≡ 1/N |∑ e^(iθ_p)| ⟩_t ")
-
-scatter!(ax, Drs, Js, color=:white, strokecolor=:black, strokewidth=1)
-
-display(f);
-save(joinpath(plot_base_folder,"mean_K_Dr_J.pdf"),f)
+save_path = joinpath(plot_base_folder,"K_Dr_J.pdf")
+Dr_J_heatmap(Drs, Js, Kms, " ⟨ K(t) ≡ 1/N |∑ e^(iθ_p)| ⟩_t ", save_path)
 
 
 
