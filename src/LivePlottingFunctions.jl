@@ -109,7 +109,7 @@ function plot_sized_points!(ax, cpsO, cfsO)
 
 
     else
-        s = @lift([2*p_i.R[1]^2  for p_i in $cpsO])
+        s = @lift([2*p_i.R[1]  for p_i in $cpsO])
         scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
 
     end
@@ -128,7 +128,7 @@ function plot_disks!(ax, cpsO, cfsO)
     c = @lift([ p_i.id[1] for p_i in $cpsO])
 
     
-    s = @lift([2*p_i.R[1]^2  for p_i in $cpsO])
+    s = @lift([2*p_i.R[1]  for p_i in $cpsO])
     scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
 
     return ax
@@ -144,7 +144,7 @@ function plot_disks_uw!(ax, cpsO, cfsO)
     c = @lift([ p_i.id[1] for p_i in $cpsO])
 
     
-    s = @lift([2*p_i.R[1]^2  for p_i in $cpsO])
+    s = @lift([p_i.R[1]  for p_i in $cpsO])
     scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
 
     return ax
@@ -159,7 +159,7 @@ function plot_disks_vx!(ax, cpsO, cfsO)
     c = @lift([ p_i.v[1] for p_i in $cpsO])
 
     
-    s = @lift([2*p_i.R[1]^2  for p_i in $cpsO])
+    s = @lift([2*p_i.R[1]  for p_i in $cpsO])
     scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1,colorrange=(-0.05,0.05))
 
     return ax
@@ -174,7 +174,7 @@ function plot_disks_orientation!(ax, cpsO, cfsO)
     c = @lift([ angle(p_i.p[1]+1im*p_i.p[2]) for p_i in $cpsO])
 
     
-    s = @lift([2*p_i.R[1]^2  for p_i in $cpsO])
+    s = @lift([2*p_i.R[1]  for p_i in $cpsO])
     scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1,colormap=:hsv,colorrange=(-pi,pi))
 
     return ax
@@ -189,7 +189,7 @@ function plot_disks_vp_phase_difference!(ax, cpsO, cfsO)
     c = @lift([ angle( exp(1im* (angle(p_i.v[1]+1im*p_i.v[2]) - angle(p_i.p[1]+1im*p_i.p[2])) ) )  for p_i in $cpsO])
 
     
-    s = @lift([2*p_i.R[1]^2  for p_i in $cpsO])
+    s = @lift([2*p_i.R[1]  for p_i in $cpsO])
     scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1,colormap=:hsv,colorrange=(-pi,pi))
 
     return ax
@@ -215,7 +215,7 @@ function plot_type_sized_points!(ax, cpsO, cfsO)
 
 
     else
-        s = @lift([2*p_i.R[1]^2  for p_i in $cpsO])
+        s = @lift([2*p_i.R[1]  for p_i in $cpsO])
         scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
 
     end

@@ -46,7 +46,7 @@ GLMakie.activate!()
 
     #disks
     c = @lift( angle.($px+1im*$py) )
-    s = @lift( 2. *$R.^2 )
+    s = @lift( 2. *$R)
 
     scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.1, strokecolor=:black, strokewidth=1,colormap=:hsv,colorrange=(-pi,pi))
 
