@@ -435,9 +435,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::pairABP_force,r
 
         if dxn < r
             β = 1 - dxn/r
-            p_i.fn[1] += -β*(cos(p_j.θ[1])*p_j.v0[1]- cos(p_i.θ[1])*p_i.v0[1])/2
-            p_i.fn[2] += -β*(sin(p_j.θ[1])*p_j.v0[1]- sin(p_i.θ[1])*p_i.v0[1])/2
-            p_i.n[1]+=1
+            p_i.f.+= -β*(p_j.p *p_j.v0[1] .- p_i.p* p_i.v0[1])/2
         end
     end
     return p_i
