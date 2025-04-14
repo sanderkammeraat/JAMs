@@ -51,7 +51,7 @@ function evolve_locally!(p_i, t, dt, dofevolver::overdamped_θω_evolver)
 
     if p_i.type[1] in dofevolver.ontypes
     #evolve
-    p_i.θ.+= p_i.ω * dt
+    p_i.θ.+= p_i.ω .* dt
 
     #reinitalize
     p_i.ω.*= 0.

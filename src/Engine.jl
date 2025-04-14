@@ -421,6 +421,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
             for dofevolver in system.local_dofevolvers
                 p_i=evolve_locally!(p_i, t, dt, dofevolver)
             end
+            current_particle_state[i] = p_i
         end
         #Or global
 
@@ -435,7 +436,6 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
             #apply periodic boundary conditions
             if system.Periodic
                 p_i=periodic!(p_i, system.sizes)
-        
             else
                 check_outside_system(p_i,system.sizes)
             end
