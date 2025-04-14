@@ -312,7 +312,7 @@ end
 
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_disk_force,rngs_particles)
 
-    if p_i.type[1]::Int64 in force.ontypes && p_j.type[1]::Int64 in force.ontypes
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
     d2R = p_i.R[1]+p_j.R[1]
     f = @MVector zeros(length(dx))
         if dxn < d2R
