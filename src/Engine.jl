@@ -96,30 +96,32 @@ periodic: Bool describing whether the system is spatially periodic of the system
 rcut_pair_global: Float setting the cutoff of all pair_forces and is used to generate cell lists.
 
 """
-struct System{T1,T2, T3, T4, T5, T6, T7, T8, T9}
+struct System{Ts,Tips, Tifs, Tef, Tpf, Tnf, Tff, Tfu, Tld, Tlg}
 
     #Vector that determines the linear size of the system
-    sizes::T1
+    sizes::Ts
 
     #Array containing particles in a specific state
-    initial_particle_state::T2
+    initial_particle_state::Tips
 
     #Array containing fields in a specific state
-    initial_field_state::T3
+    initial_field_state::Tifs
 
     #Array of force functions:
-    external_forces::T4
+    external_forces::Tef
 
-    pair_forces::T5
+    pair_forces::Tpf
 
-    field_forces::T6
+    neighbourhood_forces::Tnf
 
-    field_updaters::T7
+    field_forces::Tff
+
+    field_updaters::Tfu
     
     #Array of functions to evolve dof (and reinitialize forces)
-    local_dofevolvers::T8
+    local_dofevolvers::Tld
 
-    global_dofevolvers::T9
+    global_dofevolvers::Tlg
 
     #Spatially periodic boundary conditions?
     Periodic::Bool
@@ -166,6 +168,13 @@ function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_t
     for force in system.pair_forces
 
         preamble = "system/forces/pair_forces/"
+
+        save_raw_force_data!(file,preamble, force)
+
+    end
+    for force in system.neighbourhood_forces
+
+        preamble = "system/forces/neighbourhood_forces/"
 
         save_raw_force_data!(file,preamble, force)
 
@@ -486,6 +495,10 @@ function particle_step!(i,p_i, current_particle_state,Npair,t, dt, system,cells,
         p_i=contribute_external_force!(p_i, t, dt, force,rngs_particles)
     end
 
+    for force in system.neighbourhood_forces
+        p_i=contribute_neighbourhood_forces!(i,p_i, current_particle_state,t, dt, system,cells,stencils,rngs_particles)
+    end
+
     return p_i
 end
 
@@ -557,6 +570,25 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cel
     return p_i
 end
 
+function contribute_neighbourhood_forces!(i,p_i, current_particle_state, t, dt,system,cells,stencils,rngs_particles)
+    
+    dx = @MVector zeros(Float64,length(p_i.x))
+    neighbours= get_neighbours(p_i,cells,stencils)
+    if !isnothing(neighbours)
+
+        neighbourhood = [n  for n in neighbours if n!=i]
+        dxs_unchecked = [ minimal_image_difference!(dx, p_i.x, current_particle_state[n].x, system.sizes, system.Periodic) for n in neighbourhood ]
+        dxns_unchecked = norm.(dxs_unchecked)
+        p_js = [current_particle_state[neighbourhood[m]] for m in eachindex(neighbourhood) if dxns_unchecked[m]<=system.rcut_pair_global]
+        dxs = [dxs_unchecked[m] for m in eachindex(neighbourhood) if dxns_unchecked[m]<=system.rcut_pair_global]
+        dxns = [dxns_unchecked[m] for m in eachindex(neighbourhood) if dxns_unchecked[m]<=system.rcut_pair_global]
+
+        for force in system.neighbourhood_forces
+            p_i=contribute_neighbourhood_force!(p_i, p_js, dxs, dxns, t, dt, force,rngs_particles)
+        end
+    end
+    return p_i
+end
 
 
 function construct_cell_lists!(system)

@@ -5,13 +5,13 @@ function simulation()
 
     pair_forces = [soft_disk_force(1,2)]
 
-    
+    neighbourhood_forces = []
     
     local_dofevolvers =  [overdamped_θω_evolver(1), overdamped_xvf_evolver(1)]
     global_dofevolvers = []
 
     #Initialize state
-    N=100
+    N=1000
     ϕ = 0.5
     L=sqrt(N*pi/ϕ)
     poly = 15e-2
@@ -25,12 +25,12 @@ function simulation()
     field_updaters = []
 
 
-    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, true,10.)#2.5*(1+poly));
+    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,neighbourhood_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, true,2.5*(1+poly));
 
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system, 0.1,1e4,Tplot=10, seed=2, Tsave = nothing, save_folder_path=joinpath("/Users/kammeraat/mounting/data1_kammeraat/testing/network", "prof_soft_abps"), save_functions=[save_2d_polar_θ!], fps=120, plot_functions=[plot_disks!, plot_directors!, plot_velocity_vectors!]);
+    sim = Euler_integrator(system, 0.1,1e3,Tplot=10, seed=2, Tsave = nothing, save_folder_path=joinpath("/Users/kammeraat/mounting/data1_kammeraat/testing/network", "prof_soft_abps"), save_functions=[save_2d_polar_θ!], fps=120, plot_functions=[plot_disks!, plot_directors!, plot_velocity_vectors!]);
     return sim
 end
 #
