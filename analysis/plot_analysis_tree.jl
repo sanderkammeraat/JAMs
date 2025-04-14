@@ -3,6 +3,9 @@ include("AnalysisPipeline.jl")
 
 
 base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
+
+base_folder = joinpath(homedir(), "sa", "phi_1", "Nlin_4", "vary_J_Dr")
+
 analysis_base_folder = joinpath(base_folder, "analysis")
 
 plot_base_folder = mkpath(joinpath(base_folder, "plots")) 
