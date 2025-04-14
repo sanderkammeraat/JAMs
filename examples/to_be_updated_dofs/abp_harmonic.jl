@@ -7,9 +7,6 @@ function simulation()
     pair_forces = []#[soft_disk_force(1,1)]
 
     
-    
-    dofevolvers =  [overdamped_evolver!]
-
     #Initialize state
     N=1
     L=40.

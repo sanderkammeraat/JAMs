@@ -96,30 +96,32 @@ periodic: Bool describing whether the system is spatially periodic of the system
 rcut_pair_global: Float setting the cutoff of all pair_forces and is used to generate cell lists.
 
 """
-struct System{T1,T2, T3, T4, T5, T6, T7, T8, T9}
+struct System{Ts,Tips, Tifs, Tef, Tpf, Tff, Tfu, Tld, Tgd, Tfd}
 
     #Vector that determines the linear size of the system
-    sizes::T1
+    sizes::Ts
 
     #Array containing particles in a specific state
-    initial_particle_state::T2
+    initial_particle_state::Tips
 
     #Array containing fields in a specific state
-    initial_field_state::T3
+    initial_field_state::Tifs
 
-    #Array of force functions:
-    external_forces::T4
+    #Array of force structs:
+    external_forces::Tef
 
-    pair_forces::T5
+    pair_forces::Tpf
 
-    field_forces::T6
+    field_forces::Tff
 
-    field_updaters::T7
+    field_updaters::Tfu
     
-    #Array of functions to evolve dof (and reinitialize forces)
-    local_dofevolvers::T8
+    #Array of structs to evolve dof (and reinitialize forces)
+    local_dofevolvers::Tld
 
-    global_dofevolvers::T9
+    global_dofevolvers::Tgd
+
+    field_dofevolvers::Tfd
 
     #Spatially periodic boundary conditions?
     Periodic::Bool
@@ -195,6 +197,12 @@ function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_t
 
         dofevolver_name = string(nameof(dofevolver))
         file["system/global_dofevolvers/"*dofevolver_name] = dofevolver_name
+    end
+
+    for dofevolver in system.field_dofevolvers
+
+        dofevolver_name = string(nameof(dofevolver))
+        file["system/field_dofevolvers/"*dofevolver_name] = dofevolver_name
     end
 
     file["integration_info/integration_tax"] = integration_tax
@@ -450,8 +458,8 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
             field_i = current_field_state[i]
 
-            for dofevolver in system.dofevolvers
-                field_i=dofevolver(field_i, t, dt)
+            for dofevolver in system.field_dofevolvers
+                field_i=evolve_field!(field_i, t, dt, dofevolver)
             end
         end
 

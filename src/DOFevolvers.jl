@@ -60,6 +60,7 @@ function evolve_locally!(p_i, t, dt, dofevolver::overdamped_θω_evolver)
     return p_i
 end
 
+
 function evolve_globally!(current_particle_state, current_field_state, system, cells, stencils, dt, dofevolver::overdamped_pairdis_evolver)
 
     dims = length(system.sizes)
@@ -136,7 +137,7 @@ end
 
 
 
-#old, still fully functional, focus on particle
+#old, no longer functional, focus on particle
 
 function inertial_evolver!(p_i::Hexbug, t, dt)
 
@@ -361,6 +362,22 @@ function overdamped_evolver!(p_i::PolarParticle3dN, t, dt)
 
 end
 
+struct overdamped_CCvCf_evolver
+    ontypes::Union{Int64,Vector{Int64}}
+end
+    
+function evolve_field!(field, t, dt, dofevolver::overdamped_CCvCf_evolver)
+
+    if field.type in dofevolver.ontypes
+        field.C.+= field.Cv*dt
+
+        field.Cv.= field.Cf
+
+        #reinitalize
+        field.Cf.*= 0.
+    end
+    return field
+end
 
 function overdamped_evolver!(field::FuelField2d, t, dt)
     

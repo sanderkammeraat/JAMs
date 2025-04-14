@@ -1,4 +1,4 @@
-include(joinpath("..","src","Engine.jl"))
+include(joinpath(pwd(),"src","Engine.jl"))
 function simulation()
 
     external_forces = [ABP_2d_propulsion_force(1), ABP_2d_angular_noise(1)]
@@ -9,6 +9,7 @@ function simulation()
     
     local_dofevolvers =  [overdamped_θω_evolver(1), overdamped_xvf_evolver(1)]
     global_dofevolvers = []
+    
 
     #Initialize state
     N=100
@@ -23,9 +24,10 @@ function simulation()
     initial_field_state=[]
     field_forces = []
     field_updaters = []
+    field_dofevolvers = []
 
 
-    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, true,10.)#2.5*(1+poly));
+    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers, true,2.5*(1+poly));
 
     #Run integration
     #Use plot_disks! for nice visuals

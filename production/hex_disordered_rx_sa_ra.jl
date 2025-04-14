@@ -23,7 +23,9 @@ addprocs(n)
 
     pair_forces = [soft_disk_force([1, 2],[1. 1.; 1. 1.])]
     #dofevolvers = [inertial_evolver!]
-    dofevolvers = [overdamped_evolver!]
+    local_dofevolvers = [overdamped_xvf_evolver(1),overdamped_pq_evolver(1)]
+    global_dofevolvers = []
+    field_dofevolvers = []
     #First make stair
     Nlin=20
     Nrows = 2*Nlin
@@ -104,10 +106,10 @@ addprocs(n)
     field_forces = []
     field_updaters = []
 
-    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,2.5*r*(1+poly));
+    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, field_dofevolvers, false,2.5*r*(1+poly));
 
     #Run integration
-    sim = Euler_integrator(system,1e-1, 1e4,Tsave=Tsave, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="rx" , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-1, 5e2,Tsave=Tsave, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="rx" , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 
 end
@@ -119,8 +121,9 @@ end
 
     pair_forces = [soft_disk_force([1, 2],[1 1; 1 1])]
 
-    #dofevolvers = [inertial_evolver!]
-    dofevolvers = [overdamped_evolver!]
+    local_dofevolvers = [overdamped_xvf_evolver(1),overdamped_pq_evolver(1)]
+    global_dofevolvers = []
+    field_dofevolvers = []
 
     sizes = rx_step.system.sizes
     initial_field_state=[]
@@ -138,10 +141,10 @@ end
         p_i.v0[1] = 0.01
 
     end
-    system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,rx_step.system.rcut_pair_global);
+    system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,false,rx_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,1e-2, 5e3,Tsave=Tsave,seed=seed, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="sa" , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-2, 5e2,Tsave=Tsave,seed=seed, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="sa" , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 end
 
