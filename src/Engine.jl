@@ -156,6 +156,26 @@ function save_raw_force_data!(file, preamble, force)
     return file
 end
 
+function save_raw_dofevolver_data!(file, preamble, dofevolver)
+
+    dofevolver_name = string(nameof(typeof(dofevolver)))
+
+    field_names = fieldnames(typeof(dofevolver))
+
+    for field_name in field_names
+
+        name = string(field_name)
+        val = getfield(dofevolver, field_name)
+
+
+        file[preamble*dofevolver_name*"/"*name] = val
+
+    end
+
+    return file
+end
+
+
 function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_tax, master_seed)
 
     for force in system.external_forces
@@ -189,20 +209,23 @@ function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_t
 
     for dofevolver in system.local_dofevolvers
 
-        dofevolver_name = string(nameof(dofevolver))
-        file["system/local_dofevolvers/"*dofevolver_name] = dofevolver_name
+        preamble = "system/local_dofevolvers/"
+
+        save_raw_dofevolver_data!(file,preamble, dofevolver)
     end
 
     for dofevolver in system.global_dofevolvers
 
-        dofevolver_name = string(nameof(dofevolver))
-        file["system/global_dofevolvers/"*dofevolver_name] = dofevolver_name
+        preamble = "system/global_dofevolvers/"
+
+        save_raw_dofevolver_data!(file,preamble, dofevolver)
     end
 
     for dofevolver in system.field_dofevolvers
 
-        dofevolver_name = string(nameof(dofevolver))
-        file["system/field_dofevolvers/"*dofevolver_name] = dofevolver_name
+        preamble = "system/field_dofevolvers/"
+
+        save_raw_dofevolver_data!(file,preamble, dofevolver)
     end
 
     file["integration_info/integration_tax"] = integration_tax
