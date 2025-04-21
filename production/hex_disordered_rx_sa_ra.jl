@@ -207,7 +207,7 @@ for j in eachindex(Js)
         display("Running")
 
         base_path="/data1/kammeraat/"
-        base_path = homedir()
+        #base_path = homedir()
         save_folder_path = joinpath(base_path,"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr","simdata", "J_$J","Dr_$Dr","seed_$seed");
         print(save_folder_path)
 
