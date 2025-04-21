@@ -27,7 +27,7 @@ addprocs(n)
     global_dofevolvers = []
     field_dofevolvers = []
     #First make stair
-    Nlin=4
+    Nlin=20
     Nrows = 2*Nlin
     initial_state = Union{PolarParticle3d,ConfinedPolarParticle3d}[]
     xs = []
@@ -208,14 +208,14 @@ for j in eachindex(Js)
 
         base_path="/data1/kammeraat/"
         #base_path = homedir()
-        save_folder_path = joinpath(base_path,"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr","simdata", "J_$J","Dr_$Dr","seed_$seed");
+        save_folder_path = joinpath(base_path,"sa","survey","hex_disordered","phi_1","Nlin_20","vary_J_Dr","simdata", "J_$J","Dr_$Dr","seed_$seed");
         print(save_folder_path)
 
-        rx_result = relaxation_step(save_folder_path,Tplot=10)
+        rx_result = relaxation_step(save_folder_path,Tplot=nothing)
 
-        sa_result = self_aligning_step(rx_result,J,Dr, seed, save_folder_path, Tplot=100);
+        sa_result = self_aligning_step(rx_result,J,Dr, seed, save_folder_path, Tplot=nothing);
 
-        ra_result=relax_again_step(sa_result, save_folder_path,Tplot=10);
+        ra_result=relax_again_step(sa_result, save_folder_path,Tplot=nothing);
 
 
     end
