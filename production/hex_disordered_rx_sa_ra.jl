@@ -191,8 +191,8 @@ end
 
 
 
-Drs = [0., 0.01, 0.1, 1, 10] 
-Js=[0, 0.01, 0.1, 1. ,2., 5. , 10.]
+Drs = [0.,0.001, 0.01,0.02,0.05, 0.1, 0.2, 0.5, 1, 10] 
+Js=[0, 0.01, 0.1, 0.2, 0.5, 1. ,2., 5.]
 
 seeds = reshape( collect(1:length(Drs)*length(Js)), (length(Drs),length(Js)) )
 
@@ -206,7 +206,9 @@ for j in eachindex(Js)
 
         display("Running")
 
-        save_folder_path = joinpath("/data1/kammeraat/","sa","hex_disordered","phi_1","Nlin_4","vary_J_Dr","simdata", "J_$J","Dr_$Dr","seed_$seed");
+        base_path="/data1/kammeraat/"
+        base_path = homedir()
+        save_folder_path = joinpath(base_path,"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr","simdata", "J_$J","Dr_$Dr","seed_$seed");
         print(save_folder_path)
 
         rx_result = relaxation_step(save_folder_path,Tplot=10)
