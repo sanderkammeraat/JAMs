@@ -89,7 +89,7 @@ GLMakie.activate!()
 
     display(f)
 
-    record(f, joinpath(save_folder,"Dr_$(Dr)_J_$(J).mp4"), frame_numbers; visible=true) do i 
+    record(f, joinpath(save_folder,"Dr_$(Dr)_J_$(J).mp4"), frame_numbers; visible=false) do i 
 
         stri = string(i)
         t[] = frames[stri]["t"]
@@ -115,7 +115,7 @@ GLMakie.activate!()
     end
 end
 
-function main(base_folder, animation_base_folder; raw_data_file_name="raw_data.jld2")
+function main(base_folder, animation_base_folder; raw_data_file_name="sa_raw_data.jld2")
 
     tree = construct_folder_tree_param_param_seed(base_folder)
 
@@ -144,9 +144,13 @@ end
 
 #base_folder = joinpath("/data1","kammeraat", "sa", "phi_1","Nlin_20","vary_J_Dr")
 
-base_folder = joinpath(homedir(), "sa", "phi_1","Nlin_4","vary_J_Dr")
+base_folder = joinpath(homedir(), "sa","survey","hex_disordered", "phi_1","Nlin_4","vary_J_Dr")
 
 #base_folder = joinpath(homedir(), "sa", "vary_J_Dr_largeN","simdata")
 animation_base_folder = joinpath(base_folder,"movies")
 main(joinpath(base_folder,"simdata"), animation_base_folder)
+
+tree = construct_folder_tree_param_param_seed(joinpath(base_folder,"simdata"))
+
+tree["J_0.01"]["Dr_0.0"]["seed_11"]
 

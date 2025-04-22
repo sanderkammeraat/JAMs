@@ -209,21 +209,21 @@ function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_t
 
     for dofevolver in system.local_dofevolvers
 
-        preamble = "system/local_dofevolvers/"
+        preamble = "system/dofevolvers/local_dofevolvers/"
 
         save_raw_dofevolver_data!(file,preamble, dofevolver)
     end
 
     for dofevolver in system.global_dofevolvers
 
-        preamble = "system/global_dofevolvers/"
+        preamble = "system/dofevolvers/global_dofevolvers/"
 
         save_raw_dofevolver_data!(file,preamble, dofevolver)
     end
 
     for dofevolver in system.field_dofevolvers
 
-        preamble = "system/field_dofevolvers/"
+        preamble = "system/dofevolvers/field_dofevolvers/"
 
         save_raw_dofevolver_data!(file,preamble, dofevolver)
     end

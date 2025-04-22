@@ -6,7 +6,9 @@ include("AnalysisFunctions.jl")
 
 #base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr"
 
-base_folder = joinpath(homedir(),"sa","phi_1","Nlin_4","vary_J_Dr")
+#base_folder = joinpath(homedir(),"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr")
+
+base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_J_Dr/" 
 
 raw_data_base_folder = joinpath(base_folder, "simdata")
 
@@ -15,7 +17,7 @@ analysis_base_folder = mkpath(joinpath(base_folder, "analysis"))
 #Make tree to navigate simulation data folder structure
 tree = construct_folder_tree_param_param_seed(raw_data_base_folder)
 
-function analyze_single_seed_inner!(analysis_file, system, integration_info, frames) 
+function analyze_single_seed_inner!(analysis_file, system, integration_info, frames; frames_support) 
 
     t = integration_info["save_tax"]
 
@@ -75,8 +77,8 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
     analysis_file["AUTO_p"] = auto_correlation(t, px, py, minrow=500)
 
     #Include boundary points!
-    x0 = frames["1"]["x"]
-    y0 = frames["1"]["y"]
+    x0 = frames_support[string(length(frames_support))]["x"]
+    y0 = frames_support[string(length(frames_support))]["y"]
     k = system["forces"]["pair_forces"]["soft_disk_force"]["karray"]
     R = frames["1"]["R"]
     type = frames["1"]["type"]
@@ -149,63 +151,63 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
 
 end
 
-run_multithreaded_analysis_param1_param2_seed(tree, analyze_single_seed_inner!, analysis_base_folder, overwrite=true)
+run_multithreaded_analysis_param1_param2_seed(tree, analyze_single_seed_inner!, analysis_base_folder, overwrite=true, raw_data_file_name="sa_raw_data.jld2", support_raw_data_file_name="ra_raw_data.jld2")
 
-#original = jldopen( joinpath(raw_data_base_folder,"Dr_0.01","J_0.0","seed_1",raw_data_file_name ), "r")
-#test = jldopen( joinpath(analysis_base_folder,"Dr_0.01","J_0.0","seed_1.jld2"), "r")
-#close(test)
-
-
-##Develop room for inner function
-
-#Check with single 
+# #original = jldopen( joinpath(raw_data_base_folder,"Dr_0.01","J_0.0","seed_1",raw_data_file_name ), "r")
+# #test = jldopen( joinpath(analysis_base_folder,"Dr_0.01","J_0.0","seed_1.jld2"), "r")
+# #close(test)
 
 
-raw_data_file_path =  joinpath(raw_data_base_folder,"Dr_0.01","J_1.0","seed_50","raw_data.jld2")
+# ##Develop room for inner function
+
+# #Check with single 
 
 
-analysis_file_path = joinpath( mkpath(joinpath(analysis_base_folder,"Dr_0.01","J_1.0")), "seed_50.jld2")
+# raw_data_file_path =  joinpath(raw_data_base_folder,"Dr_0.01","J_1.0","seed_50","raw_data.jld2")
 
 
-analyze_single_seed_outer(raw_data_file_path, analysis_file_path, analyze_single_seed_inner!, overwrite=true)
+# analysis_file_path = joinpath( mkpath(joinpath(analysis_base_folder,"Dr_0.01","J_1.0")), "seed_50.jld2")
 
 
-result = jldopen(analysis_file_path,"r")
+# analyze_single_seed_outer(raw_data_file_path, analysis_file_path, analyze_single_seed_inner!, overwrite=true)
 
 
-plot(result["type"])
-display(result)
-
-θv = result["θv"]
-θp = result["θp"]
-ϕ = result["ϕ"]
-f = Figure();
-ax = Axis(f[1,1])
-for i in 500:600
-
-    scatter!(ax, θv[:,i], θp[:,i])
-end
-
-display(f)
-
-ax2 = Axis(f[1,2])
-
-lines!(ax2, result["integration_info"]["save_tax"],mean(ϕ, dims=1)[1,:])
-
-display(f)
+# result = jldopen(analysis_file_path,"r")
 
 
-AUTO_p = result["AUTO_p"]
+# plot(result["type"])
+# display(result)
 
-Δt = AUTO_p["Δt"]
+# θv = result["θv"]
+# θp = result["θp"]
+# ϕ = result["ϕ"]
+# f = Figure();
+# ax = Axis(f[1,1])
+# for i in 500:600
+
+#     scatter!(ax, θv[:,i], θp[:,i])
+# end
+
+# display(f)
+
+# ax2 = Axis(f[1,2])
+
+# lines!(ax2, result["integration_info"]["save_tax"],mean(ϕ, dims=1)[1,:])
+
+# display(f)
 
 
-heatmap(AUTO_p["C"])
+# AUTO_p = result["AUTO_p"]
+
+# Δt = AUTO_p["Δt"]
+
+
+# heatmap(AUTO_p["C"])
 
 
 
-lines(AUTO_p["Cavg"])
+# lines(AUTO_p["Cavg"])
 
-close(result)
+# close(result)
 
 

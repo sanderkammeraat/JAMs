@@ -1,14 +1,21 @@
 include(joinpath("..","src","Engine.jl"))
 include("AnalysisPipeline.jl")
 
-
 base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
 
 base_folder = joinpath(homedir(), "sa", "phi_1", "Nlin_4", "vary_J_Dr")
 
+#base_folder = joinpath("/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
+
+base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa", "phi_1", "Nlin_20", "vary_J_Dr")
+
+base_folder = joinpath(homedir(), "sa", "survey","hex_disordered","phi_1", "Nlin_4", "vary_J_Dr")
+
+base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_J_Dr/" 
+
 analysis_base_folder = joinpath(base_folder, "analysis")
 
-plot_base_folder = mkpath(joinpath(base_folder, "plots")) 
+plot_base_folder = mkpath(joinpath(base_folder, "plots_v4")) 
 
 tree = construct_folder_tree_param_param_seed(analysis_base_folder)
 
@@ -17,7 +24,7 @@ using PDFmerger
 using CairoMakie
 
 #Individual plots
-function plot_mean_phi_over_time(seed,seedanalysis_file)
+function plot_phi_over_time(seed,seedanalysis_file)
     f = Figure()
     Dr = seedanalysis_file["Dr"]
     J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
@@ -29,8 +36,12 @@ function plot_mean_phi_over_time(seed,seedanalysis_file)
     display(f)
 
     save("temp.pdf",f)
+    
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
 
-    append_pdf!( joinpath(plot_base_folder,"mean_phi_over_time.pdf"), "temp.pdf", cleanup=true)
+    save(joinpath(subfolder_path,"phi_over_time.pdf"),f)
+
+    append_pdf!( joinpath(plot_base_folder,"phi_over_time.pdf"), "temp.pdf", cleanup=true)
 end
 
 function plot_psi_over_time(seed,seedanalysis_file)
@@ -45,6 +56,9 @@ function plot_psi_over_time(seed,seedanalysis_file)
     display(f)
 
     save("temp.pdf",f)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
+
+    save(joinpath(subfolder_path,"psi_over_time.pdf"),f)
 
     append_pdf!( joinpath(plot_base_folder,"psi_over_time.pdf"), "temp.pdf", cleanup=true)
 end
@@ -62,10 +76,13 @@ function plot_K_over_time(seed,seedanalysis_file)
     display(f)
 
     save("temp.pdf",f)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
+
+    save(joinpath(subfolder_path,"K_over_time.pdf"),f)
 
     append_pdf!( joinpath(plot_base_folder,"K_over_time.pdf"), "temp.pdf", cleanup=true)
 end
-acces_param1_param2_seedanalysis(tree, [plot_K_over_time])
+
 function plot_px_over_time(seed,seedanalysis_file)
     f = Figure()
     Dr = seedanalysis_file["Dr"]
@@ -78,11 +95,15 @@ function plot_px_over_time(seed,seedanalysis_file)
     display(f)
 
     save("temp.pdf",f)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
 
-    append_pdf!( joinpath(plot_base_folder,"mean_px_time.pdf"), "temp.pdf", cleanup=true)
+    save(joinpath(subfolder_path,"px_time.pdf"),f)
+
+    append_pdf!( joinpath(plot_base_folder,"px_time.pdf"), "temp.pdf", cleanup=true)
 end
 
-acces_param1_param2_seedanalysis(tree, [plot_mean_phi_over_time,plot_px_over_time,plot_psi_over_time])
+
+
 
 function plot_AUTO_p(seed,seedanalysis_file)
     f = Figure()
@@ -95,15 +116,18 @@ function plot_AUTO_p(seed,seedanalysis_file)
     t = seedanalysis_file["integration_info"]["save_tax"]
     ax = Axis(f[1,1], xlabel="Δt", ylabel=" ⟨ p(t+Δt) ⋅ p(t) ⟩_{t>500}", title="J=$J, Dr=$Dr")
     ylims!(-1,1)
-    xlims!(0,Δt[1:length(Cavg)][end])
+    xlims!(0,500)#Δt[1:length(Cavg)][end])
     lines!(ax, Δt[1:length(Cavg)],Cavg)
     display(f)
 
     save("temp.pdf",f)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
+
+    save(joinpath(subfolder_path,"AUTO_p.pdf"),f)
 
     append_pdf!( joinpath(plot_base_folder,"AUTO_p.pdf"), "temp.pdf", cleanup=true)
 end
-acces_param1_param2_seedanalysis(tree, [plot_AUTO_p])
+
 
 function plot_v_p_projections(seed,seedanalysis_file)
     f = Figure()
@@ -113,7 +137,7 @@ function plot_v_p_projections(seed,seedanalysis_file)
     v_projs = seedanalysis_file["v_projs"]
     p_projs = seedanalysis_file["p_projs"]
     t = seedanalysis_file["integration_info"]["save_tax"]
-    ax = Axis(f[1,1], xlabel="v_proj", ylabel=" p_proj", title="J=$J, Dr=$Dr")
+    ax = Axis(f[1,1], xlabel="⟨λ_n|V⟩ ", ylabel="⟨λ_n|P⟩", title="J=$J, Dr=$Dr")
     scatter!(ax, v_projs[1,:],p_projs[1,:], color=:blue)
 
     scatter!(ax, v_projs[2,:],p_projs[2,:], color=:red)
@@ -121,10 +145,13 @@ function plot_v_p_projections(seed,seedanalysis_file)
     display(f)
 
     save("temp.pdf",f)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
+
+    save(joinpath(subfolder_path,"v_p_projs.pdf"),f)
 
     append_pdf!( joinpath(plot_base_folder,"v_p_projs.pdf"), "temp.pdf", cleanup=true)
 end
-acces_param1_param2_seedanalysis(tree, [plot_v_p_projections])
+
 
 function plot_p_projections(seed,seedanalysis_file)
     f = Figure()
@@ -133,12 +160,15 @@ function plot_p_projections(seed,seedanalysis_file)
     v0 = seedanalysis_file["v0"]
     p_projs = seedanalysis_file["p_projs"]
     t = seedanalysis_file["integration_info"]["save_tax"]
-    ax = Axis(f[1,1], xlabel="mode number", ylabel="proj^2", title="J=$J, Dr=$Dr", yscale=log10)
+    ax = Axis(f[1,1], xlabel="n", ylabel="⟨λ_n|P⟩^2", title="J=$J, Dr=$Dr", yscale=log10)
     scatter!(ax, mean(p_projs.^2, dims=2)[:,1], color=:blue)
 
     display(f)
 
     save("temp.pdf",f)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
+
+    save(joinpath(subfolder_path,"p_projs.pdf"),f)
 
     append_pdf!( joinpath(plot_base_folder,"p_projs.pdf"), "temp.pdf", cleanup=true)
 end
@@ -151,12 +181,15 @@ function plot_dis_projections(seed,seedanalysis_file)
     dis_projs = seedanalysis_file["dis_projs"]
     ωs = sqrt.(seedanalysis_file["modes"]["eigvals"])
     t = seedanalysis_file["integration_info"]["save_tax"]
-    ax = Axis(f[1,1], xlabel="mode number", ylabel="dis_proj^2", title="J=$J, Dr=$Dr", yscale=log10)
+    ax = Axis(f[1,1], xlabel="n", ylabel="⟨λ_n|δR⟩^2", title="J=$J, Dr=$Dr", yscale=log10)
     scatter!(ax, mean(dis_projs.^2, dims=2)[:,1], color=:blue)
 
     display(f)
 
     save("temp.pdf",f)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
+
+    save(joinpath(subfolder_path,"dis_projs.pdf"),f)
 
     append_pdf!( joinpath(plot_base_folder,"dis_projs.pdf"), "temp.pdf", cleanup=true)
 end
@@ -170,12 +203,15 @@ function plot_ω_dis_projections(seed,seedanalysis_file)
     ωs = sqrt.(seedanalysis_file["modes"]["eigvals"])
 
     t = seedanalysis_file["integration_info"]["save_tax"]
-    ax = Axis(f[1,1], xlabel="ω", ylabel="dis_proj^2", title="J=$J, Dr=$Dr", yscale=log10)
+    ax = Axis(f[1,1], xlabel="ω_n", ylabel="⟨λ_n=ω_n^2|δR⟩^2", title="J=$J, Dr=$Dr", yscale=log10)
     scatter!(ax,ωs, mean(dis_projs[:,500:end].^2, dims=2)[:,1], color=:blue)
 
     display(f)
 
     save("temp.pdf",f)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
+
+    save(joinpath(subfolder_path,"omega_dis_projs.pdf"),f)
 
     append_pdf!( joinpath(plot_base_folder,"omega_dis_projs.pdf"), "temp.pdf", cleanup=true)
 end
@@ -189,15 +225,29 @@ function plot_ω_v_projections(seed,seedanalysis_file)
     ωs = sqrt.(seedanalysis_file["modes"]["eigvals"])
     
     t = seedanalysis_file["integration_info"]["save_tax"]
-    ax = Axis(f[1,1], xlabel="ω", ylabel="v_proj^2", title="J=$J, Dr=$Dr")#, yscale=log10)
+    
+    ax = Axis(f[1,1], xlabel="ω_n", ylabel="⟨λ_n=ω_n^2|V⟩^2", title="J=$J, Dr=$Dr")#, yscale=log10)
     scatter!(ax,ωs, mean(v_projs[:,500:end].^2, dims=2)[:,1], color=:blue)
-
+    #ylims!(1e-7, 1e-5)
     display(f)
 
     save("temp.pdf",f)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
+
+    save(joinpath(subfolder_path,"lin_omega_v_projs.pdf"),f)
 
     append_pdf!( joinpath(plot_base_folder,"lin_omega_v_projs.pdf"), "temp.pdf", cleanup=true)
 end
+
+
+acces_param1_param2_seedanalysis(tree, [plot_phi_over_time ,plot_px_over_time, plot_psi_over_time])
+acces_param1_param2_seedanalysis(tree, [plot_AUTO_p])
+acces_param1_param2_seedanalysis(tree, [plot_K_over_time])
+
+
+
+
+acces_param1_param2_seedanalysis(tree, [plot_v_p_projections])
 
 
 acces_param1_param2_seedanalysis(tree, [plot_ω_v_projections])
@@ -292,3 +342,63 @@ for i in eachindex(Drs)
 end
 f[1,2]=Legend(f,ax, "J")
 display(f)
+
+
+
+
+for (param1,_) in sort(tree)
+    f = Figure()
+    ax = Axis(f[1,1], xlabel="ω_n", ylabel=" \frac{⟨λ_n=ω_n^2|V⟩^2}{⟨λ_0=ω_0^2|V⟩^2}", title="$param1", yscale=log10)#, xscale=log10)
+
+    
+    marker_ind=1
+
+    marker_labels=[
+        (:circle, ":circle"),
+        (:rect, ":rect"),
+        (:diamond, ":diamond"),
+        (:hexagon, ":hexagon"),
+        (:cross, ":cross"),
+        (:xcross, ":xcross"),
+        (:utriangle, ":utriangle"),
+        (:dtriangle, ":dtriangle"),
+        (:ltriangle, ":ltriangle"),
+        (:rtriangle, ":rtriangle"),
+        (:pentagon, ":pentagon")]
+
+    for (param2,_) in sort(tree[param1])
+        for (seed, seedpath) in tree[param1][param2]
+            jldopen(seedpath, "r") do seedanalysis_file
+
+                Dr = seedanalysis_file["Dr"]
+                J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+                v0 = seedanalysis_file["v0"]
+                v_projs = seedanalysis_file["v_projs"]
+                ωs = sqrt.(seedanalysis_file["modes"]["eigvals"])
+                
+                t = seedanalysis_file["integration_info"]["save_tax"]
+                
+                
+                tau =1/Dr
+                theory = v0^2  *tau ./ (2 .* ωs + 2 .* ωs.^2 .* tau)
+                lines!(ax, ωs, theory ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:gist_rainbow), alpha=0.5)
+                numerics =  mean(v_projs[:,500:end].^2, dims=2)[:,1]
+                scatterlines!(ax,ωs, numerics,  label="$Dr",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), linewidth=0.5, marker=marker_labels[marker_ind][1], )
+                marker_ind+=1
+                #ylims!(1e-7, 1e-3)
+                #ylims!(1e-5,1.5)
+            end
+        end
+
+    end
+    f[1,2]=Legend(f,ax, "Dr")
+
+    display(f)
+
+    save("temp.pdf",f)
+
+    append_pdf!( joinpath(plot_base_folder,"J_omega_v_proj.pdf"), "temp.pdf", cleanup=true)
+
+    subfolder_path = mkpath(joinpath(plot_base_folder, "$param1"))
+    save(joinpath(subfolder_path,"omega_v_proj.pdf"),f )
+end

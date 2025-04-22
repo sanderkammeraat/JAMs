@@ -53,14 +53,25 @@ function initialize_analysis_file!(raw_data_file,analysis_file)
         end
     end
 
-    for dofevolver in keys(system["dofevolvers"])
-        analysis_file["system/dofevolvers/$(dofevolver)"] = system["dofevolvers"][dofevolver]
-    end
+    # for dofevolvertype in keys(system["dofevolvers"])
+
+    #     for dofevolver in keys(system["dofevolvers"][dofevolvertype])
+
+    #         for dofevolver_param in keys(system["dofevolvers"][dofevolvertype][force])
+
+    #             analysis_file["system/dofevolvers/$(dofevolvertype)/$(dofevolver)/$(dofevolver_param)"]=system["dofevolvers"][dofevolvertype][dofevolver][force_param]
+    #         end
+    #     end
+    # end
+
+    # for dofevolver in keys(system["dofevolvers"])
+    #     analysis_file["system/dofevolvers/$(dofevolver)"] = system["dofevolvers"][dofevolver]
+    # end
 
 end
 #Does nothing else than opening and saving analysis file.
 # analyze_single_seed_inner is a function that should take  (analysis_file, system, integration_info, frames) as arguments and return analysis_file.
-function analyze_single_seed_outer(raw_data_file_path, analysis_file_path, analyze_single_seed_inner; overwrite=false)
+function analyze_single_seed_outer(raw_data_file_path, analysis_file_path, analyze_single_seed_inner; overwrite=false, support_raw_data_file_path=nothing)
 
     raw_data_file = jldopen(raw_data_file_path, "r")
 
@@ -84,13 +95,22 @@ function analyze_single_seed_outer(raw_data_file_path, analysis_file_path, analy
     integration_info  = analysis_file["integration_info"]
     frames = raw_data_file["frames"]
 
+    if !isnothing(support_raw_data_file_path)
+        support_raw_data_file = jldopen(support_raw_data_file_path, "r")
+        frames_support = support_raw_data_file["frames"]
+    else
+        frames_support=nothing
+    end
     #Do stuff with custom inner analysis function
 
     try
-        analysis_file = analyze_single_seed_inner(analysis_file, system, integration_info, frames)
+        analysis_file = analyze_single_seed_inner(analysis_file, system, integration_info, frames, frames_support=frames_support)
     catch e
         close(analysis_file)
         close(raw_data_file)
+        if !isnothing(support_raw_data_file_path)
+            close(support_raw_data_file)
+        end
         error("JAMS: data(group) already present in analysis file, aborted to prevent overwriting.  Suggested solution: check if overwriting is desired and if so, use overwrite=true.)")
         rethrow(e)
 
@@ -99,9 +119,12 @@ function analyze_single_seed_outer(raw_data_file_path, analysis_file_path, analy
     #Now close
     close(analysis_file)
     close(raw_data_file)
+    if !isnothing(support_raw_data_file_path)
+        close(support_raw_data_file)
+    end
 end
 
-function run_serial_analysis_param1_param2_seed(tree, analyze_single_seed_inner, analysis_base_folder; raw_data_file_name="raw_data.jld2", overwrite=false)
+function run_serial_analysis_param1_param2_seed(tree, analyze_single_seed_inner, analysis_base_folder; raw_data_file_name="raw_data.jld2", support_raw_data_file_name=nothing, overwrite=false)
 
      for (param1, subdict) in tree
 
@@ -111,9 +134,15 @@ function run_serial_analysis_param1_param2_seed(tree, analyze_single_seed_inner,
 
                 raw_data_file_path = joinpath(seedpath, raw_data_file_name)
 
+                if !isnothing(support_raw_data_file_name)
+                    support_raw_data_file_path= joinpath(seedpath, support_raw_data_file_name)
+                else
+                    support_raw_data_file_path=nothing
+                end
+
                 analysis_file_path = joinpath( mkpath(joinpath(analysis_base_folder,param1, param2)), "$(seed).jld2")
 
-                analyze_single_seed_outer(raw_data_file_path,analysis_file_path, analyze_single_seed_inner, overwrite=overwrite)
+                analyze_single_seed_outer(raw_data_file_path,analysis_file_path, analyze_single_seed_inner, overwrite=overwrite, support_raw_data_file_path=support_raw_data_file_path)
             end
 
         end
@@ -121,7 +150,7 @@ function run_serial_analysis_param1_param2_seed(tree, analyze_single_seed_inner,
     end
 end
 
-function run_multithreaded_analysis_param1_param2_seed(tree, analyze_single_seed_inner, analysis_base_folder; raw_data_file_name="raw_data.jld2", overwrite=false)
+function run_multithreaded_analysis_param1_param2_seed(tree, analyze_single_seed_inner, analysis_base_folder; raw_data_file_name="raw_data.jld2", support_raw_data_file_name=nothing, overwrite=false)
 
     k1s = collect(keys(tree))
     for k1 in k1s
@@ -135,10 +164,15 @@ function run_multithreaded_analysis_param1_param2_seed(tree, analyze_single_seed
                seedpath = tree[k1][k2][k3]
                seed = k3
                raw_data_file_path = joinpath(seedpath, raw_data_file_name)
+               if !isnothing(support_raw_data_file_name)
+                    support_raw_file_path= joinpath(seedpath, support_raw_data_file_name)
+               else
+                    support_raw_file_path=nothing
+               end
 
                analysis_file_path = joinpath( mkpath(joinpath(analysis_base_folder,k1, k2)), "$(seed).jld2")
 
-               analyze_single_seed_outer(raw_data_file_path,analysis_file_path, analyze_single_seed_inner, overwrite=overwrite)
+               analyze_single_seed_outer(raw_data_file_path,analysis_file_path, analyze_single_seed_inner, overwrite=overwrite, support_raw_data_file_path=support_raw_data_file_path)
            end
 
        end
@@ -155,11 +189,11 @@ end
 
 function acces_param1_param2_seedanalysis(tree, dofunctions)
 
-    for (param1, subdict) in tree
+    for (param1, subdict) in sort(tree)
 
-        for (param2, seeddict) in subdict
+        for (param2, seeddict) in sort(subdict)
 
-            for (seed, seedpath) in  seeddict
+            for (seed, seedpath) in  sort(seeddict)
 
                 jldopen(seedpath, "r") do seedanalysis_file
 
