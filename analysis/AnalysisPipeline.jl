@@ -159,15 +159,15 @@ function run_multithreaded_analysis_param1_param2_seed(tree, analyze_single_seed
         Threads.@threads for k2 in k2s
         k3s = collect(keys(tree[k1][k2]))
 
-           @showprogress dt = 1 desc="Analysis in progress..." showspeed=true for k3 in  k3s
-            
+           @showprogress dt = 1 desc="Analysis in progress..." showspeed=true for k3 in k3s
                seedpath = tree[k1][k2][k3]
                seed = k3
                raw_data_file_path = joinpath(seedpath, raw_data_file_name)
+               
                if !isnothing(support_raw_data_file_name)
-                    support_raw_file_path= joinpath(seedpath, support_raw_data_file_name)
+                    support_raw_data_file_path= joinpath(seedpath, support_raw_data_file_name)
                else
-                    support_raw_file_path=nothing
+                    support_raw_data_file_path=nothing
                end
 
                analysis_file_path = joinpath( mkpath(joinpath(analysis_base_folder,k1, k2)), "$(seed).jld2")
