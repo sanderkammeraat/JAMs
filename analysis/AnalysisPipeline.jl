@@ -6,6 +6,17 @@ function readdir_filt(folder_path)
 
 end
 
+function save_dict!(file,dict, dictsavename)
+
+    preamble  = dictsavename
+
+    for (key, val) in dict
+        file[preamble*"/"*string(key)] = val
+    end
+    return file
+end
+
+
 function construct_folder_tree_param_param_seed(base_folder)
     tree = Dict()
 

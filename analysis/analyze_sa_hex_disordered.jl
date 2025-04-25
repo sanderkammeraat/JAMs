@@ -71,14 +71,19 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
         K[i] = 1/Np*norm(sum(exp.(1im .* θp[:,i])))
     end
 
-    analysis_file["x"] = x
-    analysis_file["y"] = y
 
-    analysis_file["AUTO_p"] = auto_correlation(t, px, py, minrow=500)
+
+    save_dict!(analysis_file, auto_correlation(t, px, py, minrow=500), "AUTO_p")
 
     #Include boundary points!
+
+
+    
     x0 = frames_support[string(length(frames_support))]["x"]
     y0 = frames_support[string(length(frames_support))]["y"]
+
+    analysis_file["x0"] = x0
+    analysis_file["y0"] = y0
     k = system["forces"]["pair_forces"]["soft_disk_force"]["karray"]
     R = frames["1"]["R"]
     type = frames["1"]["type"]
@@ -108,17 +113,17 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
     modes = diagonalize_D(D)
     analysis_file["modes"] = modes
 
-    dis_projs = project_on_eigvecs(modes["eigvecs"], dis_x,dis_y)
+    #dis_projs = project_on_eigvecs(modes["eigvecs"], dis_x,dis_y)
 
-    p_projs = project_on_eigvecs(modes["eigvecs"], px,py)
+    #p_projs = project_on_eigvecs(modes["eigvecs"], px,py)
 
     v_projs = project_on_eigvecs(modes["eigvecs"], vx,vy)
 
-    analysis_file["dis_projs"] = dis_projs
+    #analysis_file["dis_projs"] = dis_projs
 
     analysis_file["v_projs"] = v_projs
 
-    analysis_file["p_projs"] = p_projs
+    #analysis_file["p_projs"] = p_projs
 
     analysis_file["θv"] = θv   
     analysis_file["θp"] = θp  

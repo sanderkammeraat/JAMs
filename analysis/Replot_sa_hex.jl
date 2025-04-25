@@ -10,7 +10,7 @@ GLMakie.activate!()
 
     J = raw_data_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
 
-    frame_numbers = 1:1:length(save_tax)
+    frame_numbers = 1:1:1000#length(save_tax)
 
     frames = raw_data_file["frames"]
     Dr = frames["1"]["Dr"][1]

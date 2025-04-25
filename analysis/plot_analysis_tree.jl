@@ -1,27 +1,61 @@
 include(joinpath("..","src","Engine.jl"))
 include("AnalysisPipeline.jl")
 
-base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
+#base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
 
 base_folder = joinpath(homedir(), "sa", "phi_1", "Nlin_4", "vary_J_Dr")
+base_folder = joinpath(homedir(), "sa","survey","hex_disordered", "phi_1", "Nlin_4", "vary_J_Dr")
+
+
+base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa", "phi_1", "Nlin_20", "vary_J_Dr")
+base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr")
+
+
 
 #base_folder = joinpath("/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
 
-base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa", "phi_1", "Nlin_20", "vary_J_Dr")
+#base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa", "phi_1", "Nlin_20", "vary_J_Dr")
 
-base_folder = joinpath(homedir(), "sa", "survey","hex_disordered","phi_1", "Nlin_4", "vary_J_Dr")
+#base_folder = joinpath(homedir(), "sa", "survey","hex_disordered","phi_1", "Nlin_4", "vary_J_Dr")
 
-base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_J_Dr/" 
+#base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_J_Dr/" 
 
 analysis_base_folder = joinpath(base_folder, "analysis")
 
-plot_base_folder = mkpath(joinpath(base_folder, "plots_v4")) 
+plot_base_folder = mkpath(joinpath(base_folder, "plots_new")) 
 
 tree = construct_folder_tree_param_param_seed(analysis_base_folder)
 
 
 using PDFmerger
 using CairoMakie
+
+
+
+function get_tag(seedanalysis_file)
+
+    v0 = v0 = seedanalysis_file["v0"]
+
+    type = seedanalysis_file["type"]
+
+    R = seedanalysis_file["R"]
+
+    k = seedanalysis_file["system"]["forces"]["pair_forces"]["soft_disk_force"]["karray"]
+
+    #Interior particles
+    Nint = sum(type .== 1)
+    ϕ = 1
+    #Check if all radii are the same, if so do, else , hardcoded 0.15, because I did not store the polydispersity of the initial conditions in the  analysis file
+    poly =  all( R .== R[1]) ? 0. : 0.15
+
+
+    tag = Dict("ϕ"=>ϕ, "v0"=> v0, "Nint"=> Nint, "poly"=>poly, "k"=>k)
+
+    return tag
+
+end
+
+
 
 #Individual plots
 function plot_phi_over_time(seed,seedanalysis_file)
@@ -234,9 +268,9 @@ function plot_ω_v_projections(seed,seedanalysis_file)
     save("temp.pdf",f)
     subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
 
-    save(joinpath(subfolder_path,"lin_omega_v_projs.pdf"),f)
+    save(joinpath(subfolder_path,"omega_v_projs.pdf"),f)
 
-    append_pdf!( joinpath(plot_base_folder,"lin_omega_v_projs.pdf"), "temp.pdf", cleanup=true)
+    append_pdf!( joinpath(plot_base_folder,"omega_v_projs.pdf"), "temp.pdf", cleanup=true)
 end
 
 
@@ -344,11 +378,18 @@ f[1,2]=Legend(f,ax, "J")
 display(f)
 
 
-
-
+begin
+collective_plot_file_name ="J_omega_v_proj.pdf"
+try 
+    rm(joinpath(plot_base_folder,collective_plot_file_name))
+catch
+end
 for (param1,_) in sort(tree)
+
+
+    with_theme(theme_latexfonts()) do 
     f = Figure()
-    ax = Axis(f[1,1], xlabel="ω_n", ylabel=" \frac{⟨λ_n=ω_n^2|V⟩^2}{⟨λ_0=ω_0^2|V⟩^2}", title="$param1", yscale=log10)#, xscale=log10)
+    ax = Axis(f[1,1], xlabel=L"ω_n", ylabel= L"Vel. proj.: $\langle \lambda_n|\delta \dot{R} \rangle^2$", title="$param1", yscale=log10)#, xscale=log10)
 
     
     marker_ind=1
@@ -365,12 +406,13 @@ for (param1,_) in sort(tree)
         (:ltriangle, ":ltriangle"),
         (:rtriangle, ":rtriangle"),
         (:pentagon, ":pentagon")]
-
     for (param2,_) in sort(tree[param1])
         for (seed, seedpath) in tree[param1][param2]
             jldopen(seedpath, "r") do seedanalysis_file
 
+
                 Dr = seedanalysis_file["Dr"]
+                if Dr!=0
                 J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
                 v0 = seedanalysis_file["v0"]
                 v_projs = seedanalysis_file["v_projs"]
@@ -380,25 +422,32 @@ for (param1,_) in sort(tree)
                 
                 
                 tau =1/Dr
-                theory = v0^2  *tau ./ (2 .* ωs + 2 .* ωs.^2 .* tau)
-                lines!(ax, ωs, theory ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:gist_rainbow), alpha=0.5)
+                theory = v0^2  ./ (2 .+ 2 .* ωs.^2 .* tau)
+                lines!(ax, ωs, theory ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:gist_rainbow), alpha=1, linestyle=:dash)
                 numerics =  mean(v_projs[:,500:end].^2, dims=2)[:,1]
                 scatterlines!(ax,ωs, numerics,  label="$Dr",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), linewidth=0.5, marker=marker_labels[marker_ind][1], )
                 marker_ind+=1
-                #ylims!(1e-7, 1e-3)
-                #ylims!(1e-5,1.5)
+                end
+                ylims!(ax,low=5e-9,high=1e-3)
+                xlims!(ax,low=0,high=2.5)
+
+
+                global tag = get_tag(seedanalysis_file)
             end
         end
 
     end
-    f[1,2]=Legend(f,ax, "Dr")
+    f[1,2]=Legend(f,ax, L"D_r")
+    Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
 
     display(f)
 
     save("temp.pdf",f)
 
-    append_pdf!( joinpath(plot_base_folder,"J_omega_v_proj.pdf"), "temp.pdf", cleanup=true)
+    append_pdf!( joinpath(plot_base_folder,collective_plot_file_name), "temp.pdf", cleanup=true)
 
     subfolder_path = mkpath(joinpath(plot_base_folder, "$param1"))
     save(joinpath(subfolder_path,"omega_v_proj.pdf"),f )
+end
+end 
 end

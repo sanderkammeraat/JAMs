@@ -35,7 +35,6 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
     x = zeros(Np, Nt)
     y = zeros(Np, Nt)
 
-
     px = zeros(Np, Nt)
     py = zeros(Np, Nt)
     vx = zeros(Np, Nt)
@@ -69,14 +68,15 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
         K[i] = 1/Np*norm(sum(exp.(1im .* θp[:,i])))
     end
 
-    analysis_file["x"] = x
-    analysis_file["y"] = y
 
-    analysis_file["AUTO_p"] = auto_correlation(t, px, py, minrow=500)
+    save_dict!(analysis_file, auto_correlation(t, px, py, minrow=500), "AUTO_p")
 
     #Include boundary points!
     x0 = frames["1"]["x"]
     y0 = frames["1"]["y"]
+
+    analysis_file["x0"] = x0
+    analysis_file["y0"] = y0
     k = system["forces"]["pair_forces"]["soft_disk_force"]["karray"]
     R = frames["1"]["R"]
     type = frames["1"]["type"]
@@ -106,17 +106,17 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
     modes = diagonalize_D(D)
     analysis_file["modes"] = modes
 
-    dis_projs = project_on_eigvecs(modes["eigvecs"], dis_x,dis_y)
+    #dis_projs = project_on_eigvecs(modes["eigvecs"], dis_x,dis_y)
 
-    p_projs = project_on_eigvecs(modes["eigvecs"], px,py)
+    #p_projs = project_on_eigvecs(modes["eigvecs"], px,py)
 
     v_projs = project_on_eigvecs(modes["eigvecs"], vx,vy)
 
-    analysis_file["dis_projs"] = dis_projs
+    #analysis_file["dis_projs"] = dis_projs
 
     analysis_file["v_projs"] = v_projs
 
-    analysis_file["p_projs"] = p_projs
+    #analysis_file["p_projs"] = p_projs
 
     analysis_file["θv"] = θv   
     analysis_file["θp"] = θp  
@@ -161,51 +161,51 @@ run_multithreaded_analysis_param1_param2_seed(tree, analyze_single_seed_inner!, 
 #Check with single 
 
 
-raw_data_file_path =  joinpath(raw_data_base_folder,"Dr_0.01","J_1.0","seed_50","raw_data.jld2")
+# raw_data_file_path =  joinpath(raw_data_base_folder,"Dr_0.01","J_1.0","seed_50","raw_data.jld2")
 
 
-analysis_file_path = joinpath( mkpath(joinpath(analysis_base_folder,"Dr_0.01","J_1.0")), "seed_50.jld2")
+# analysis_file_path = joinpath( mkpath(joinpath(analysis_base_folder,"Dr_0.01","J_1.0")), "seed_50.jld2")
 
 
-analyze_single_seed_outer(raw_data_file_path, analysis_file_path, analyze_single_seed_inner!, overwrite=true)
+# analyze_single_seed_outer(raw_data_file_path, analysis_file_path, analyze_single_seed_inner!, overwrite=true)
 
 
-result = jldopen(analysis_file_path,"r")
+# result = jldopen(analysis_file_path,"r")
 
 
-plot(result["type"])
-display(result)
+# plot(result["type"])
+# display(result)
 
-θv = result["θv"]
-θp = result["θp"]
-ϕ = result["ϕ"]
-f = Figure();
-ax = Axis(f[1,1])
-for i in 500:600
+# θv = result["θv"]
+# θp = result["θp"]
+# ϕ = result["ϕ"]
+# f = Figure();
+# ax = Axis(f[1,1])
+# for i in 500:600
 
-    scatter!(ax, θv[:,i], θp[:,i])
-end
+#     scatter!(ax, θv[:,i], θp[:,i])
+# end
 
-display(f)
+# display(f)
 
-ax2 = Axis(f[1,2])
+# ax2 = Axis(f[1,2])
 
-lines!(ax2, result["integration_info"]["save_tax"],mean(ϕ, dims=1)[1,:])
+# lines!(ax2, result["integration_info"]["save_tax"],mean(ϕ, dims=1)[1,:])
 
-display(f)
-
-
-AUTO_p = result["AUTO_p"]
-
-Δt = AUTO_p["Δt"]
+# display(f)
 
 
-heatmap(AUTO_p["C"])
+# AUTO_p = result["AUTO_p"]
+
+# Δt = AUTO_p["Δt"]
+
+
+# heatmap(AUTO_p["C"])
 
 
 
-lines(AUTO_p["Cavg"])
+# lines(AUTO_p["Cavg"])
 
-close(result)
+# close(result)
 
 
