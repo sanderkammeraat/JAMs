@@ -1,5 +1,54 @@
 
 
+function spatial_p_correlation(binsize, maxbin_center, px, py)
+
+
+    rbin_edges = prepend!(collect(range(start=0, step=binsize, stop=maxbin_center)),[0])
+
+    rbin_edges2 = rbin_edges.^2
+
+    rbin_centers = (rbin_edges[2:end] + rbin_edges[1:end-1])/2
+
+    Nbin = length(rbin_centers)
+
+    C = ones(size(px)[2], Nbin)*NaN
+
+    counts = zeros(size(px)[2], Nbin)
+
+    @showprogress dt = 1 desc="spatial correlation" showspeed=true for i in eachindex(t)
+        for p1 in 1:size(px)[1]
+
+            for p2 in p1:size(px)[1]
+
+                Δr2 = (x[p1, i]- x[p2,i])^2 +   (y[p1, i]- y[p2,i])^2
+
+                for bin in eachindex(rbin_centers)
+
+                    if (Δr2<= rbin_edges2[bin+1] && Δr2> rbin_edges2[bin]) || (p1==p2 && bin==1)
+
+                        if isnan(C[i, bin])
+                            C[i, bin]=0
+                            counts[i, bin]=0
+                        end
+
+                        C[i, bin] += px[p1, i]* px[p2, i] + py[p1, i] * py[p2, i]
+                        counts[i,bin] += 1
+                    end
+
+                end
+
+            end
+        end
+    end
+
+    C.=C./counts
+    return Dict("rbc"=>rbin_centers,"C"=> C)
+
+end
+
+
+
+
 
 function auto_correlation(t, px, py; normalized=false, minrow=1, maxrow=nothing)
 
@@ -145,7 +194,7 @@ end
 
     projs = zeros(Neigvecs, Nt)
 
-    @showprogress desc="Projection on eigvecs" showspeed=true for i in 1:Nt
+    @showprogress dt = 1 desc="Projection on eigvecs" showspeed=true for i in 1:Nt
 
          for j in 1:Neigvecs
              projs[j,i] =  project_on_eigvec(eigvecs[:,j], xinterior[:,i], yinterior[:,i])
