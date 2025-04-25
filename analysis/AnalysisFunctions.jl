@@ -47,9 +47,6 @@ function spatial_p_correlation(binsize, maxbin_center, px, py)
 end
 
 
-
-
-
 function auto_correlation(t, px, py; normalized=false, minrow=1, maxrow=nothing)
 
 
