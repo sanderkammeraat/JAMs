@@ -4,27 +4,23 @@ include(joinpath("..","src","Engine.jl"))
 include("AnalysisPipeline.jl")
 include("AnalysisFunctions.jl")
 
-#base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr"
+base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr"
 
-base_folder = joinpath(homedir(),"sa","phi_1","Nlin_4","vary_J_Dr")
+#base_folder = joinpath(homedir(),"sa","phi_1","Nlin_4","vary_J_Dr")
 
 raw_data_base_folder = joinpath(base_folder, "simdata")
 
-analysis_base_folder = mkpath(joinpath(base_folder, "analysis"))
+analysis_base_folder = mkpath(joinpath(base_folder, "analysis_v2"))
 
 #Make tree to navigate simulation data folder structure
 tree = construct_folder_tree_param_param_seed(raw_data_base_folder)
 
-function analyze_single_seed_inner!(analysis_file, system, integration_info, frames) 
+function analyze_single_seed_inner!(analysis_file, system, integration_info, frames; frames_support) 
 
     t = integration_info["save_tax"]
 
     #For reference
-    analysis_file["R"] = frames["1"]["R"]
-    analysis_file["id"] = frames["1"]["id"]
-    analysis_file["type"] = frames["1"]["type"]
-    analysis_file["v0"] = frames["1"]["v0"][1]
-    analysis_file["Dr"] = frames["1"]["Dr"][1]
+
 
     Nt = length(t)
     #Ignore boundary particles
@@ -68,15 +64,20 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
         K[i] = 1/Np*norm(sum(exp.(1im .* θp[:,i])))
     end
 
+    #Set maximum value of radial bin edge
+    xmax = maximum(x)
+    ymax = maximum(y)
 
-    save_dict!(analysis_file, auto_correlation(t, px, py, minrow=500), "AUTO_p")
+    rmax = 2*sqrt(xmax^2 + ymax^2)
+
+
 
     #Include boundary points!
     x0 = frames["1"]["x"]
     y0 = frames["1"]["y"]
+    
 
-    analysis_file["x0"] = x0
-    analysis_file["y0"] = y0
+
     k = system["forces"]["pair_forces"]["soft_disk_force"]["karray"]
     R = frames["1"]["R"]
     type = frames["1"]["type"]
@@ -101,10 +102,11 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
     D = Symmetric(D_wb[1:2*interior_indmax,1:2*interior_indmax])
 
 
-    analysis_file["D"] = D
+    
 
     modes = diagonalize_D(D)
-    analysis_file["modes"] = modes
+
+    #save_dict!(analysis_file, modes, "modes")
 
     #dis_projs = project_on_eigvecs(modes["eigvecs"], dis_x,dis_y)
 
@@ -117,6 +119,30 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
     analysis_file["v_projs"] = v_projs
 
     #analysis_file["p_projs"] = p_projs
+
+
+    save_dict!(analysis_file, auto_correlation(t, px, py, minrow=500), "AUTO_p")
+
+    save_dict!(analysis_file, spatial_p_correlation(2.5, rmax, x,y,px, py), "SPAT_p" )
+
+    save_dict!(analysis_file,spatiotemporal_p_correlation(2.5, rmax, x[:,1],y[:,1],px, py), "SPTE_p" )
+
+    analysis_file["R"] = frames["1"]["R"]
+    analysis_file["id"] = frames["1"]["id"]
+    analysis_file["type"] = frames["1"]["type"]
+    analysis_file["v0"] = frames["1"]["v0"][1]
+    analysis_file["Dr"] = frames["1"]["Dr"][1]
+
+    #analysis_file["D"] = D
+
+    analysis_file["modes/eigvals"] = modes["eigvals"]
+
+
+    #only store the first, at most 100, eigvecs
+    analysis_file["modes/100eigvecs"] =  size(modes["eigvecs"])[2]<=100 ? modes["eigvecs"] :  modes["eigvecs"][:,1:100]
+
+    analysis_file["x0"] = x0
+    analysis_file["y0"] = y0
 
     analysis_file["θv"] = θv   
     analysis_file["θp"] = θp  
@@ -144,68 +170,11 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
 
     analysis_file["std_px"] =std(px, dims=1)[1,:] 
 
+    analysis_file["t"] = integration_info["save_tax"]
+
 
     return analysis_file
 
 end
 
-run_multithreaded_analysis_param1_param2_seed(tree, analyze_single_seed_inner!, analysis_base_folder, overwrite=true)
-
-#original = jldopen( joinpath(raw_data_base_folder,"Dr_0.01","J_0.0","seed_1",raw_data_file_name ), "r")
-#test = jldopen( joinpath(analysis_base_folder,"Dr_0.01","J_0.0","seed_1.jld2"), "r")
-#close(test)
-
-
-##Develop room for inner function
-
-#Check with single 
-
-
-# raw_data_file_path =  joinpath(raw_data_base_folder,"Dr_0.01","J_1.0","seed_50","raw_data.jld2")
-
-
-# analysis_file_path = joinpath( mkpath(joinpath(analysis_base_folder,"Dr_0.01","J_1.0")), "seed_50.jld2")
-
-
-# analyze_single_seed_outer(raw_data_file_path, analysis_file_path, analyze_single_seed_inner!, overwrite=true)
-
-
-# result = jldopen(analysis_file_path,"r")
-
-
-# plot(result["type"])
-# display(result)
-
-# θv = result["θv"]
-# θp = result["θp"]
-# ϕ = result["ϕ"]
-# f = Figure();
-# ax = Axis(f[1,1])
-# for i in 500:600
-
-#     scatter!(ax, θv[:,i], θp[:,i])
-# end
-
-# display(f)
-
-# ax2 = Axis(f[1,2])
-
-# lines!(ax2, result["integration_info"]["save_tax"],mean(ϕ, dims=1)[1,:])
-
-# display(f)
-
-
-# AUTO_p = result["AUTO_p"]
-
-# Δt = AUTO_p["Δt"]
-
-
-# heatmap(AUTO_p["C"])
-
-
-
-# lines(AUTO_p["Cavg"])
-
-# close(result)
-
-
+run_serial_analysis_param1_param2_seed(tree, analyze_single_seed_inner!, analysis_base_folder, overwrite=true)

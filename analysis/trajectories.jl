@@ -24,6 +24,7 @@ y = zeros(Np, Nt)
 vx = zeros(Np, Nt)
 vy = zeros(Np, Nt)
 
+print(data["system"])
 
 px = zeros(Np, Nt)
 py = zeros(Np, Nt)
@@ -120,17 +121,52 @@ function p_correlation(binsize, maxbin_center)
 
 end
 
-@profview rc,C = p_correlation(2.5, 10)
+PCOR = spatial_p_correlation(2.5, 10, x,y,px, py)
 
 
-
-
+@time spatial_p_correlation(2.5, 10, x,y,px, py)
 
 begin
     f = Figure();
     ax = Axis(f[1,1])
     
-    scatterlines!(ax,rc, mean(C[500:end,:], dims=1)[1,:] )
+    scatterlines!(ax,PCOR["rbc"], mean(PCOR["C"][500:end,:], dims=1)[1,:] )
     display(f)
 
 end
+
+
+PSTCOR = spatiotemporal_p_correlation(2.5, 10, x[:,1],y[:,1],px, py, min_t_ind=500)
+begin
+    f = Figure();
+    ax = Axis(f[1,1], yreversed=true)
+    t_max_ind = 5000
+    
+    heatmap!(ax,  PSTCOR["rbe"],t[1:t_max_ind],   transpose(PSTCOR["C"][1:t_max_ind,:]), colormap=:seismic, colorrange=(-1,1))
+    vlines!(ax, PSTCOR["rbe"], color=:black)
+    display(f)
+
+end
+
+@profview spatiotemporal_p_correlation(2.5, 10, x[:,1],y[:,1],px, py)
+
+
+begin
+    f = Figure();
+    ax = Axis(f[1,1])
+    t_max_ind = 5000
+    scatterlines!(ax,  PSTCOR["rbc"],PSTCOR["C"][1,:])
+    scatterlines!(ax,  PSTCOR["rbc"],PSTCOR["C"][end-497,:])
+    display(f)
+
+end
+
+xmax = maximum(x)
+ymax = maximum(y)
+
+rmax = sqrt(xmax^2 + ymax^2)
+
+using JLD2
+
+analysis = jldopen("/Users/kammeraat/sa/phi_1/Nlin_4/vary_J_Dr/analysis_v2/J_0.01/Dr_0.0/seed_10.jld2")
+

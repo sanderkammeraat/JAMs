@@ -1,6 +1,6 @@
 
 
-function spatial_p_correlation(binsize, maxbin_center, px, py)
+function spatial_p_correlation(binsize, maxbin_center, x,y, px, py)
 
 
     rbin_edges = prepend!(collect(range(start=0, step=binsize, stop=maxbin_center)),[0])
@@ -11,11 +11,13 @@ function spatial_p_correlation(binsize, maxbin_center, px, py)
 
     Nbin = length(rbin_centers)
 
-    C = ones(size(px)[2], Nbin)*NaN
+    Nt = size(px)[2]
 
-    counts = zeros(size(px)[2], Nbin)
+    C = ones(Nt, Nbin)*NaN
 
-    @showprogress dt = 1 desc="spatial correlation" showspeed=true for i in eachindex(t)
+    counts = zeros(Nt, Nbin)
+
+    @showprogress dt = 1 desc="spatial correlation" showspeed=true for i in 1:Nt
         for p1 in 1:size(px)[1]
 
             for p2 in p1:size(px)[1]
@@ -42,8 +44,64 @@ function spatial_p_correlation(binsize, maxbin_center, px, py)
     end
 
     C.=C./counts
-    return Dict("rbc"=>rbin_centers,"C"=> C)
+    return Dict("rbc"=>rbin_centers,"rbe"=>rbin_edges,"C"=> C)
 
+end
+
+
+
+function spatiotemporal_p_correlation(binsize, maxbin_center, x0,y0, px, py; min_t_ind=1)
+
+    rbin_edges = prepend!(collect(range(start=0, step=binsize, stop=maxbin_center)),[0])
+
+    rbin_edges2 = rbin_edges.^2
+
+    rbin_centers = (rbin_edges[2:end] + rbin_edges[1:end-1])/2
+
+    Nbin = length(rbin_centers)
+
+    Nt = size(px)[2]
+
+    C = ones(Nt, Nbin)*NaN
+
+    counts = zeros(Nt, Nbin)
+
+    #particle 1 loop
+    @showprogress dt = 1 desc="spatiotemporal correlation" showspeed=true for p1 in 1:size(px)[1]
+
+        #particle 2 loop
+        for p2 in p1:size(px)[1]
+
+            Δr2 = (x0[p1]- x0[p2])^2 +   (y0[p1]- y0[p2])^2
+
+            #Loop over spatial bin
+            for bin in eachindex(rbin_centers)
+
+                if (Δr2<= rbin_edges2[bin+1] && Δr2> rbin_edges2[bin]) || (p1==p2 && bin==1)
+
+                    for i in min_t_ind:Nt
+
+                        for j in min_t_ind:Nt
+
+                            dij = abs(i-j)+ 1
+
+                            if isnan(C[dij, bin])
+                                C[dij, bin]=0
+                                counts[dij, bin]=0
+                            end
+
+                            C[dij, bin] += px[p1, i]* px[p2, j] + py[p1, i] * py[p2, j]
+                            counts[dij,bin] += 1
+                        end
+                    end
+                end
+
+            end
+
+        end
+    end
+    C.=C./counts
+    return Dict("rbc"=>rbin_centers,"rbe"=>rbin_edges,"C"=> C)
 end
 
 
@@ -75,7 +133,7 @@ function auto_correlation(t, px, py; normalized=false, minrow=1, maxrow=nothing)
         end
     end
 
-    return Dict("C"=>C,"Cavg"=>Cavg, "t"=>t, "Δt"=> Δt)
+    return Dict("Cavg"=>Cavg, "t"=>t, "Δt"=> Δt)
 end
 
 
