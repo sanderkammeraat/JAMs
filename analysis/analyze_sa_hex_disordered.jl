@@ -129,11 +129,10 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
 
     rmax = 2*sqrt(xmax^2 + ymax^2)
 
+    save_dict!(analysis_file,spatiotemporal_p_correlation(2.5, rmax, x[:,1],y[:,1],px, py, min_t_ind=500), "SPTE_p" )
     save_dict!(analysis_file, auto_correlation(t, px, py, minrow=500), "AUTO_p")
 
-    save_dict!(analysis_file, spatial_p_correlation(2.5, rmax, x,y,px, py), "SPAT_p" )
-
-    save_dict!(analysis_file,spatiotemporal_p_correlation(2.5, rmax, x0int , y0int,px, py), "SPTE_p" )
+    save_dict!(analysis_file, spatial_p_correlation(2.5, rmax, x,y,px, py,min_t_ind=500), "SPAT_p" )
 
 
     #For reference
