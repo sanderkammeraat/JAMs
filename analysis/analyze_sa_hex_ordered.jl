@@ -121,11 +121,12 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
     #analysis_file["p_projs"] = p_projs
 
 
+    save_dict!(analysis_file,spatiotemporal_p_correlation(2.5, rmax, x[:,1],y[:,1],px, py,min_t_ind=500,max_t_ind=1500,every_n=10), "SPTE_p" )
     save_dict!(analysis_file, auto_correlation(t, px, py, minrow=500), "AUTO_p")
 
-    save_dict!(analysis_file, spatial_p_correlation(2.5, rmax, x,y,px, py), "SPAT_p" )
+    save_dict!(analysis_file, spatial_p_correlation(2.5, rmax, x,y,px, py,min_t_ind=500,max_t_ind=1500,every_n=10), "SPAT_p" )
 
-    save_dict!(analysis_file,spatiotemporal_p_correlation(2.5, rmax, x[:,1],y[:,1],px, py), "SPTE_p" )
+
 
     analysis_file["R"] = frames["1"]["R"]
     analysis_file["id"] = frames["1"]["id"]

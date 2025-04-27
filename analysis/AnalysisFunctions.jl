@@ -1,6 +1,6 @@
 
 
-function spatial_p_correlation(binsize, maxbin_center, x,y, px, py)
+function spatial_p_correlation(binsize, maxbin_center, x,y, px, py; min_t_ind=1, max_t_ind=nothing, every_n=nothing)
 
 
     rbin_edges = prepend!(collect(range(start=0, step=binsize, stop=maxbin_center)),[0])
@@ -13,11 +13,15 @@ function spatial_p_correlation(binsize, maxbin_center, x,y, px, py)
 
     Nt = size(px)[2]
 
+    max_t_ind_set = isnothing(max_t_ind) ? Nt : max_t_ind
+
+    every_n_set = isnothing(every_n) ? 1 : every_n
+
     C = ones(Nt, Nbin)*NaN
 
     counts = zeros(Nt, Nbin)
 
-    @showprogress dt = 1 desc="spatial correlation" showspeed=true for i in 1:Nt
+    @showprogress dt = 1 desc="spatial correlation" showspeed=true for i in min_t_ind:every_n_set:max_t_ind_set
         for p1 in 1:size(px)[1]
 
             for p2 in p1:size(px)[1]
@@ -50,7 +54,7 @@ end
 
 
 
-function spatiotemporal_p_correlation(binsize, maxbin_center, x0,y0, px, py; min_t_ind=1)
+function spatiotemporal_p_correlation(binsize, maxbin_center, x0,y0, px, py; min_t_ind=1, max_t_ind=nothing, every_n=nothing)
 
     rbin_edges = prepend!(collect(range(start=0, step=binsize, stop=maxbin_center)),[0])
 
@@ -66,6 +70,10 @@ function spatiotemporal_p_correlation(binsize, maxbin_center, x0,y0, px, py; min
 
     counts = zeros(Nt, Nbin)
 
+    max_t_ind_set = isnothing(max_t_ind) ? Nt : max_t_ind
+
+    every_n_set = isnothing(every_n) ? 1 : every_n
+
     #particle 1 loop
     @showprogress dt = 1 desc="spatiotemporal correlation" showspeed=true for p1 in 1:size(px)[1]
 
@@ -79,9 +87,9 @@ function spatiotemporal_p_correlation(binsize, maxbin_center, x0,y0, px, py; min
 
                 if (Δr2<= rbin_edges2[bin+1] && Δr2> rbin_edges2[bin]) || (p1==p2 && bin==1)
 
-                    for i in min_t_ind:Nt
+                    for i in min_t_ind:max_t_ind_set
 
-                        for j in min_t_ind:Nt
+                        Threads.@threads for j in min_t_ind:every_n_set:max_t_ind_set
 
                             dij = abs(i-j)+ 1
 
