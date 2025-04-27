@@ -119,7 +119,7 @@ function auto_correlation(t, px, py; normalized=false, minrow=1, maxrow=nothing)
 
     C = zeros(Nt, Nt).*NaN
 
-    @showprogress desc="Autocorrelation" showspeed=true for i in 1:Nt-1
+    @showprogress desc="Autocorrelation" dt=1 showspeed=true for i in 1:Nt-1
 
         @views for j in i:Nt
             C[i,j-i+1] = mean(px[:,j].* px[:,i] .+ py[:,j].* py[:,i])

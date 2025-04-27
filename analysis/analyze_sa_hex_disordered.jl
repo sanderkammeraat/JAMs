@@ -117,8 +117,9 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
 
     #analysis_file["dis_projs"] = dis_projs
 
-    #analysis_file["v_projs"] = v_projs
-    analysis_file["v_proj_2_tmean"] = mean(v_projs[:,500:end].^2, dims=2)[:,1]
+    analysis_file["v_projs"] = v_projs
+    
+    #analysis_file["v_proj_2_tmean"] = mean(v_projs[:,500:end].^2, dims=2)[:,1]
 
     #analysis_file["p_projs"] = p_projs
 
