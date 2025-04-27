@@ -144,17 +144,17 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
 
 
 
-    analysis_file["θv"] = θv   
-    analysis_file["θp"] = θp  
-    analysis_file["ϕ"] = ϕ
+    #analysis_file["θv"] = θv   
+    #analysis_file["θp"] = θp  
+    #analysis_file["ϕ"] = ϕ
 
-    analysis_file["ψ"] = ψ
+    #analysis_file["ψ"] = ψ
 
     analysis_file["mean_ψ"] = mean(ψ)
 
     analysis_file["std_ψ"] = std(ψ)
 
-    analysis_file["K"] = K
+    #analysis_file["K"] = K
 
     analysis_file["mean_K"] = mean(K)
 
@@ -177,5 +177,5 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
 
 end
 
-run_serial_analysis_param1_param2_seed(tree, analyze_single_seed_inner!, analysis_base_folder, overwrite=true, raw_data_file_name="sa_raw_data.jld2", support_raw_data_file_name="ra_raw_data.jld2")
+run_multithreaded_analysis_param1_param2_seed(tree, analyze_single_seed_inner!, analysis_base_folder, overwrite=true, raw_data_file_name="sa_raw_data.jld2", support_raw_data_file_name="ra_raw_data.jld2")
 
