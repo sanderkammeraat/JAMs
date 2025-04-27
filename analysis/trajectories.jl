@@ -170,3 +170,17 @@ using JLD2
 
 analysis = jldopen("/Users/kammeraat/sa/phi_1/Nlin_4/vary_J_Dr/analysis_v2/J_0.01/Dr_0.0/seed_10.jld2")
 
+analysis = jldopen("/Users/kammeraat/mounting/data1_kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/analysis_v2/J_1.0/Dr_1.0/seed_14.jld2")
+
+SPTE_p=analysis["SPTE_p"]
+t = analysis["t"]
+begin
+    f = Figure();
+    ax = Axis(f[1,1], yreversed=true)
+    t_max_ind = 5000
+    
+    heatmap!(ax,  SPTE_p["rbe"],t[1:t_max_ind],   transpose(SPTE_p["C"][1:t_max_ind,:]), colormap=:seismic, colorrange=(-1,1))
+    vlines!(ax, SPTE_p["rbe"], color=:black)
+    display(f)
+
+end
