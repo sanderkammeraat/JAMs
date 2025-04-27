@@ -89,7 +89,7 @@ function spatiotemporal_p_correlation(binsize, maxbin_center, x0,y0, px, py; min
 
                     for i in min_t_ind:max_t_ind_set
 
-                        dij = abs(i)+ 1
+                        dij = abs(i)
 
                         if isnan(C[dij, bin])
                             C[dij, bin]=0
