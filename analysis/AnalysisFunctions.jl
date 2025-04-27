@@ -72,13 +72,13 @@ function spatiotemporal_p_correlation(binsize, maxbin_center, x0,y0, px, py; min
 
     max_t_ind_set = isnothing(max_t_ind) ? Nt : max_t_ind
 
-    every_n_set = isnothing(every_n) ? 1 : every_n
+    #every_n_set = isnothing(every_n) ? 1 : every_n
 
     #particle 1 loop
     @showprogress dt = 1 desc="spatiotemporal correlation" showspeed=true for p1 in 1:size(px)[1]
 
         #particle 2 loop
-        for p2 in p1:size(px)[1]
+        for p2 in 1:size(px)[1]
 
             Δr2 = (x0[p1]- x0[p2])^2 +   (y0[p1]- y0[p2])^2
 
@@ -89,18 +89,15 @@ function spatiotemporal_p_correlation(binsize, maxbin_center, x0,y0, px, py; min
 
                     for i in min_t_ind:max_t_ind_set
 
-                        Threads.@threads for j in min_t_ind:every_n_set:max_t_ind_set
+                        dij = abs(i)+ 1
 
-                            dij = abs(i-j)+ 1
-
-                            if isnan(C[dij, bin])
-                                C[dij, bin]=0
-                                counts[dij, bin]=0
-                            end
-
-                            C[dij, bin] += px[p1, i]* px[p2, j] + py[p1, i] * py[p2, j]
-                            counts[dij,bin] += 1
+                        if isnan(C[dij, bin])
+                            C[dij, bin]=0
+                            counts[dij, bin]=0
                         end
+
+                        C[dij, bin] += px[p1, min_t_ind]* px[p2, i] + py[p1, min_t_ind] * py[p2, i]
+                        counts[dij,bin] += 1
                     end
                 end
 
