@@ -3,14 +3,14 @@ include("AnalysisPipeline.jl")
 
 #base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
 
-base_folder = joinpath(homedir(), "sa", "phi_1", "Nlin_4", "vary_J_Dr")
-base_folder = joinpath(homedir(), "sa","survey","hex_disordered", "phi_1", "Nlin_4", "vary_J_Dr")
+#base_folder = joinpath(homedir(), "sa", "phi_1", "Nlin_4", "vary_J_Dr")
+#base_folder = joinpath(homedir(), "sa","survey","hex_disordered", "phi_1", "Nlin_4", "vary_J_Dr")
 
 
-base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa", "phi_1", "Nlin_20", "vary_J_Dr")
+#base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa", "phi_1", "Nlin_20", "vary_J_Dr")
 base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr")
 
-
+begin
 
 #base_folder = joinpath("/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
 
@@ -20,9 +20,9 @@ base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa","survey","hex
 
 #base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_J_Dr/" 
 
-analysis_base_folder = joinpath(base_folder, "analysis")
+analysis_base_folder = joinpath(base_folder, "analysis_v2")
 
-plot_base_folder = mkpath(joinpath(base_folder, "plots_new")) 
+plot_base_folder = mkpath(joinpath(base_folder, "plots_good")) 
 
 tree = construct_folder_tree_param_param_seed(analysis_base_folder)
 
@@ -31,7 +31,7 @@ using PDFmerger
 using CairoMakie
 
 
-
+begin
 function get_tag(seedanalysis_file)
 
     v0 = v0 = seedanalysis_file["v0"]
@@ -273,30 +273,35 @@ function plot_ω_v_projections(seed,seedanalysis_file)
     append_pdf!( joinpath(plot_base_folder,"omega_v_projs.pdf"), "temp.pdf", cleanup=true)
 end
 
-
-acces_param1_param2_seedanalysis(tree, [plot_phi_over_time ,plot_px_over_time, plot_psi_over_time])
-acces_param1_param2_seedanalysis(tree, [plot_AUTO_p])
-acces_param1_param2_seedanalysis(tree, [plot_K_over_time])
-
-
+end
+#acces_param1_param2_seedanalysis(tree, [plot_phi_over_time ,plot_px_over_time, plot_psi_over_time])
+#acces_param1_param2_seedanalysis(tree, [plot_AUTO_p])
+#acces_param1_param2_seedanalysis(tree, [plot_K_over_time])
 
 
-acces_param1_param2_seedanalysis(tree, [plot_v_p_projections])
 
 
-acces_param1_param2_seedanalysis(tree, [plot_ω_v_projections])
-acces_param1_param2_seedanalysis(tree, [plot_ω_dis_projections])
-acces_param1_param2_seedanalysis(tree, [plot_dis_projections])
-acces_param1_param2_seedanalysis(tree, [plot_p_projections])
+#acces_param1_param2_seedanalysis(tree, [plot_v_p_projections])
+
+
+#acces_param1_param2_seedanalysis(tree, [plot_ω_v_projections])
+#acces_param1_param2_seedanalysis(tree, [plot_ω_dis_projections])
+#acces_param1_param2_seedanalysis(tree, [plot_dis_projections])
+#acces_param1_param2_seedanalysis(tree, [plot_p_projections])
 #### Combined plots
+begin
 Drs = []
 Js = []
 ϕms = []
+
+pxms = []
+
 ψms = []
 ψmstds = []
 
 Kms = []
 Kmstds = []
+tags=[]
 function collect_params(seed,seedanalysis_file)
 
     Dr = seedanalysis_file["Dr"]
@@ -305,33 +310,43 @@ function collect_params(seed,seedanalysis_file)
     if Dr>0 && J>0
         push!(Drs, Dr)
         push!(Js, J)
-        t_transient = 500
+        t_ind_transient = 500
 
-        push!(ϕms, mean(seedanalysis_file["mean_ϕ"][t .> t_transient]))
+        push!(ϕms, mean((seedanalysis_file["mean_ϕ"])[t_ind_transient:end]))
 
-        push!(ψms, mean(seedanalysis_file["ψ"][t .> t_transient]))
+        push!(pxms, mean((seedanalysis_file["mean_px"])[t_ind_transient:end]))
 
-        push!(ψmstds, std(seedanalysis_file["ψ"][t .> t_transient]))
+        #push!(ψms, (seedanalysis_file["mean_ψ"])[t_ind_transient:end])
 
-        push!(Kms, mean(seedanalysis_file["K"][t .> t_transient]))
+        #push!(ψmstds, seedanalysis_file["std_ψ"][t_ind_transient:end])
 
-        push!(Kmstds, std(seedanalysis_file["K"][t .> t_transient]))
+        #println(seedanalysis_file["mean_K"])
+        #push!(Kms, mean( ( seedanalysis_file["mean_K"])[t_ind_transient:end] ) )
+
+        #push!(Kmstds, seedanalysis_file["std_K"][t_ind_transient:end])
+
+        push!(tags,get_tag(seedanalysis_file))
     end
 end
 
 acces_param1_param2_seedanalysis(tree, [collect_params])
 
-function Dr_J_heatmap(Drs, Js, vals, cbarlabel, save_path)
+function Dr_J_heatmap(Drs, Js, vals, cbarlabel,tags,  save_path)
 
 
     f = Figure();
-    ax = Axis(f[1,1], xlabel="log10(Dr)", ylabel="log10(J)");
+    ax = Axis(f[1,1], xlabel="Dr", ylabel="J", xscale=Makie.pseudolog10, yscale=Makie.pseudolog10);
 
-    hm=heatmap!(ax,log10.(Drs), log10.(Js), vals)
+
+    hm=heatmap!(ax,Drs[Drs .>  0], Js[Js .>  0], vals[(Drs .>  0) .&& (Js .>  0)])
 
     Colorbar(f[:, end+1], hm,label=cbarlabel)
 
-    scatter!(ax, log10.(Drs), log10.(Js), color=:white, strokecolor=:black, strokewidth=1)
+    scatter!(ax, Drs[Drs .>  0], Js[Js .>  0], color=:white, strokecolor=:black, strokewidth=1)
+
+
+    tag = tags[1]
+    Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
 
     display(f);
 
@@ -339,115 +354,348 @@ function Dr_J_heatmap(Drs, Js, vals, cbarlabel, save_path)
 end
 
 save_path = joinpath(plot_base_folder,"phi_Dr_J.pdf")
-Dr_J_heatmap(Drs, Js, ϕms, "⟨ ⟨ϕ⟩ ⟩", save_path)
+Dr_J_heatmap(Drs, Js, ϕms, "⟨ ⟨ϕ⟩ ⟩",tags, save_path)
+
+
 
 save_path = joinpath(plot_base_folder,"abs_phi_Dr_J.pdf")
-Dr_J_heatmap(Drs, Js, abs.(ϕms), "|⟨ ⟨ϕ⟩ ⟩|", save_path)
-
-
-save_path = joinpath(plot_base_folder,"psi_Dr_J.pdf")
-Dr_J_heatmap(Drs, Js, ψms, "⟨ ψ(t) ≡ 1/N |∑ e^(iϕ)| ⟩_t ", save_path)
-
-save_path = joinpath(plot_base_folder,"K_Dr_J.pdf")
-Dr_J_heatmap(Drs, Js, Kms, " ⟨ K(t) ≡ 1/N |∑ e^(iθ_p)| ⟩_t ", save_path)
-
-
-
-f = Figure();
-ax = Axis(f[1,1], xlabel="1/Dr", ylabel="⟨ ψ(t)⟩_t", xscale=log10);
-ylims!(ax, (0,1))
-colormap=:viridis
-for i in eachindex(Drs)
-
-    Dr = Drs[i]
-    J = Js[i]
-    ψm = ψms[i]
-    ψmstd = ψmstds[i]
-
-    if J==1. || J==0.1 || true
-        if Dr==0.01
-            scatter!(ax, 1/Dr, ψm, color=J, colorrange=(0,1.), label="$J", colormap=colormap)
-        else
-            scatter!(ax, 1/Dr, ψm, color=J, colorrange=(0,1.),colormap=colormap)
-        end
-        errorbars!(ax,[1/Dr],[ψm], [ψmstd], color=[J], colorrange=(0,1.), colormap=colormap)
-    end
-
+Dr_J_heatmap(Drs, Js, abs.(ϕms), "|⟨ ⟨ϕ⟩ ⟩|",tags, save_path)
 end
-f[1,2]=Legend(f,ax, "J")
-display(f)
+
+#save_path = joinpath(plot_base_folder,"psi_Dr_J.pdf")
+#Dr_J_heatmap(Drs, Js, ψms, "⟨ ψ(t) ≡ 1/N |∑ e^(iϕ)| ⟩_t ",tags, save_path)
+
+#save_path = joinpath(plot_base_folder,"K_Dr_J.pdf")
+#Dr_J_heatmap(Drs, Js, Kms, " ⟨ K(t) ≡ 1/N |∑ e^(iθ_p)| ⟩_t ",tags, save_path)
+
+
+
+# f = Figure();
+# ax = Axis(f[1,1], xlabel="1/Dr", ylabel="⟨ ψ(t)⟩_t", xscale=log10);
+# ylims!(ax, (0,1))
+# colormap=:viridis
+# for i in eachindex(Drs)
+
+#     Dr = Drs[i]
+#     J = Js[i]
+#     ψm = ψms[i]
+#     ψmstd = ψmstds[i]
+
+#     if J==1. || J==0.1 || true
+#         if Dr==0.01
+#             scatter!(ax, 1/Dr, ψm, color=J, colorrange=(0,1.), label="$J", colormap=colormap)
+#         else
+#             scatter!(ax, 1/Dr, ψm, color=J, colorrange=(0,1.),colormap=colormap)
+#         end
+#         errorbars!(ax,[1/Dr],[ψm], [ψmstd], color=[J], colorrange=(0,1.), colormap=colormap)
+#     end
+
+# end
+# f[1,2]=Legend(f,ax, "J")
+# display(f)
+
+#J with different Drs
+begin
+    collective_plot_file_name ="J_omega_v_proj.pdf"
+    try 
+        rm(joinpath(plot_base_folder,collective_plot_file_name))
+    catch
+    end
+    for (param1,_) in sort(tree)
+
+
+        with_theme(theme_latexfonts()) do 
+            f = Figure()
+            ax = Axis(f[1,1], xlabel=L"ω_n", ylabel= L"Vel. proj.: $\langle \lambda_n|\delta \dot{R} \rangle^2$", title="$param1", yscale=log10)#, xscale=log10)
+
+            
+            marker_ind=1
+
+            marker_labels=[
+                (:circle, ":circle"),
+                (:rect, ":rect"),
+                (:diamond, ":diamond"),
+                (:hexagon, ":hexagon"),
+                (:cross, ":cross"),
+                (:xcross, ":xcross"),
+                (:utriangle, ":utriangle"),
+                (:dtriangle, ":dtriangle"),
+                (:ltriangle, ":ltriangle"),
+                (:rtriangle, ":rtriangle"),
+                (:pentagon, ":pentagon")]
+            for (param2,_) in sort(tree[param1])
+                for (seed, seedpath) in tree[param1][param2]
+                    jldopen(seedpath, "r") do seedanalysis_file
+                        Dr = seedanalysis_file["Dr"]
+                        
+                        J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+                        v0 = seedanalysis_file["v0"]
+                        v_projs = seedanalysis_file["v_projs"]
+                        if all(seedanalysis_file["modes"]["eigvals"].>0)
+                        ωs = sqrt.(seedanalysis_file["modes"]["eigvals"])
+                        
+                        t = seedanalysis_file["integration_info"]["save_tax"]
+                        if Dr!=0
+                            tau =1/Dr
+                            theory = v0^2  ./ (2 .+ 2 .* ωs.^2 .* tau)
+                            lines!(ax, ωs, theory ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:gist_rainbow), alpha=1, linestyle=:dash)
+                        end
+                        numerics =  mean(v_projs[:,500:end].^2, dims=2)[:,1]
+                        scatterlines!(ax,ωs, numerics,  label="$Dr",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), linewidth=0.5, marker=marker_labels[marker_ind][1], )
+                        marker_ind+=1
+                        ylims!(ax,low=5e-9,high=1e-1)
+                        xlims!(ax,low=0,high=2.5)
+                        global tag = get_tag(seedanalysis_file)
+                        end
+                    end
+                end
+            end
+        f[1,2]=Legend(f,ax, L"D_r")
+        Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+        display(f)
+        save("temp.pdf",f)
+        append_pdf!( joinpath(plot_base_folder,collective_plot_file_name), "temp.pdf", cleanup=true)
+        subfolder_path = mkpath(joinpath(plot_base_folder, "$param1"))
+        save(joinpath(subfolder_path,"omega_v_proj.pdf"),f )
+        end
+    end
+end
+
 
 
 begin
-collective_plot_file_name ="J_omega_v_proj.pdf"
-try 
-    rm(joinpath(plot_base_folder,collective_plot_file_name))
-catch
-end
-for (param1,_) in sort(tree)
-
-
-    with_theme(theme_latexfonts()) do 
-    f = Figure()
-    ax = Axis(f[1,1], xlabel=L"ω_n", ylabel= L"Vel. proj.: $\langle \lambda_n|\delta \dot{R} \rangle^2$", title="$param1", yscale=log10)#, xscale=log10)
-
+    collective_plot_file_name ="J_auto_p.pdf"
+    try 
+        rm(joinpath(plot_base_folder,collective_plot_file_name))
+    catch
+    end
+    for (param1,_) in sort(tree)
+        with_theme(theme_latexfonts()) do 
+        f = Figure()
+        ax = Axis(f[1,1], xlabel=L"t", ylabel= L"$\langle \mathbf{p}(t_0+t) \cdot \mathbf{p}(t_0) \rangle$", title="$param1")#, xscale=log10)
     
-    marker_ind=1
-
-    marker_labels=[
-        (:circle, ":circle"),
-        (:rect, ":rect"),
-        (:diamond, ":diamond"),
-        (:hexagon, ":hexagon"),
-        (:cross, ":cross"),
-        (:xcross, ":xcross"),
-        (:utriangle, ":utriangle"),
-        (:dtriangle, ":dtriangle"),
-        (:ltriangle, ":ltriangle"),
-        (:rtriangle, ":rtriangle"),
-        (:pentagon, ":pentagon")]
-    for (param2,_) in sort(tree[param1])
-        for (seed, seedpath) in tree[param1][param2]
-            jldopen(seedpath, "r") do seedanalysis_file
-
-
-                Dr = seedanalysis_file["Dr"]
-                if Dr!=0
-                J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
-                v0 = seedanalysis_file["v0"]
-                v_projs = seedanalysis_file["v_projs"]
-                ωs = sqrt.(seedanalysis_file["modes"]["eigvals"])
-                
-                t = seedanalysis_file["integration_info"]["save_tax"]
-                
-                
-                tau =1/Dr
-                theory = v0^2  ./ (2 .+ 2 .* ωs.^2 .* tau)
-                lines!(ax, ωs, theory ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:gist_rainbow), alpha=1, linestyle=:dash)
-                numerics =  mean(v_projs[:,500:end].^2, dims=2)[:,1]
-                scatterlines!(ax,ωs, numerics,  label="$Dr",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), linewidth=0.5, marker=marker_labels[marker_ind][1], )
-                marker_ind+=1
+        
+        marker_ind=1
+    
+        marker_labels=[
+            (:circle, ":circle"),
+            (:rect, ":rect"),
+            (:diamond, ":diamond"),
+            (:hexagon, ":hexagon"),
+            (:cross, ":cross"),
+            (:xcross, ":xcross"),
+            (:utriangle, ":utriangle"),
+            (:dtriangle, ":dtriangle"),
+            (:ltriangle, ":ltriangle"),
+            (:rtriangle, ":rtriangle"),
+            (:pentagon, ":pentagon")]
+        for (param2,_) in sort(tree[param1])
+            for (seed, seedpath) in tree[param1][param2]
+                jldopen(seedpath, "r") do seedanalysis_file
+    
+    
+                    Dr = seedanalysis_file["Dr"]
+                    J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+                    v0 = seedanalysis_file["v0"]
+                    AUTO_p = seedanalysis_file["AUTO_p"]
+                    
+                    Δt  =AUTO_p["Δt"]
+                    C = AUTO_p["Cavg"]
+                    
+                    scatterlines!(ax,Δt[1:length(C)], C,  label="$Dr",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), linewidth=0.5, marker=marker_labels[marker_ind][1], )
+                    marker_ind+=1
+                    ylims!(ax, low=-1.01,high=1.01)
+                    xlims!(ax, low=0, high=100)
+    
+                    global tag = get_tag(seedanalysis_file)
                 end
-                ylims!(ax,low=5e-9,high=1e-3)
-                xlims!(ax,low=0,high=2.5)
-
-
-                global tag = get_tag(seedanalysis_file)
             end
         end
-
+    
+        f[1,2]=Legend(f,ax, L"D_r")
+        Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+        display(f)
+        save("temp.pdf",f)
+        append_pdf!( joinpath(plot_base_folder,collective_plot_file_name), "temp.pdf", cleanup=true)
+        subfolder_path = mkpath(joinpath(plot_base_folder, "$param1"))
+        save(joinpath(subfolder_path,"auto_p.pdf"),f )
     end
-    f[1,2]=Legend(f,ax, L"D_r")
-    Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+    end
+end
+
+
+
+
+
+begin
+    collective_plot_file_name ="J_spatial_p.pdf"
+    try 
+        rm(joinpath(plot_base_folder,collective_plot_file_name))
+    catch
+    end
+    for (param1,_) in sort(tree)
+    
+    
+        with_theme(theme_latexfonts()) do 
+        f = Figure()
+        ax = Axis(f[1,1], xlabel=L"r", ylabel= L"$\langle \mathbf{p}(t_0, \mathbf{r_0}) \cdot \mathbf{p}(t_0, \mathbf{r_0}+\mathbf{r})) \rangle$", title="$param1")#, xscale=log10)
+    
+        
+        marker_ind=1
+    
+        marker_labels=[
+            (:circle, ":circle"),
+            (:rect, ":rect"),
+            (:diamond, ":diamond"),
+            (:hexagon, ":hexagon"),
+            (:cross, ":cross"),
+            (:xcross, ":xcross"),
+            (:utriangle, ":utriangle"),
+            (:dtriangle, ":dtriangle"),
+            (:ltriangle, ":ltriangle"),
+            (:rtriangle, ":rtriangle"),
+            (:pentagon, ":pentagon")]
+        for (param2,_) in sort(tree[param1])
+            for (seed, seedpath) in tree[param1][param2]
+                jldopen(seedpath, "r") do seedanalysis_file
+    
+    
+                    Dr = seedanalysis_file["Dr"]
+                    J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+                    v0 = seedanalysis_file["v0"]
+                    SPAT_p = seedanalysis_file["SPAT_p"]
+                    
+                    rbc  =SPAT_p["rbc"]
+                    C = SPAT_p["C"]
+
+
+                    Cavg = zeros(size(C)[2])
+                    for i in 1:size(C)[2]
+                        Cavg[i] = mean( filter!( e->!isnan(e) ,C[:,i] ) )
+
+                    end
+                    
+                    scatterlines!(ax,rbc, Cavg,  label="$Dr",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), linewidth=0.5, marker=marker_labels[marker_ind][1], )
+                    marker_ind+=1
+                    ylims!(ax, low=-1.01,high=1.01)
+                    #xlims!(ax, low=0, high=100)
+    
+                    global tag = get_tag(seedanalysis_file)
+                end
+            end
+    
+        end
+        f[1,2]=Legend(f,ax, L"D_r")
+        Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+        display(f)
+        save("temp.pdf",f)
+        append_pdf!( joinpath(plot_base_folder,collective_plot_file_name), "temp.pdf", cleanup=true)
+        subfolder_path = mkpath(joinpath(plot_base_folder, "$param1"))
+        save(joinpath(subfolder_path,"spatial_p.pdf"),f )
+    end
+    end 
+end
+
+
+
+
+function plot_first_n_modes(seed,seedanalysis_file)
+
+    with_theme(theme_latexfonts()) do 
+    Dr = seedanalysis_file["Dr"]
+    J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+    v0 = seedanalysis_file["v0"]
+    pxm  = seedanalysis_file["mean_px"]
+    t = seedanalysis_file["integration_info"]["save_tax"]
+    f = Figure(size=(2000,2000));
+    mm=1
+
+    x0  = seedanalysis_file["x0"]
+    y0  = seedanalysis_file["y0"]
+
+    R = seedanalysis_file["R"]
+
+    id = seedanalysis_file["id"]
+    
+    n = 3
+    for i in 1:n
+        for j in 1:n
+        print(mm)
+    
+        m = mm
+
+        eigvecs = seedanalysis_file["modes"]["100eigvecs"]
+        eigvals = seedanalysis_file["modes"]["eigvals"]
+    
+        eigen_m_value = eigvals[m]
+        eigen_m_vector =  reshape(eigvecs[:,m], (2, round(Int64,length(eigvecs[:,m])/2)) )
+        eigen_m_x = eigen_m_vector[1,:]
+        eigen_m_y = eigen_m_vector[2,:]
+    
+    
+        ax=Axis(f[i,j], xlabel = "x", ylabel="y", aspect=DataAspect(), title=L"λ_%$(m)= %$(eigen_m_value)")
+        scatter!(ax,x0,y0, markerspace=:data, markersize=2 .*R, color = id,marker = Circle,alpha=0.3)
+    
+        scale = length(R)>100 ? 100 : 4
+
+
+        arrows!(ax, x0, y0, eigen_m_x, eigen_m_y, lengthscale = scale)
+        mm+=1
+        end
+    
+    end
+
+    tag = get_tag(seedanalysis_file)
+    Label(f[n+1,1],"J = $J, Dr=$(Dr), "*"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
+
+    save(joinpath(subfolder_path,"mode_vis.pdf"),f)
 
     display(f)
+end
+
+end
+
+acces_param1_param2_seedanalysis(tree, [plot_first_n_modes])
+
+
+function plot_spatiotemporal_p(seed,seedanalysis_file)
+    with_theme(theme_latexfonts()) do 
+
+    f = Figure()
+    Dr = seedanalysis_file["Dr"]
+    J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+    v0 = seedanalysis_file["v0"]
+    SPTE_p = seedanalysis_file["SPTE_p"]
+    ax = Axis(f[1,1], yreversed=true, xlabel=L"r", ylabel=L"t")
+    t_max_ind = 5000
+
+    t = seedanalysis_file["t"]
+    
+    hm=heatmap!(ax,  SPTE_p["rbe"],t[1:t_max_ind],   transpose(SPTE_p["C"][1:t_max_ind,:]), colormap=:seismic, colorrange=(-1,1))
+    vlines!(ax, SPTE_p["rbe"], color=:black)
+
+    tag = get_tag(seedanalysis_file)
+    Label(f[end+1,1],"J = $J, Dr=$(Dr), "*"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+    Colorbar(f[1, end+1], hm,label=L"$\langle \mathbf{p}(t_s+t, \mathbf{r_0}) \cdot \mathbf{p}(t_s, \mathbf{r_0}+\mathbf{r})) \rangle$")
+    display(f)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
 
     save("temp.pdf",f)
+    append_pdf!( joinpath(plot_base_folder,"spatiotemporal.pdf"), "temp.pdf", cleanup=true)
 
-    append_pdf!( joinpath(plot_base_folder,collective_plot_file_name), "temp.pdf", cleanup=true)
 
-    subfolder_path = mkpath(joinpath(plot_base_folder, "$param1"))
-    save(joinpath(subfolder_path,"omega_v_proj.pdf"),f )
+    
+    save(joinpath(subfolder_path,"spatiotemporal_p.pdf"),f)
 end
-end 
+
+
+end
+
+
+
+
+acces_param1_param2_seedanalysis(tree, [plot_spatiotemporal_p])
+
+
 end
