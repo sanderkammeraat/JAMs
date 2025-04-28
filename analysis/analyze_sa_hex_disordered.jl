@@ -177,5 +177,21 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
 
 end
 
-run_multithreaded_analysis_param1_param2_seed(tree, analyze_single_seed_inner!, analysis_base_folder, overwrite=true, raw_data_file_name="sa_raw_data.jld2", support_raw_data_file_name="ra_raw_data.jld2")
+
+
+for (key,val) in tree
+    println(key)
+end
+
+partial_tree=Dict()
+
+
+partial_tree["J_0.0"] = tree["J_0.0"]
+
+partial_tree["J_0.5"] = tree["J_0.5"]
+
+partial_tree["J_5.0"] = tree["J_5.0"]
+
+
+run_multithreaded_analysis_param1_param2_seed(partial_tree, analyze_single_seed_inner!, analysis_base_folder, overwrite=true, raw_data_file_name="sa_raw_data.jld2", support_raw_data_file_name="ra_raw_data.jld2")
 
