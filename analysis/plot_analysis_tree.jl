@@ -1,14 +1,14 @@
 include(joinpath("..","src","Engine.jl"))
 include("AnalysisPipeline.jl")
 
-#base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
+base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
 
 #base_folder = joinpath(homedir(), "sa", "phi_1", "Nlin_4", "vary_J_Dr")
 #base_folder = joinpath(homedir(), "sa","survey","hex_disordered", "phi_1", "Nlin_4", "vary_J_Dr")
 
 
 #base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa", "phi_1", "Nlin_20", "vary_J_Dr")
-base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr")
+#base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr")
 
 begin
 
@@ -30,8 +30,8 @@ tree = construct_folder_tree_param_param_seed(analysis_base_folder)
 using PDFmerger
 using CairoMakie
 
+end
 
-begin
 function get_tag(seedanalysis_file)
 
     v0 = v0 = seedanalysis_file["v0"]
@@ -273,14 +273,81 @@ function plot_ω_v_projections(seed,seedanalysis_file)
     append_pdf!( joinpath(plot_base_folder,"omega_v_projs.pdf"), "temp.pdf", cleanup=true)
 end
 
+
+function plot_t_v_projections(seed,seedanalysis_file)
+
+    
+
+    Dr = seedanalysis_file["Dr"]
+    J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+    v0 = seedanalysis_file["v0"]
+    #if J==0.1
+    with_theme(theme_latexfonts()) do 
+    f = Figure()
+
+
+    
+    
+    v_projs = seedanalysis_file["v_projs"]
+    #
+    
+    t = seedanalysis_file["integration_info"]["save_tax"]
+    
+    ax = Axis(f[1,1], xlabel="t", ylabel=L"Vel. proj.: $\langle \lambda_n|\delta \dot{R} \rangle$", title="J=$J, Dr=$Dr")#, yscale=log10)
+
+    marker_labels=[
+        (:circle, ":circle"),
+        (:rect, ":rect"),
+        (:diamond, ":diamond"),
+        (:hexagon, ":hexagon"),
+        (:cross, ":cross"),
+        (:xcross, ":xcross"),
+        (:utriangle, ":utriangle"),
+        (:dtriangle, ":dtriangle"),
+        (:ltriangle, ":ltriangle"),
+        (:rtriangle, ":rtriangle"),
+        (:pentagon, ":pentagon")]
+
+
+    Nmodes = 5
+
+    for i in 1:Nmodes
+        scatterlines!(ax,t, v_projs[i,:], color=i, colorrange=(1, Nmodes), label="$i", marker=marker_labels[i][1])
+
+    end
+
+    tag = get_tag(seedanalysis_file)
+
+    # lines!(ax,t, v_projs, color=:blue)
+
+    f[1,2]=Legend(f,ax, L"Mode numbers")
+    Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+    xlims!(1000, 1200)
+    #ylims!(-0.03, 0.03)
+    display(f)
+
+    save("temp.pdf",f)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
+
+    save(joinpath(subfolder_path,"t_v_projs.pdf"),f)
+
+    append_pdf!( joinpath(plot_base_folder,"t_v_projs.pdf"), "temp.pdf", cleanup=true)
 end
+end
+#end
+
+
 #acces_param1_param2_seedanalysis(tree, [plot_phi_over_time ,plot_px_over_time, plot_psi_over_time])
 #acces_param1_param2_seedanalysis(tree, [plot_AUTO_p])
 #acces_param1_param2_seedanalysis(tree, [plot_K_over_time])
-
-
-
-
+begin
+collective_plot_file_name ="t_v_projs.pdf"
+try 
+    rm(joinpath(plot_base_folder,collective_plot_file_name))
+catch
+end
+acces_param1_param2_seedanalysis(tree, [plot_t_v_projections])
+end
 #acces_param1_param2_seedanalysis(tree, [plot_v_p_projections])
 
 
@@ -457,6 +524,73 @@ begin
         append_pdf!( joinpath(plot_base_folder,collective_plot_file_name), "temp.pdf", cleanup=true)
         subfolder_path = mkpath(joinpath(plot_base_folder, "$param1"))
         save(joinpath(subfolder_path,"omega_v_proj.pdf"),f )
+        end
+    end
+end
+
+begin
+    collective_plot_file_name ="J_n_v_proj.pdf"
+    try 
+        rm(joinpath(plot_base_folder,collective_plot_file_name))
+    catch
+    end
+    for (param1,_) in sort(tree)
+
+
+        with_theme(theme_latexfonts()) do 
+            f = Figure()
+            ax = Axis(f[1,1], xlabel=L"n", ylabel= L"Vel. proj.: $\langle \lambda_n|\delta \dot{R} \rangle^2$", title="$param1", yscale=log10)#, xscale=log10)
+
+            
+            marker_ind=1
+
+            marker_labels=[
+                (:circle, ":circle"),
+                (:rect, ":rect"),
+                (:diamond, ":diamond"),
+                (:hexagon, ":hexagon"),
+                (:cross, ":cross"),
+                (:xcross, ":xcross"),
+                (:utriangle, ":utriangle"),
+                (:dtriangle, ":dtriangle"),
+                (:ltriangle, ":ltriangle"),
+                (:rtriangle, ":rtriangle"),
+                (:pentagon, ":pentagon")]
+            for (param2,_) in sort(tree[param1])
+                for (seed, seedpath) in tree[param1][param2]
+                    jldopen(seedpath, "r") do seedanalysis_file
+                        Dr = seedanalysis_file["Dr"]
+                        
+                        J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+                        v0 = seedanalysis_file["v0"]
+                        v_projs = seedanalysis_file["v_projs"]
+                        if all(seedanalysis_file["modes"]["eigvals"].>0)
+                        ωs = sqrt.(seedanalysis_file["modes"]["eigvals"])
+                        
+                        t = seedanalysis_file["integration_info"]["save_tax"]
+                        numerics =  mean(v_projs[:,500:end].^2, dims=2)[:,1]
+                        scatterlines!(ax,1:length(ωs), numerics,  label="$Dr",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), marker=marker_labels[marker_ind][1], linewidth=0.1)
+                        if Dr!=0
+                            tau =1/Dr
+                            theory = v0^2  ./ (2 .+ 2 .* ωs.^2 .* tau)
+                            lines!(ax, 1:length(ωs), theory ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:gist_rainbow), alpha=1)
+                        end
+                        
+                        marker_ind+=1
+                        ylims!(ax,low=5e-9,high=1e-1)
+                        xlims!(ax,low=0,high=40)
+                        global tag = get_tag(seedanalysis_file)
+                        end
+                    end
+                end
+            end
+        f[1,2]=Legend(f,ax, L"D_r")
+        Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+        display(f)
+        save("temp.pdf",f)
+        append_pdf!( joinpath(plot_base_folder,collective_plot_file_name), "temp.pdf", cleanup=true)
+        subfolder_path = mkpath(joinpath(plot_base_folder, "$param1"))
+        save(joinpath(subfolder_path,"n_v_proj.pdf"),f )
         end
     end
 end
@@ -697,5 +831,3 @@ end
 
 acces_param1_param2_seedanalysis(tree, [plot_spatiotemporal_p])
 
-
-end
