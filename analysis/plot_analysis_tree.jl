@@ -1,8 +1,8 @@
 include(joinpath("..","src","Engine.jl"))
 include("AnalysisPipeline.jl")
 
-base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
-
+#base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
+base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_J_Dr/" 
 #base_folder = joinpath(homedir(), "sa", "phi_1", "Nlin_4", "vary_J_Dr")
 #base_folder = joinpath(homedir(), "sa","survey","hex_disordered", "phi_1", "Nlin_4", "vary_J_Dr")
 
@@ -18,7 +18,7 @@ begin
 
 #base_folder = joinpath(homedir(), "sa", "survey","hex_disordered","phi_1", "Nlin_4", "vary_J_Dr")
 
-#base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_J_Dr/" 
+
 
 analysis_base_folder = joinpath(base_folder, "analysis_v2")
 
