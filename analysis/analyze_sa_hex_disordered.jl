@@ -179,9 +179,9 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
 
     #analysis_file["ψ"] = ψ
 
-    analysis_file["mean_ψ"] = mean(ψ)
+    analysis_file["mean_ψ"] = mean(ψ, dims=1)[1,:] 
 
-    analysis_file["std_ψ"] = std(ψ)
+    analysis_file["std_ψ"] = std(ψ, dims=1)[1,:] 
 
     #analysis_file["K"] = K
 
