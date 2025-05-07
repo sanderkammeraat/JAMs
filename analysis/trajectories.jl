@@ -8,15 +8,19 @@ include("AnalysisPipeline.jl")
 include("AnalysisFunctions.jl")
 
 
+tree = construct_folder_tree_param_param_seed(joinpath(homedir(),"sa","survey","hex_disordered", "phi_1","Nlin_4","vary_J_Dr","simdata"))
 
 
-data = jldopen(joinpath(homedir(),"sa", "phi_1","Nlin_4","vary_J_Dr","simdata","J_0.5","Dr_0.1","seed_59","raw_data.jld2"))
+#tree = construct_folder_tree_param_param_seed(joinpath(homedir(),"mounting","data1_kammeraat","sa","survey","hex_disordered", "phi_1","Nlin_20","vary_J_Dr","simdata"))
+
+data = jldopen( joinpath(tree["J_1.0"]["Dr_0.01"]["seed_53"], "sa_raw_data.jld2") )
 
 #data = jldopen(joinpath(homedir(),"mounting","data1_kammeraat","sa", "phi_1","Nlin_20","vary_J_Dr","simdata","J_0.1","Dr_0.01","seed_7","raw_data.jld2"))
 
 #Ignore boundary particles
 frames = data["frames"]
 t = data["integration_info"]["save_tax"]
+
 Nt = length(t)
 Np = length(extract_frame_data_for_type("id",1,frames["1"]))
 x = zeros(Np, Nt)
@@ -58,6 +62,16 @@ ax = Axis(f[1,1], aspect=DataAspect())
 
 scatterlines!(ax, dx[pid,1:fidmax], dy[pid,1:fidmax], color = t[1:fidmax], colormap=:rainbow)
 display(f)          
+end
+
+begin
+    f = Figure();
+    fidmax = 1000
+    pid = 10
+    ax = Axis(f[1,1])
+    
+    scatterlines!(ax,t[1:fidmax], dx[pid,1:fidmax])
+    display(f)          
 end
 
 
@@ -184,3 +198,91 @@ begin
     display(f)
 
 end
+
+
+#%%
+
+
+using FFTW
+
+tss = 500
+
+FT =rfft(dx[:,tss:end],2)
+FTfreq = rfftfreq( size(dx[:,tss:end])[2], 1/ (t[2]-t[1])).*2*pi
+
+
+begin
+f = Figure();
+
+ax = Axis(f[1,1], yscale=log10);
+for i in 1:size(FT)[1]
+
+scatter!(ax, FTfreq, abs.(FT[i,:]).^2, color=i, colorrange=(1,size(FT)[1] ))
+
+end
+display(f)
+
+end
+
+FT_particle_mean = mean(abs.(FT).^2, dims=1)[1,:]
+
+maxval, maxind = findmax(FT_particle_mean)
+
+main_freq = FTfreq[maxind]
+
+begin
+    f = Figure();
+    
+    ax = Axis(f[1,1], yscale=log10, xlabel=L"\omega", ylabel=L"|  \mathcal{F}\{\delta x(t)\}(\omega)|^2");
+    
+    
+    scatter!(ax, FTfreq, FT_particle_mean)
+
+    scatter!(ax,main_freq , maxval)
+    
+    display(f)
+    
+end
+
+2*pi/main_freq
+
+using Peaks
+
+begin
+f = Figure();
+    
+ax = Axis(f[1,1], yscale=log10, xlabel=L"\omega", ylabel=L"|  \mathcal{F}\{\delta x(t)\}(\omega)|^2");
+inds, vals = findmaxima(FT_particle_mean,200)
+scatter!(ax, FTfreq, FT_particle_mean)
+scatter!(ax,FTfreq[inds] , vals)
+
+display(f)
+end
+
+FTfreq[inds][2]/FTfreq[inds][1]
+
+
+
+
+
+FT = temporal_Fourier_transform(t[2]-t[1], dx, min_t_ind=500)
+
+
+begin
+    f = Figure();
+        
+    ax = Axis(f[1,1], yscale=log10, xlabel=L"\omega", ylabel=L"|  \mathcal{F}\{\delta x(t)\}(\omega)|^2");
+    inds, vals = findmaxima(FT_particle_mean,200)
+    band!(ax, FT["ω"], FT["pavg_X2"] .-FT["pste_X2"] ,FT["pavg_X2"] .+FT["pste_X2"], color=:red)
+    scatter!(ax, FT["ω"], FT["pavg_X2"])
+    scatter!(ax,FT["ω_max"] , FT["max_X2"])
+
+
+    
+    display(f)
+end
+
+
+
+
+close(data)

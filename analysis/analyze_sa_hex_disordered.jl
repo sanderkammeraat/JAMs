@@ -11,7 +11,7 @@ base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_J_Dr
 
 raw_data_base_folder = joinpath(base_folder, "simdata")
 
-analysis_base_folder = mkpath(joinpath(base_folder, "analysis_v2"))
+analysis_base_folder = mkpath(joinpath(base_folder, "analysis_FT"))
 
 #Make tree to navigate simulation data folder structure
 tree = construct_folder_tree_param_param_seed(raw_data_base_folder)
@@ -74,8 +74,8 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
     x0int = extract_frame_data_for_type("x",1,frames_support[string(length(frames_support))])
     y0int = extract_frame_data_for_type("y",1,frames_support[string(length(frames_support))])
 
-    analysis_file["x0"] = x0
-    analysis_file["y0"] = y0
+
+
     k = system["forces"]["pair_forces"]["soft_disk_force"]["karray"]
     R = frames["1"]["R"]
     type = frames["1"]["type"]
@@ -129,8 +129,29 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
 
     rmax = 2*sqrt(xmax^2 + ymax^2)
 
-    save_dict!(analysis_file,spatiotemporal_p_correlation(2.5, rmax, x0int,y0int,px, py, min_t_ind=500), "SPTE_p" )
-    save_dict!(analysis_file, auto_correlation(t, px, py, minrow=500), "AUTO_p")
+    #save_dict!(analysis_file,spatiotemporal_p_correlation(2.5, rmax, x0int,y0int,px, py, min_t_ind=500), "SPTE_p" )
+
+
+    AUTO_p = auto_correlation(t, px, py, minrow=500)
+
+
+    save_dict!(analysis_file,secondary_temporal_Fourier_transform(AUTO_p["Δt"][2]-AUTO_p["Δt"][1], AUTO_p["Cavg"]), "FT_auto_P")
+
+
+    #save_dict!(analysis_file,spatiotemporal_p_correlation(2.5, rmax, x[:,1],y[:,1],px, py, min_t_ind=500), "SPTE_p" )
+    save_dict!(analysis_file, AUTO_p, "AUTO_p")
+
+    dt = t[2] - t[1]
+
+    save_dict!(analysis_file,temporal_Fourier_transform(dt, dis_x;  min_t_ind=500), "FT_dx")
+
+    save_dict!(analysis_file,temporal_Fourier_transform(dt, px;  min_t_ind=500), "FT_px")
+
+    save_dict!(analysis_file,temporal_Fourier_transform(dt, vx;  min_t_ind=500), "FT_vx")
+
+
+
+    
 
     save_dict!(analysis_file, spatial_p_correlation(2.5, rmax, x,y,px, py,min_t_ind=500), "SPAT_p" )
 
@@ -141,6 +162,13 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
     analysis_file["type"] = frames["1"]["type"]
     analysis_file["v0"] = frames["1"]["v0"][1]
     analysis_file["Dr"] = frames["1"]["Dr"][1]
+
+
+    analysis_file["x0"] = x0
+    analysis_file["y0"] = y0
+
+    analysis_file["x0int"] = x0int
+    analysis_file["y0int"] = y0int
 
 
 
@@ -193,5 +221,5 @@ partial_tree["J_0.5"] = tree["J_0.5"]
 partial_tree["J_5.0"] = tree["J_5.0"]
 
 
-run_multithreaded_analysis_param1_param2_seed(partial_tree, analyze_single_seed_inner!, analysis_base_folder, overwrite=true, raw_data_file_name="sa_raw_data.jld2", support_raw_data_file_name="ra_raw_data.jld2")
+run_multithreaded_analysis_param1_param2_seed(tree, analyze_single_seed_inner!, analysis_base_folder, overwrite=true, raw_data_file_name="sa_raw_data.jld2", support_raw_data_file_name="ra_raw_data.jld2")
 

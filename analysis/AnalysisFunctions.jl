@@ -1,4 +1,61 @@
 
+using FFTW
+
+
+function temporal_Fourier_transform(dt, x;  min_t_ind=1)
+
+    #Calculate the Fourier transform along the time axis for a real signal
+
+    @views xf = x[:, min_t_ind:end ]
+    Xf =rfft(xf, 2 )
+
+    #Times 2 π to get angular frequency
+    ω = rfftfreq( size(xf)[2], 1/dt).*2*pi
+
+
+    Xf2 = abs.(Xf).^2
+
+    @views pavg_Xf2 = mean(Xf2, dims=1)[1,:]
+
+    @views pstd_Xf2 = std(Xf2, dims=1)[1,:]
+
+    #Standard error to the mean
+    @views pste_Xf2 = pstd_Xf2 ./ sqrt(size(Xf2)[1])
+
+
+    maxval, maxind = findmax(pavg_Xf2)
+    ω_max = ω[maxind]
+
+
+    FT = Dict("pavg_X2"=>pavg_Xf2, "pstd_X2"=>pstd_Xf2, "pste_X2"=>pste_Xf2, "ω"=>ω, "max_X2"=>maxval, "max_X2_ind" =>maxind, "ω_max"=>ω_max )
+
+    return FT
+
+end
+
+function secondary_temporal_Fourier_transform(dt, C)
+
+
+        #Calculate the Fourier transform along the time axis for a real signal
+        Xf =rfft(C, 2 )
+    
+        #Times 2 π to get angular frequency
+        ω = rfftfreq( length(Xf), 1/dt).*2*pi
+    
+    
+        Xf2 = abs.(Xf).^2
+    
+    
+        maxval, maxind = findmax(Xf2)
+        ω_max = ω[maxind]
+    
+    
+        FT = Dict("X2"=>Xf2, "ω"=>ω, "max_X2"=>maxval, "max_X2_ind" =>maxind, "ω_max"=>ω_max )
+    
+        return FT
+
+end
+
 
 function spatial_p_correlation(binsize, maxbin_center, x,y, px, py; min_t_ind=1, max_t_ind=nothing, every_n=nothing)
 
