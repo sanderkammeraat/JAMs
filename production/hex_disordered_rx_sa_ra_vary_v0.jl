@@ -108,7 +108,7 @@ addprocs(n)
     system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, field_dofevolvers, false,2.5*r*(1+poly));
 
     #Run integration
-    sim = Euler_integrator(system,1e-1, 5e3,Tsave=Tsave, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="rx")# , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-1, 5e3,Tsave=Tsave, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="rx", fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 
 end
@@ -143,7 +143,7 @@ end
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,false,rx_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,1e-2, 5e3,Tsave=Tsave,seed=seed, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="sa" )#, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-2, 5e3,Tsave=Tsave,seed=seed, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="sa" , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 end
 
@@ -177,7 +177,7 @@ end
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,false,sa_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,1e-1, 5e3,Tsave=Tsave,seed=nothing, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="ra")# , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-1, 5e3,Tsave=Tsave,seed=nothing, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="ra", fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 end
 
@@ -213,11 +213,11 @@ for j in eachindex(Js)
         save_folder_path = joinpath(base_path,"sa","survey","hex_disordered","phi_1","Nlin_20","vary_v0","simdata", "J_$J","v0_$(v0)","seed_$seed");
         print(save_folder_path)
 
-        rx_result = relaxation_step(save_folder_path,Tplot=nothing)
+        rx_result = relaxation_step(save_folder_path,Tplot=1000)
 
         sa_result = self_aligning_step(rx_result,J,Dr,v0, seed, save_folder_path, Tplot=1000);
 
-        ra_result=relax_again_step(sa_result, save_folder_path,Tplot=nothing);
+        ra_result=relax_again_step(sa_result, save_folder_path,Tplot=1000);
 
 
     end
