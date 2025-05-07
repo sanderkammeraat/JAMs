@@ -135,7 +135,7 @@ function analyze_single_seed_inner!(analysis_file, system, integration_info, fra
     AUTO_p = auto_correlation(t, px, py, minrow=500)
 
 
-    save_dict!(analysis_file,secondary_temporal_Fourier_transform(AUTO_p["Δt"][2]-AUTO_p["Δt"][1], AUTO_p["Cavg"]), "FT_auto_P")
+    save_dict!(analysis_file,secondary_temporal_Fourier_transform(AUTO_p["Δt"][2]-AUTO_p["Δt"][1], AUTO_p["Cavg"]), "FT_AUTO_p")
 
 
     #save_dict!(analysis_file,spatiotemporal_p_correlation(2.5, rmax, x[:,1],y[:,1],px, py, min_t_ind=500), "SPTE_p" )

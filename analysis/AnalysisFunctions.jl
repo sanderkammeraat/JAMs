@@ -37,10 +37,10 @@ function secondary_temporal_Fourier_transform(dt, C)
 
 
         #Calculate the Fourier transform along the time axis for a real signal
-        Xf =rfft(C, 2 )
+        Xf =rfft(C)
     
         #Times 2 π to get angular frequency
-        ω = rfftfreq( length(Xf), 1/dt).*2*pi
+        ω = rfftfreq( length(C), 1/dt).*2*pi
     
     
         Xf2 = abs.(Xf).^2

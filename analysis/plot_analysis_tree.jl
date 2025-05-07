@@ -2,10 +2,12 @@ include(joinpath("..","src","Engine.jl"))
 include("AnalysisPipeline.jl")
 
 #base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
-base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_J_Dr/" 
+#base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_J_Dr/" 
 #base_folder = joinpath(homedir(), "sa", "phi_1", "Nlin_4", "vary_J_Dr")
 #base_folder = joinpath(homedir(), "sa","survey","hex_disordered", "phi_1", "Nlin_4", "vary_J_Dr")
 
+
+base_folder = joinpath(homedir(), "sa","survey","hex_ordered", "phi_1", "Nlin_4", "vary_J_Dr")
 
 #base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa", "phi_1", "Nlin_20", "vary_J_Dr")
 #base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr")
@@ -20,9 +22,9 @@ begin
 
 
 
-analysis_base_folder = joinpath(base_folder, "analysis_v2")
+analysis_base_folder = joinpath(base_folder, "analysis_FT")
 
-plot_base_folder = mkpath(joinpath(base_folder, "plots_good")) 
+plot_base_folder = mkpath(joinpath(base_folder, "plots_FT")) 
 
 tree = construct_folder_tree_param_param_seed(analysis_base_folder)
 
@@ -334,20 +336,184 @@ function plot_t_v_projections(seed,seedanalysis_file)
     append_pdf!( joinpath(plot_base_folder,"t_v_projs.pdf"), "temp.pdf", cleanup=true)
 end
 end
-#end
-
-
-#acces_param1_param2_seedanalysis(tree, [plot_phi_over_time ,plot_px_over_time, plot_psi_over_time])
-#acces_param1_param2_seedanalysis(tree, [plot_AUTO_p])
-#acces_param1_param2_seedanalysis(tree, [plot_K_over_time])
 begin
-collective_plot_file_name ="t_v_projs.pdf"
-try 
-    rm(joinpath(plot_base_folder,collective_plot_file_name))
-catch
+    collective_plot_file_name ="t_v_projs.pdf"
+    try 
+        rm(joinpath(plot_base_folder,collective_plot_file_name))
+    catch
+    end
+    acces_param1_param2_seedanalysis(tree, [plot_t_v_projections])
+    end
+
+function plot_FT_px(seed,seedanalysis_file)
+
+    
+
+    Dr = seedanalysis_file["Dr"]
+    J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+    v0 = seedanalysis_file["v0"]
+    #if J==0.1
+    with_theme(theme_latexfonts()) do 
+    f = Figure()
+
+
+    
+    
+    FT = seedanalysis_file["FT_px"]
+    
+    t = seedanalysis_file["integration_info"]["save_tax"]
+
+
+    ax = Axis(f[1,1], yscale=log10, xlabel=L"\omega", ylabel=L"|  \mathcal{F}\{p_x(t)\}(\omega)|^2", title="J=$J, Dr=$Dr");
+    scatter!(ax, FT["ω"], FT["pavg_X2"])
+    scatter!(ax,FT["ω_max"] , FT["max_X2"],label="max")
+
+    tag = get_tag(seedanalysis_file)
+
+    Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+
+    f[1,2]=Legend(f,ax)
+    ylims!(ax, low=1e-1,high= 1e7)
+    display(f)
+
+    save("temp.pdf",f)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
+
+    save(joinpath(subfolder_path,"FT_px.pdf"),f)
+
+    append_pdf!( joinpath(plot_base_folder,"FT_px.pdf"), "temp.pdf", cleanup=true)
 end
-acces_param1_param2_seedanalysis(tree, [plot_t_v_projections])
 end
+begin
+    collective_plot_file_name ="FT_px.pdf"
+    try 
+        rm(joinpath(plot_base_folder,collective_plot_file_name))
+    catch
+    end
+    acces_param1_param2_seedanalysis(tree, [plot_FT_px])
+end
+
+function plot_FT_vx(seed,seedanalysis_file)
+    Dr = seedanalysis_file["Dr"]
+    J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+    v0 = seedanalysis_file["v0"]
+    #if J==0.1
+    with_theme(theme_latexfonts()) do 
+    f = Figure()
+
+    FT = seedanalysis_file["FT_vx"]
+    
+    t = seedanalysis_file["integration_info"]["save_tax"]
+
+    ax = Axis(f[1,1], yscale=log10, xlabel=L"\omega", ylabel=L"|  \mathcal{F}\{v_x(t)\}(\omega)|^2", title="J=$J, Dr=$Dr");
+    scatter!(ax, FT["ω"], FT["pavg_X2"])
+    scatter!(ax,FT["ω_max"] , FT["max_X2"],label="max")
+
+    tag = get_tag(seedanalysis_file)
+
+    Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+
+    f[1,2]=Legend(f,ax)
+    #ylims!(ax, low=1e-7,high= 1e2)
+    display(f)
+
+    save("temp.pdf",f)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
+
+    save(joinpath(subfolder_path,"FT_vx.pdf"),f)
+
+    append_pdf!( joinpath(plot_base_folder,"FT_vx.pdf"), "temp.pdf", cleanup=true)
+end
+end
+begin
+    collective_plot_file_name ="FT_vx.pdf"
+    try 
+        rm(joinpath(plot_base_folder,collective_plot_file_name))
+    catch
+    end
+    acces_param1_param2_seedanalysis(tree, [plot_FT_vx])
+end
+function plot_FT_dx(seed,seedanalysis_file)
+    Dr = seedanalysis_file["Dr"]
+    J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+    v0 = seedanalysis_file["v0"]
+    #if J==0.1
+    with_theme(theme_latexfonts()) do 
+    f = Figure()
+
+    FT = seedanalysis_file["FT_dx"]
+    
+    t = seedanalysis_file["integration_info"]["save_tax"]
+
+    ax = Axis(f[1,1], yscale=log10, xlabel=L"\omega", ylabel=L"|  \mathcal{F}\{δx(t)\}(\omega)|^2", title="J=$J, Dr=$Dr");
+    scatter!(ax, FT["ω"], FT["pavg_X2"])
+    scatter!(ax,FT["ω_max"] , FT["max_X2"],label="max")
+
+    tag = get_tag(seedanalysis_file)
+
+    Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+
+    f[1,2]=Legend(f,ax)
+    #ylims!(ax, low=1e-7,high= 1e2)
+    display(f)
+
+    save("temp.pdf",f)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
+
+    save(joinpath(subfolder_path,"FT_dx.pdf"),f)
+
+    append_pdf!( joinpath(plot_base_folder,"FT_dx.pdf"), "temp.pdf", cleanup=true)
+end
+end
+begin
+    collective_plot_file_name ="FT_dx.pdf"
+    try 
+        rm(joinpath(plot_base_folder,collective_plot_file_name))
+    catch
+    end
+    acces_param1_param2_seedanalysis(tree, [plot_FT_dx])
+end
+function plot_FT_AUTO_p(seed,seedanalysis_file)
+    Dr = seedanalysis_file["Dr"]
+    J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+    v0 = seedanalysis_file["v0"]
+    #if J==0.1
+    with_theme(theme_latexfonts()) do 
+    f = Figure()
+
+    FT = seedanalysis_file["FT_auto_P"]
+    
+    t = seedanalysis_file["integration_info"]["save_tax"]
+
+    ax = Axis(f[1,1], yscale=log10, xlabel=L"\omega", ylabel=L"|  \mathcal{F}\{AUTO_p(Δt)\}(\omega)|^2", title="J=$J, Dr=$Dr");
+    scatter!(ax, FT["ω"], FT["X2"])
+    scatter!(ax,FT["ω_max"] , FT["max_X2"],label="max")
+
+    tag = get_tag(seedanalysis_file)
+
+    Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+
+    f[1,2]=Legend(f,ax)
+    #ylims!(ax, low=1e-7,high= 1e2)
+    display(f)
+
+    save("temp.pdf",f)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
+
+    save(joinpath(subfolder_path,"FT_AUTO_p.pdf"),f)
+
+    append_pdf!( joinpath(plot_base_folder,"FT_AUTO_p.pdf"), "temp.pdf", cleanup=true)
+end
+end
+begin
+    collective_plot_file_name ="FT_AUTO_p.pdf"
+    try 
+        rm(joinpath(plot_base_folder,collective_plot_file_name))
+    catch
+    end
+    acces_param1_param2_seedanalysis(tree, [plot_FT_AUTO_p])
+end
+
 #acces_param1_param2_seedanalysis(tree, [plot_v_p_projections])
 
 
