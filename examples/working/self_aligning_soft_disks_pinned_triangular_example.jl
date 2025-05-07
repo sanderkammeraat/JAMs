@@ -1,4 +1,4 @@
-include(joinpath("..","src","Engine.jl"))
+include(joinpath("..","..","src","Engine.jl"))
 
 function simulation()
 
@@ -7,7 +7,9 @@ function simulation()
     pair_forces = [soft_disk_force(1,1.)]
 
     #dofevolvers = [inertial_evolver!]
-    dofevolvers = [overdamped_evolver!]
+    local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_evolver(1))
+    global_dofevolvers = []
+    field_dofevolvers = []
 
     #30 or 70
     Nlin = 70
@@ -60,7 +62,7 @@ function simulation()
 
     external_forces = (ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,1),ABP_perpendicular_angular_noise(1,[0,0,1]),external_harmonic_pinning_force(1,0.1,0,pins))
 
-    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,2.5);
+    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, false,2.5);
 
     #Run integration
     #Use plot_disks! for nice visualss
