@@ -10,10 +10,11 @@ GLMakie.activate!()
 
     J = raw_data_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
 
-    frame_numbers = 1:1:1000#length(save_tax)
+    frame_numbers = 1:length(save_tax)
 
     frames = raw_data_file["frames"]
     Dr = frames["1"]["Dr"][1]
+    v0 = frames["1"]["v0"][1]
 
     t = Observable(0.)
 
@@ -38,10 +39,10 @@ GLMakie.activate!()
     Np = length(frames["1"]["x"])
     scaleup = maximum(frames["1"]["R"])+maximum(frames["1"]["x"])
     #Setup figure
-    f = Figure()#Figure(size=(2000,2000));
-    ax = Axis(f[1,1], aspect=DataAspect(),title = @lift("t = $(round($t, digits = 1)), Dr=$Dr, J=$J "), xlabel="x", ylabel="y");
+    f = Figure(size=(1000,1000));
+    ax = Axis(f[1,1], aspect=DataAspect(),title = @lift("t = $(round($t, digits = 1)), Dr=$Dr, J=$J, v0=$(v0) "), xlabel="x", ylabel="y");
 
-    ax2 = Axis(f[1,2],title = @lift("t = $(round($t, digits = 1)), Dr=$Dr, J=$J "), xlabel="t", ylabel="std(px), mean(px)");
+    #ax2 = Axis(f[1,2],title = @lift("t = $(round($t, digits = 1)), Dr=$Dr, J=$J "), xlabel="t", ylabel="std(px), mean(px)");
 
 
     #disks
@@ -72,24 +73,24 @@ GLMakie.activate!()
 
     #arrows!(ax, x,y, vp_x,vp_y , color=cv,  colormap=:hsv,colorrange=(-pi,pi))
 
-    plotpx = @lift(scaleup.*$(px)[type.==1]) 
-    plotpy = @lift(scaleup.*$(py)[type.==1]) 
+    #plotpx = @lift(scaleup.*$(px)[type.==1]) 
+    #plotpy = @lift(scaleup.*$(py)[type.==1]) 
 
-    scatter!(ax,plotpx,plotpy, color=cp,  colormap=:hsv,colorrange=(-pi,pi))
+    #scatter!(ax,plotpx,plotpy, color=cp,  colormap=:hsv,colorrange=(-pi,pi))
 
 
-    lines!(ax2, t_stdp)
+    #lines!(ax2, t_stdp)
 
-    lines!(ax2, t_mp)
+    #lines!(ax2, t_mp)
 
-    colsize!(f.layout, 1, Relative(3/4))
-    ylims!(ax2, (-1,1))
+    #colsize!(f.layout, 1, Relative(3/4))
+    #ylims!(ax2, (-1,1))
 
 
 
     display(f)
 
-    record(f, joinpath(save_folder,"Dr_$(Dr)_J_$(J).mp4"), frame_numbers; visible=false) do i 
+    record(f, joinpath(save_folder,"Dr_$(Dr)_J_$(J).mp4"), frame_numbers; visible=true) do i 
 
         stri = string(i)
         t[] = frames[stri]["t"]
@@ -106,11 +107,11 @@ GLMakie.activate!()
         px[] = frames[stri]["px"]
         py[] = frames[stri]["py"]
 
-        t_stdp[] = push!(t_stdp[], Point2f(frames[stri]["t"], std( px[][type.==1]) ) )
+        #t_stdp[] = push!(t_stdp[], Point2f(frames[stri]["t"], std( px[][type.==1]) ) )
 
-        t_mp[] = push!(t_mp[], Point2f(frames[stri]["t"], mean( px[][type.==1]) ) )
+        #t_mp[] = push!(t_mp[], Point2f(frames[stri]["t"], mean( px[][type.==1]) ) )
 
-        xlims!(ax2, (0,1e-3+frames[stri]["t"]))
+        #xlims!(ax2, (0,1e-3+frames[stri]["t"]))
         
     end
 end
@@ -144,7 +145,8 @@ end
 
 #base_folder = joinpath("/data1","kammeraat", "sa", "phi_1","Nlin_20","vary_J_Dr")
 
-base_folder = joinpath(homedir(), "sa","survey","hex_disordered", "phi_1","Nlin_4","vary_J_Dr")
+base_folder = joinpath("/data1","kammeraat", "sa", "survey","hex_disordered","phi_1","Nlin_20","vary_v0")
+#base_folder = joinpath(homedir(), "sa","survey","hex_disordered", "phi_1","Nlin_4","vary_v0")
 
 #base_folder = joinpath(homedir(), "sa", "vary_J_Dr_largeN","simdata")
 animation_base_folder = joinpath(base_folder,"movies_sa")
