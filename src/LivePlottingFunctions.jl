@@ -133,6 +133,20 @@ function plot_disks!(ax, cpsO, cfsO)
 
     return ax
 end
+function plot_disks_type!(ax, cpsO, cfsO)
+
+
+    x = @lift([p_i.x[1] for p_i in $cpsO])
+    y = @lift([p_i.x[2] for p_i in $cpsO])
+
+    c = @lift([ p_i.type[1] for p_i in $cpsO])
+
+    
+    s = @lift([2*p_i.R[1]  for p_i in $cpsO])
+    scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1, colormap=Reverse(:seismic))
+
+    return ax
+end
 
 
 function plot_disks_uw!(ax, cpsO, cfsO)
