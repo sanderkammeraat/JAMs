@@ -2,7 +2,7 @@ include(joinpath("..","src","Engine.jl"))
 include("AnalysisPipeline.jl")
 
 #base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
-base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_J_Dr/" 
+base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_v0/" 
 #base_folder = joinpath(homedir(), "sa", "phi_1", "Nlin_4", "vary_J_Dr")
 #base_folder = joinpath(homedir(), "sa","survey","hex_disordered", "phi_1", "Nlin_4", "vary_J_Dr")
 
@@ -36,7 +36,7 @@ end
 
 function get_tag(seedanalysis_file)
 
-    v0 = v0 = seedanalysis_file["v0"]
+    Dr = seedanalysis_file["Dr"]
 
     type = seedanalysis_file["type"]
 
@@ -51,7 +51,7 @@ function get_tag(seedanalysis_file)
     poly =  all( R .== R[1]) ? 0. : 0.15
 
 
-    tag = Dict("ϕ"=>ϕ, "v0"=> v0, "Nint"=> Nint, "poly"=>poly, "k"=>k)
+    tag = Dict("ϕ"=>ϕ,"Dr"=>Dr, "Nint"=> Nint, "poly"=>poly, "k"=>k)
 
     return tag
 
@@ -295,7 +295,7 @@ function plot_t_v_projections(seed,seedanalysis_file)
     
     t = seedanalysis_file["integration_info"]["save_tax"]
     
-    ax = Axis(f[1,1], xlabel="t", ylabel=L"Vel. proj.: $\langle \lambda_n|\delta \dot{R} \rangle$", title="J=$J, Dr=$Dr")#, yscale=log10)
+    ax = Axis(f[1,1], xlabel="t", ylabel=L"Vel. proj.: $\langle \lambda_n|\delta \dot{R} \rangle$", title="J=$J, Dr=$Dr, v0=$v0")#, yscale=log10)
 
     marker_labels=[
         (:circle, ":circle"),
@@ -329,7 +329,7 @@ function plot_t_v_projections(seed,seedanalysis_file)
     display(f)
 
     save("temp.pdf",f)
-    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "v0_$v0"))
 
     save(joinpath(subfolder_path,"t_v_projs.pdf"),f)
 
@@ -674,16 +674,16 @@ begin
                             lines!(ax, ωs, theory ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:gist_rainbow), alpha=1, linestyle=:dash)
                         end
                         numerics =  mean(v_projs[:,500:end].^2, dims=2)[:,1]
-                        scatterlines!(ax,ωs, numerics,  label="$Dr",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), linewidth=0.5, marker=marker_labels[marker_ind][1], )
+                        scatterlines!(ax,ωs, numerics,  label="$(v0)",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), linewidth=0.5, marker=marker_labels[marker_ind][1], )
                         marker_ind+=1
-                        ylims!(ax,low=5e-9,high=1e-1)
-                        xlims!(ax,low=0,high=2.5)
+                        ylims!(ax,low=1e-12,high=1e1)
+                        xlims!(ax,low=0,high=.5)
                         global tag = get_tag(seedanalysis_file)
                         end
                     end
                 end
             end
-        f[1,2]=Legend(f,ax, L"D_r")
+        f[1,2]=Legend(f,ax, L"v_0")
         Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
         display(f)
         save("temp.pdf",f)
@@ -735,7 +735,7 @@ begin
                         
                         t = seedanalysis_file["integration_info"]["save_tax"]
                         numerics =  mean(v_projs[:,500:end].^2, dims=2)[:,1]
-                        scatterlines!(ax,1:length(ωs), numerics,  label="$Dr",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), marker=marker_labels[marker_ind][1], linewidth=0.1)
+                        scatterlines!(ax,1:length(ωs), numerics,  label="$(v0)",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), marker=marker_labels[marker_ind][1], linewidth=0.1)
                         if Dr!=0
                             tau =1/Dr
                             theory = v0^2  ./ (2 .+ 2 .* ωs.^2 .* tau)
@@ -743,14 +743,14 @@ begin
                         end
                         
                         marker_ind+=1
-                        ylims!(ax,low=5e-9,high=1e-1)
+                        ylims!(ax,low=1e-10,high=1e1)
                         xlims!(ax,low=0,high=40)
                         global tag = get_tag(seedanalysis_file)
                         end
                     end
                 end
             end
-        f[1,2]=Legend(f,ax, L"D_r")
+        f[1,2]=Legend(f,ax, L"v_0")
         Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
         display(f)
         save("temp.pdf",f)
@@ -946,8 +946,8 @@ function plot_first_n_modes(seed,seedanalysis_file)
     end
 
     tag = get_tag(seedanalysis_file)
-    Label(f[n+1,1],"J = $J, Dr=$(Dr), "*"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
-    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "Dr_$Dr"))
+    Label(f[n+1,1],"J = $J, v0=$(v0), "*"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+    subfolder_path = mkpath(joinpath(plot_base_folder, "J_$J", "v0_$v0"))
 
     save(joinpath(subfolder_path,"mode_vis.pdf"),f)
 

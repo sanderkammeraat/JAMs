@@ -7,9 +7,9 @@ include("AnalysisFunctions.jl")
 
 #base_folder = joinpath(homedir(),"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr")
 
-#base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_J_Dr/" 
+base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_v0/" 
 
-base_folder = joinpath(homedir(),"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr")
+#base_folder = joinpath(homedir(),"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr")
 raw_data_base_folder = joinpath(base_folder, "simdata")
 
 analysis_base_folder = mkpath(joinpath(base_folder, "analysis_FT"))
@@ -208,18 +208,32 @@ end
 
 
 
-for (key,val) in tree
-    println(key)
-end
+# for (key,val) in tree
+#     println(key)
+# end
 
-partial_tree=Dict()
+# partial_tree=Dict()
 
 
-partial_tree["J_0.0"] = tree["J_0.0"]
+# # partial_tree["J_0.1"] = Dict()
 
-partial_tree["J_0.5"] = tree["J_0.5"]
+# # partial_tree["J_0.1"]["Dr_0.0"] =tree["J_0.1"]["Dr_0.0"] 
+# # partial_tree["J_0.1"]["Dr_0.05"] =tree["J_0.1"]["Dr_0.05"] 
+# # partial_tree["J_0.1"]["Dr_0.001"] =tree["J_0.1"]["Dr_0.001"] 
 
-partial_tree["J_5.0"] = tree["J_5.0"]
+
+# # partial_tree["J_0.0"] = tree["J_0.0"]
+# # partial_tree["J_0.5"] = tree["J_0.5"]
+# # partial_tree["J_5.0"] = tree["J_5.0"]
+
+# partial_tree["J_0.1"] =Dict()
+# partial_tree["J_0.0"] =Dict()
+
+
+# partial_tree["J_0.1"]["Dr_0.02"]=tree["J_0.1"]["Dr_0.02"]
+# partial_tree["J_0.0"]["Dr_0.02"] =tree["J_0.0"]["Dr_0.02"]
+# partial_tree["J_0.0"]["Dr_0.001"]=tree["J_0.0"]["Dr_0.001"]
+partial_tree
 
 
 run_multithreaded_analysis_param1_param2_seed(tree, analyze_single_seed_inner!, analysis_base_folder, overwrite=true, raw_data_file_name="sa_raw_data.jld2", support_raw_data_file_name="ra_raw_data.jld2")
