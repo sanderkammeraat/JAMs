@@ -89,7 +89,7 @@ function evolve_globally!(current_particle_state, current_field_state, system, c
     
                     dxn = norm(dx)
                     
-                    @views if dxn<=dofevolver.range #In contact!
+                    if dxn<=dofevolver.range #In contact!
                         M[dims*(i-1)+1:dims*i, dims*(n-1)+1:dims*n].-=id_global
 
                         M[dims*(i-1)+1:dims*i, dims*(i-1)+1:dims*i].+= id_global
@@ -119,7 +119,6 @@ function evolve_globally!(current_particle_state, current_field_state, system, c
     end
     return current_particle_state, current_field_state
 end
-
 
 
 

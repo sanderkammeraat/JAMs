@@ -102,12 +102,20 @@ struct soft_atre_type_force{T1, T2}
     
 end
 
+
 #Thanks to Julia's indexing system. karray can be a float or a 1-element vector if using only one type: type= 1
 # cf. b=[2] then b[1,1] = 2 or b=2 then also b[1,1]=2. Or karray is 2d array with different stifness between different types
 struct soft_disk_force{T1} <: Force
     ontypes::Union{Int64,Vector{Int64}}
     karray::T1
 end
+
+struct morse_force{T1, T2}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    Dearray::T1
+    aarray::T2
+end
+
 
 struct swarm_pos_force <: Force
     ontypes::Union{Int64,Vector{Int64}}
@@ -131,10 +139,10 @@ struct Vicsek_align_force<:Force
     
 end
 
-struct pairABP_force<:Force
+struct pairABP_force{T1}<:Force
     ontypes::Union{Int64,Vector{Int64}}
     rfact::Float64
-    
+    marray::T1
 end
 
 struct chain_force<:Force
@@ -324,6 +332,22 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_disk_force
     return p_i
 
 end
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::morse_force,rngs_particles)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        re = p_i.R[1]+p_j.R[1]
+        f = @MVector zeros(length(dx))
+
+        a = force.aarray[p_i.type[1],p_j.type[1]]
+        De = force.Dearray[p_i.type[1],p_j.type[1]]
+
+        @views f.= 2*De*a*( exp(-a*(dxn-re)) - exp(-2*a*(dxn-re)) ) * dx/dxn
+        p_i.f.+= f
+
+    end
+    return p_i
+
+end
 
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::chain_force,rngs_particles)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
@@ -381,7 +405,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_atre_type_
 
         elseif  r1<dxn<r2
             k = force.karray[p_i.type[1],p_j.type[1]]
-            f.=  k * (dxn-r2) * dx/dxn
+            f.=  -k * (dxn-r2) * dx/dxn
 
             p_i.f.+= f
         else
@@ -434,8 +458,14 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::pairABP_force,r
         r = force.rfact*d2a::Float64
 
         if dxn < r
+
+            f = @MVector zeros(length(dx))
             β = 1 - dxn/r
-            p_i.f.+= -β*(p_j.p *p_j.v0[1] .- p_i.p* p_i.v0[1])/2
+            f.= -β*(p_j.p *p_j.v0[1] .- p_i.p* p_i.v0[1])/2 * force.marray[p_i.type[1],p_j.type[1]]
+
+            p_i.f.+= f
+            #add torque
+            p_i.q.+= cross(cross(dx/dxn .*p_i.R[1], f),p_i.p)
         end
     end
     return p_i

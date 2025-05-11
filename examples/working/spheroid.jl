@@ -43,14 +43,15 @@ end
 
 function injection()
 
-    N_ECM=1000
-    ϕ_ECM = 0.3
-    poly=1e-4
+    N_ECM=5000
+    ϕ_ECM = 0.9
+    
+    poly=0.15
     #Size of particles
-    Rs_ECM = rand(Uniform(1-poly, 1+poly),N_ECM)
+    Rs_ECM = rand(Uniform(0.6-poly, 0.6+poly),N_ECM)
     L =  sqrt(pi *sum(Rs_ECM.^2) / ϕ_ECM)
 
-    N_sph=200
+    N_sph=400
     ϕ_sph = 1
     Rs_sph = rand(Uniform(1-poly, 1+poly),N_sph)
 
@@ -68,7 +69,10 @@ function injection()
 
     external_forces = []
 
-    pair_forces = [soft_atre_type_force([1,2],[1 1 ; 1 1 ],[1 1 ; 1 1 ]*0.1)]
+    a = 5
+    De = 1/(2*a^2)
+
+    pair_forces = [soft_atre_type_force([1,2],[1 0.5 ; 0.5 1 ],[1 1 ; 1 1 ]*0.15)]
 
     local_dofevolvers = [overdamped_pq_evolver([1,2]),overdamped_xvf_evolver([1,2])]
     global_dofevolvers = []
@@ -77,26 +81,25 @@ function injection()
     field_forces = []
     field_updaters = []
     field_dofevovers = []
-    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, field_dofevovers, true,2.5*3);
+    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, field_dofevovers, true,3.);
 
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,1e-1, 300, Tplot=10, fps=120, plot_functions=(plot_disks_type!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-1, 200, Tplot=10, fps=120, plot_functions=(plot_disks_type!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 end
 
-inj = injection()
+global inj = injection()
 
 
 function simulation(inj)
 
-    external_forces = []
+    external_forces = [ABP_perpendicular_angular_noise([1],[0,0,1])]
+    pair_forces = (soft_atre_type_force([1,2],[1 1 ;1 0.3],[0.15 0.05 ; 0.05 0.05 ]*1.), pairABP_force([1,2],1.5,[1 0.8; 0.8 1]))#( morse_force([1,2],De*[1 1 ; 1 1], a*[1 1 ; 1 1]) ,pairABP_force([1,2],1.1) )#[soft_atre_type_force([1,2],[1 1 ; 1 1 ],[1 1 ; 1 1 ]*0.05), pairABP_force([1,2],1.1)]
 
-    pair_forces = [soft_atre_type_force([1,2],[1 1 ; 1 1 ],[1 1 ; 1 1 ]*0.05), pairABP_force([1,2],1.1)]
-
-    local_dofevolvers = [overdamped_xvf_evolver([1,2]),overdamped_pq_evolver([1,2])]
-    global_dofevolvers = []
+    local_dofevolvers = [overdamped_pq_evolver([1,2]),overdamped_xvf_evolver([1,2])]#[overdamped_pq_evolver([1,2])]#[overdamped_pq_evolver([1,2])]#[overdamped_xvf_evolver([1,2]),overdamped_pq_evolver([1,2])]
+    global_dofevolvers = []#[overdamped_pairdis_evolver(1,2) ]
     field_dofevolvers = []
 
     sizes = inj.system.sizes
@@ -119,11 +122,14 @@ function simulation(inj)
 
     end
 
-    system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,true,inj.system.rcut_pair_global);
+    system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,true,3.);
 
     #Run integration
-    sim = Euler_integrator(system,1e-1, 5e3, Tplot=10, fps=120, plot_functions=(plot_disks_type!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-1, 3e2, Tplot=10, fps=120, plot_functions=(plot_disks_type!, plot_velocity_vectors!), plotdim=2,Tsave=10, save_folder_path=joinpath(homedir(),"sph","movie"),save_functions=[save_2d_polar_p!]); 
     return sim
 end
 
+
 simulation(inj)
+
+
