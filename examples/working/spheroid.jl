@@ -49,13 +49,17 @@ function injection()
     poly=0.15
     #Size of particles
     Rs_ECM = rand(Uniform(0.6-poly, 0.6+poly),N_ECM)
-    L =  sqrt(pi *sum(Rs_ECM.^2) / ϕ_ECM)
+    
 
     N_sph=400
     ϕ_sph = 1
     Rs_sph = rand(Uniform(1-poly, 1+poly),N_sph)
 
+
     Rdisk = sqrt(sum(Rs_sph.^2) / ϕ_sph)
+
+    L =  sqrt(pi *sum(Rs_ECM.^2) / ϕ_ECM + pi*Rdisk^2)
+
     
     x_ECM, y_ECM = random_outside_disk(N_ECM,Rdisk,L)
 
@@ -125,7 +129,7 @@ function simulation(inj)
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,true,3.);
 
     #Run integration
-    sim = Euler_integrator(system,1e-1, 3e2, Tplot=10, fps=120, plot_functions=(plot_disks_type!, plot_velocity_vectors!), plotdim=2,Tsave=10, save_folder_path=joinpath(homedir(),"sph","movie"),save_functions=[save_2d_polar_p!]); 
+    sim = Euler_integrator(system,1e-1, 3e2, Tplot=10, fps=120,Tsave=nothing, plot_functions=(plot_disks_type!, plot_velocity_vectors!), plotdim=2, save_folder_path=joinpath(homedir(),"sph","movie"),save_functions=[save_2d_polar_p!]); 
     return sim
 end
 
