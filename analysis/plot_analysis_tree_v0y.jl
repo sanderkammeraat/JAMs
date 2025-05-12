@@ -638,7 +638,7 @@ begin
 
 
         with_theme(theme_latexfonts()) do 
-            f = Figure()
+            f = Figure(size=(1000,1000))
             ax = Axis(f[1,1], xlabel=L"ω_n", ylabel= L"Vel. proj.: $\langle \lambda_n|\delta \dot{R} \rangle^2$", title="$param1", yscale=log10)#, xscale=log10)
 
             
@@ -660,9 +660,12 @@ begin
                 for (seed, seedpath) in tree[param1][param2]
                     jldopen(seedpath, "r") do seedanalysis_file
                         Dr = seedanalysis_file["Dr"]
+
                         
                         J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
                         v0 = seedanalysis_file["v0"]
+
+                        if v0!=0.2
                         v_projs = seedanalysis_file["v_projs"]
                         if all(seedanalysis_file["modes"]["eigvals"].>0)
                         ωs = sqrt.(seedanalysis_file["modes"]["eigvals"])
@@ -670,15 +673,18 @@ begin
                         t = seedanalysis_file["integration_info"]["save_tax"]
                         if Dr!=0
                             tau =1/Dr
-                            theory = v0^2  ./ (2 .+ 2 .* ωs.^2 .* tau)
+                            theory =   1 ./ (2 .+ 2 .* ωs.^2 .* tau)
                             lines!(ax, ωs, theory ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:gist_rainbow), alpha=1, linestyle=:dash)
                         end
-                        numerics =  mean(v_projs[:,500:end].^2, dims=2)[:,1]
+                        numerics =  mean(v_projs[:,500:end].^2 ./v0^2, dims=2)[:,1]
                         scatterlines!(ax,ωs, numerics,  label="$(v0)",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), linewidth=0.5, marker=marker_labels[marker_ind][1], )
                         marker_ind+=1
-                        ylims!(ax,low=1e-12,high=1e1)
-                        xlims!(ax,low=0,high=.5)
+                        #ylims!(ax,low=1e-12,high=1e1)
+                        xlims!(ax,low=0,high=0.5)
+
+
                         global tag = get_tag(seedanalysis_file)
+                        end
                         end
                     end
                 end

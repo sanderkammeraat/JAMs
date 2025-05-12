@@ -1,4 +1,5 @@
 include(joinpath("..","src","Engine.jl"))
+
 include("AnalysisPipeline.jl")
 
 #base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
