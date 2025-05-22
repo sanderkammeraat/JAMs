@@ -1,5 +1,27 @@
 
+function save_single_2d_field!(file, current_particle_state, current_field_state, n, Tsave, t,framecounter)
 
+
+    preamble = "frames/"*string(framecounter)*"/"
+    
+
+
+    file[preamble*"field_n"] = n
+
+    file[preamble*"field_t"] = t
+
+
+    file[preamble*"field_id"] = [field.id for field in current_field_state]
+
+    file[preamble*"field_type"] = [field.type for field in current_field_state]
+    file[preamble*"field_bin_centers"] = [field.bin_centers for field in current_field_state]
+
+    file[preamble*"field_C"] = [field.C for field in current_field_state]
+
+
+    return file
+
+end
 
 function save_2d_polar_p!(file, current_particle_state, current_field_state, n, Tsave, t,framecounter)
 

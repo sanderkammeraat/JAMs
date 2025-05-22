@@ -240,6 +240,10 @@ function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_t
 
     file["integration_info/master_seed"] = master_seed
 
+
+    file["system/sizes"] = system.sizes
+    file["system/rcut_pair_global"] = system.rcut_pair_global
+
     return file
 
 end

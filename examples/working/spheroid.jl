@@ -73,9 +73,6 @@ function injection()
 
     external_forces = []
 
-    a = 5
-    De = 1/(2*a^2)
-
     pair_forces = [soft_atre_type_force([1,2],[1 0.5 ; 0.5 1 ],[1 1 ; 1 1 ]*0.15)]
 
     local_dofevolvers = [overdamped_pq_evolver([1,2]),overdamped_xvf_evolver([1,2])]
@@ -99,8 +96,8 @@ global inj = injection()
 
 function simulation(inj)
 
-    external_forces = [ABP_perpendicular_angular_noise([1],[0,0,1])]
-    pair_forces = (soft_atre_type_force([1,2],[1 1 ;1 0.3],[0.15 0.05 ; 0.05 0.05 ]*1.), pairABP_force([1,2],1.5,[1 0.8; 0.8 1]))#( morse_force([1,2],De*[1 1 ; 1 1], a*[1 1 ; 1 1]) ,pairABP_force([1,2],1.1) )#[soft_atre_type_force([1,2],[1 1 ; 1 1 ],[1 1 ; 1 1 ]*0.05), pairABP_force([1,2],1.1)]
+    external_forces = [ABP_perpendicular_angular_noise([1],[0,0,1]),self_align_with_v_force(1,0.)]
+    pair_forces = (soft_atre_type_force([1,2],[1 1 ;1 0.3],[0.15 0.05 ; 0.05 0.05 ]*1.), pairABP_force([1,2],1.5,[1 1.5; 1.5 1]))#( morse_force([1,2],De*[1 1 ; 1 1], a*[1 1 ; 1 1]) ,pairABP_force([1,2],1.1) )#[soft_atre_type_force([1,2],[1 1 ; 1 1 ],[1 1 ; 1 1 ]*0.05), pairABP_force([1,2],1.1)]
 
     local_dofevolvers = [overdamped_pq_evolver([1,2]),overdamped_xvf_evolver([1,2])]#[overdamped_pq_evolver([1,2])]#[overdamped_pq_evolver([1,2])]#[overdamped_xvf_evolver([1,2]),overdamped_pq_evolver([1,2])]
     global_dofevolvers = []#[overdamped_pairdis_evolver(1,2) ]

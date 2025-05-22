@@ -20,6 +20,24 @@ struct field_propulsion_3d_force<:Force
     consumption::Float64
     v0offset::Float64
 end
+struct field_propulsion_distr_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    consumption::Float64
+    cmid::Float64
+    v0max::Float64
+    σ::Float64
+end
+
+struct grad_field_propulsion_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    consumption::Float64
+    μ::Float64
+end
+
+struct self_align_with_∇C_unit_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    β::Float64
+end
 
 struct external_harmonic_pinning_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
@@ -41,6 +59,8 @@ struct self_align_with_v_force<:Force
     β::Float64
     
 end
+
+
 
 struct self_align_with_v_unit_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
@@ -325,7 +345,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_disk_force
     f = @MVector zeros(length(dx))
         if dxn < d2R
 
-            @views f.= force.karray[p_i.type[1],p_j.type[1]] * (dxn-d2R) * dx/dxn
+            @views f.= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
             p_i.f.+= f
         end
     end
@@ -338,8 +358,8 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::morse_force,rng
         re = p_i.R[1]+p_j.R[1]
         f = @MVector zeros(length(dx))
 
-        a = force.aarray[p_i.type[1],p_j.type[1]]
-        De = force.Dearray[p_i.type[1],p_j.type[1]]
+        a = force.aarray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]
+        De = force.Dearray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]
 
         @views f.= 2*De*a*( exp(-a*(dxn-re)) - exp(-2*a*(dxn-re)) ) * dx/dxn
         p_i.f.+= f
@@ -391,20 +411,19 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_atre_type_
         bij = p_i.R[1]+p_j.R[1]
         f = @MVector zeros(length(dx))
         
-        ϵ = force.ϵarray[p_i.type[1],p_j.type[1]]::Float64
+        ϵ = force.ϵarray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]::Float64
 
         r1 = (1+ϵ)*bij
 
         r2 = (1+2*ϵ)*bij
 
         if dxn <= r1
-            k = force.karray[p_i.type[1],p_j.type[1]]
-
+            k = force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]
             f.= k * (dxn-bij) * dx/dxn
             p_i.f.+= f
 
         elseif  r1<dxn<r2
-            k = force.karray[p_i.type[1],p_j.type[1]]
+            k = force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]
             f.=  -k * (dxn-r2) * dx/dxn
 
             p_i.f.+= f
@@ -461,7 +480,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::pairABP_force,r
 
             f = @MVector zeros(length(dx))
             β = 1 - dxn/r
-            f.= -β*(p_j.p *p_j.v0[1] .- p_i.p* p_i.v0[1])/2 * force.marray[p_i.type[1],p_j.type[1]]
+            f.= -β*(p_j.p *p_j.v0[1] .- p_i.p* p_i.v0[1])/2 * force.marray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]
 
             p_i.f.+= f
             #add torque
@@ -532,4 +551,84 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_
 
     return p_i, field_j
 
+end
+
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_propulsion_distr_force, rngs_particles)
+    if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
+        x_index = field_indices[1]
+        y_index = field_indices[2]
+        #print(x_index)
+
+
+
+        if field_j.C[x_index, y_index]>0
+            v0fact = force.v0max * force.σ/(force.σ+(log10(field_j.C[x_index, y_index]))^2)
+            p_i.f[1]+= p_i.zeta[1] * (v0fact) *p_i.p[1]
+            p_i.f[2]+= p_i.zeta[1] * (v0fact) *p_i.p[2]
+            field_j.Cf[x_index, y_index]+=-force.consumption
+        else
+            field_j.Cf[x_index, y_index]=0
+        end
+    end
+
+    return p_i, field_j
+
+end
+
+
+
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::self_align_with_∇C_unit_force, rngs_particles)
+    if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
+
+
+        x_index = field_indices[1]
+        y_index = field_indices[2]
+
+        ∇C = grad(field_j, x_index, y_index)
+
+        vnorm = norm(∇C)
+        if vnorm!=0
+            p_i.q.+= force.β*cross(cross(p_i.p, ∇C), ∇C)./vnorm
+        else
+            p_i.q.+= force.β*cross(cross(p_i.p,  ∇C), p_i.p)
+        end
+    end
+
+    return p_i, field_j
+end
+
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::grad_field_propulsion_force, rngs_particles)
+    if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
+
+
+        x_index = field_indices[1]
+        y_index = field_indices[2]
+
+        ∇C = grad(field_j, x_index, y_index)
+
+        if field_j.C[x_index, y_index]>0
+            v0fact = force.μ * norm(∇C)
+            p_i.f[1]+= p_i.zeta[1] * (v0fact) *p_i.p[1]
+            p_i.f[2]+= p_i.zeta[1] * (v0fact) *p_i.p[2]
+            field_j.Cf[x_index, y_index]+=-force.consumption
+        else
+            field_j.Cf[x_index, y_index]=0
+        end
+    end
+    return p_i, field_j
+end
+
+function grad(field_j, x_index, y_index)
+
+
+    grad_x = (field_j.C[x_index+1, y_index] - field_j.C[x_index-1, y_index])/2
+
+    grad_y = (field_j.C[x_index, y_index+1] - field_j.C[x_index, y_index-1])/2
+
+    ∇C = @MVector[grad_x, grad_y,0.]
+    return ∇C
+end
+
+function get_param_ind(force_types, particle_type)
+    return findfirst(isequal(particle_type),force_types)
 end

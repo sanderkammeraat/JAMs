@@ -51,7 +51,7 @@ function plot_field_magnitude!(ax, cpsO, cfsO)
     field_centers1 = @lift($(cfsO)[1].bin_centers[1])
     field_centers2 = @lift($(cfsO)[1].bin_centers[2])
     field_C = @lift($(cfsO)[1].C)
-    heatmap!(ax,field_centers1,field_centers2,field_C, alpha=0.2,colormap=:viridis,colorrange=(0,0.4))
+    heatmap!(ax,field_centers1,field_centers2,field_C, alpha=0.2,colormap=:viridis,colorrange=(0,1))
     return ax
 end
 
