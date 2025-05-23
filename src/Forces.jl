@@ -165,6 +165,13 @@ struct pairABP_force{T1}<:Force
     marray::T1
 end
 
+
+struct pair_polar_alignment_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    rcut::Float64
+    J::Float64
+end
+
 struct chain_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
     k::Float64
@@ -202,6 +209,9 @@ struct fluid_dipole_3d_force<:Force
     l::Float64
 
 end
+
+
+
 #Let's test the power of multiple dispatch
 
 
@@ -489,8 +499,25 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::pairABP_force,r
     end
     return p_i
 
+end
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::pair_polar_alignment_force,rngs_particles)
+    
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        #d2a = p_i.R[1]+p_j.R[1]
+
+        if dxn < force.rcut
+
+            #add torque
+            p_i.q.+=force.J*cross(cross(p_i.p, p_j.p),p_i.p)
+        end
+    end
+    return p_i
 
 end
+
+
+
+
 
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::fluid_dipole_2d_force,rngs_particles)
     

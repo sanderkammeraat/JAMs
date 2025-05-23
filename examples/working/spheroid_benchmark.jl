@@ -43,16 +43,16 @@ end
 
 function injection()
 
-    N_ECM=5000
-    ϕ_ECM = 0.9
+    N_ECM=2000
+    ϕ_ECM = 0.5
     
     poly=0.15
     #Size of particles
-    Rs_ECM = rand(Uniform(0.6-poly, 0.6+poly),N_ECM)
+    Rs_ECM = rand(Uniform(1-poly, 1+poly),N_ECM)
     
 
-    N_sph=400
-    ϕ_sph = 1
+    N_sph=1000
+    ϕ_sph = 0.9
     Rs_sph = rand(Uniform(1-poly, 1+poly),N_sph)
 
 
@@ -73,21 +73,19 @@ function injection()
 
     external_forces = []
 
-    pair_forces = [soft_atre_type_force([1,2],[1 0.5 ; 0.5 1 ],[1 1 ; 1 1 ]*0.15)]
+    pair_forces = (soft_atre_type_force([1,2],[1 0.4 ; 0.4 1 ],[1 1 ; 1 1 ]*0.15),)
 
-    local_dofevolvers = [overdamped_pq_evolver([1,2]),overdamped_xvf_evolver([1,2])]
+    local_dofevolvers = (overdamped_pq_evolver([1,2]),overdamped_xvf_evolver([1,2]))
     global_dofevolvers = []
-    sizes = [L,L,4];
+    sizes = [120,120,5];
     initial_field_state=[]
     field_forces = []
     field_updaters = []
     field_dofevovers = []
-    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, field_dofevovers, true,3.);
+    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, field_dofevovers, true,2.5);
 
     #Run integration
-    #Use plot_disks! for nice visualss
-    #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,1e-1, 200, Tplot=10, fps=120, plot_functions=(plot_disks_type!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-1, 5000*1e-1, Tplot=nothing, fps=120, plot_functions=(plot_disks_type!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 end
 
@@ -96,11 +94,11 @@ inj = injection()
 
 function simulation(inj)
 
-    external_forces = [ABP_perpendicular_angular_noise([1],[0,0,1]),self_align_with_v_force(1,0.)]
-    pair_forces = (soft_atre_type_force([1,2],[1 1 ;1 0.3],[0.15 0.05 ; 0.05 0.05 ]*1.), pairABP_force([1,2],1.5,[1 1.5; 1.5 1]))#( morse_force([1,2],De*[1 1 ; 1 1], a*[1 1 ; 1 1]) ,pairABP_force([1,2],1.1) )#[soft_atre_type_force([1,2],[1 1 ; 1 1 ],[1 1 ; 1 1 ]*0.05), pairABP_force([1,2],1.1)]
+    external_forces = (ABP_perpendicular_angular_noise([1],[0,0,1]),)
+    pair_forces = (soft_atre_type_force([1,2],[1 0.4 ; 0.4 1 ],[1 1 ; 1 1 ]*0.15), pairABP_force([1,2],1.5,[1 1; 1 1]), pair_polar_alignment_force(1, 2.5, 0.5))
 
-    local_dofevolvers = [overdamped_pq_evolver([1,2]),overdamped_xvf_evolver([1,2])]#[overdamped_pq_evolver([1,2])]#[overdamped_pq_evolver([1,2])]#[overdamped_xvf_evolver([1,2]),overdamped_pq_evolver([1,2])]
-    global_dofevolvers = []#[overdamped_pairdis_evolver(1,2) ]
+    local_dofevolvers = (overdamped_pq_evolver([1,2]),)
+    global_dofevolvers = (overdamped_pairdis_evolver(1,1),)
     field_dofevolvers = []
 
     sizes = inj.system.sizes
@@ -117,16 +115,16 @@ function simulation(inj)
         p_i.q.*=0
 
         if p_i.type[1]==1
-            p_i.Dr[1] = 0.01
-            p_i.v0[1] = 0.4
+            p_i.Dr[1] = 0.01/2
+            p_i.v0[1] = 0.3
         end
 
     end
 
-    system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,true,3.);
+    system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,true,2.5);
 
     #Run integration
-    sim = Euler_integrator(system,1e-1, 3e2, Tplot=10, fps=120,Tsave=nothing, plot_functions=(plot_disks_type!, plot_velocity_vectors!), plotdim=2, save_folder_path=joinpath(homedir(),"sph","movie"),save_functions=[save_2d_polar_p!]); 
+    sim = Euler_integrator(system,1e-2, 100000*1e-2, Tplot=10, fps=120,Tsave=200, plot_functions=(plot_disks_type!, plot_velocity_vectors!,plot_directors!), plotdim=2, save_folder_path=joinpath(homedir(),"sph","benchmark"),save_functions=[save_2d_polar_p!]); 
     return sim
 end
 
