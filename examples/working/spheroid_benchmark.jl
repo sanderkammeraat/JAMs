@@ -98,7 +98,7 @@ function simulation(inj)
     pair_forces = (soft_atre_type_force([1,2],[1 0.4 ; 0.4 1 ],[1 1 ; 1 1 ]*0.15), pairABP_force([1,2],1.5,[1 1; 1 1]), pair_polar_alignment_force(1, 2.5, 0.5))
 
     local_dofevolvers = (overdamped_pq_evolver([1,2]),)
-    global_dofevolvers = (overdamped_pairdis_evolver(1,1),)
+    global_dofevolvers = (overdamped_pairdis_evolver(1,1.),)
     field_dofevolvers = []
 
     sizes = inj.system.sizes
@@ -123,12 +123,13 @@ function simulation(inj)
 
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,true,2.5);
 
-    #Run integration
-    sim = Euler_integrator(system,1e-2, 100000*1e-2, Tplot=10, fps=120,Tsave=200, plot_functions=(plot_disks_type!, plot_velocity_vectors!,plot_directors!), plotdim=2, save_folder_path=joinpath(homedir(),"sph","benchmark"),save_functions=[save_2d_polar_p!]); 
+    #Run integration # 100000*1e-2
+    sim = Euler_integrator(system,1e-2,100000*1e-2, Tplot=10, fps=120,Tsave=200, plot_functions=(plot_disks_type!, plot_velocity_vectors!,plot_directors!), plotdim=2, save_folder_path=joinpath(homedir(),"sph","benchmark"),save_functions=[save_2d_polar_p!]); 
     return sim
 end
 
-
+display(Threads.nthreads())
 simulation(inj)
 
+@profview simulation(inj)
 

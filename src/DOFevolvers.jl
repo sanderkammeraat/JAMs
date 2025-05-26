@@ -3,7 +3,7 @@
 
 struct overdamped_pairdis_evolver
     η::Float64
-    range::Float64 #should be smaller than the cut off radius
+    rfact::Float64 #should be smaller than the cut off radius
 end
 
 struct overdamped_xvf_evolver
@@ -68,12 +68,19 @@ function evolve_globally!(current_particle_state, current_field_state, system, c
     id = SMatrix{dims, dims}(1I)
     id_global = SMatrix{dims, dims}(dofevolver.η*I) 
 
+
+    ax1_ind = Int64[]
+    ax2_ind = Int64[]
+    vals = Float64[]
+
+    self = @MMatrix zeros(Float64,dims, dims)
+
     #We are going to solve Mx=b with b the forces (excluding pair-dissipation) and M = I \zeta + M_pairdiss.
     # For that we need to construct M, first preallocate (make sparse?)
-
-    M = spzeros(Float64,dims*Np, dims*Np)
-
     for i in eachindex(current_particle_state)
+
+        #self part of matrix M
+        
         p_i = current_particle_state[i]
 
         dx = @MVector zeros(Float64,length(p_i.x))
@@ -88,19 +95,53 @@ function evolve_globally!(current_particle_state, current_field_state, system, c
                     dx = minimal_image_difference!(dx, p_i.x, p_j.x, system.sizes, system.Periodic)
     
                     dxn = norm(dx)
-                    
-                    if dxn<=dofevolver.range #In contact!
-                        M[dims*(i-1)+1:dims*i, dims*(n-1)+1:dims*n].-=id_global
 
-                        M[dims*(i-1)+1:dims*i, dims*(i-1)+1:dims*i].+= id_global
+                    d2a = p_i.R[1]+p_j.R[1]
+
+                    range = dofevolver.rfact*d2a::Float64
+                    
+                    if dxn<=range #In contact!
+
+
+                        for (im, Mi) in pairs(dims*(i-1)+1:dims*i)
+
+                            for (jm, Mj) in pairs(dims*(n-1)+1:dims*n)
+
+                                if im==jm
+                                    push!(ax1_ind,Mi)
+                                    push!(ax2_ind,Mj)
+                                    push!(vals, -id_global[im,jm])
+                                    self[im,jm]+=id_global[im,jm]
+                            
+                                end
+                            end
+                        end
+                        #M[dims*(i-1)+1:dims*i, dims*(n-1)+1:dims*n].-=id_global
+
+                        #M[dims*(i-1)+1:dims*i, dims*(i-1)+1:dims*i].+= id_global
                     end
                 end
                 if i==n
-                    M[dims*(i-1)+1:dims*i, dims*(i-1)+1:dims*i].+= id .*p_i.zeta[1]
+                    for (im, Mi) in pairs(dims*(i-1)+1:dims*i)
+                        self[im,im]+= id[im,im]*p_i.zeta[1]
+                    end
                 end
+
             end    
+            for (im, Mi) in pairs(dims*(i-1)+1:dims*i)
+                push!(ax1_ind,Mi)
+                push!(ax2_ind,Mi)
+                push!(vals, self[im,im])
+            end
+            #reinitialize
+            self.*=0.
+
+            
         end
     end
+
+    M = sparse(ax1_ind, ax2_ind, vals, dims*Np, dims*Np)
+
     b = reduce(vcat,[p_i.f for p_i in current_particle_state])
     vsol = Symmetric(M) \ b
 

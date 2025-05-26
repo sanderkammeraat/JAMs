@@ -6,7 +6,7 @@ function simulation()
 
     pair_forces = [soft_disk_force(1,1.)]
 
-    field_forces =[field_propulsion_distr_force(1,0.05,1.,0.4,100), self_align_with_∇C_unit_force(1,-1)]
+    field_forces =[asymmetric_field_propulsion_distr_force(1,0.001,1.,0.3,10), self_align_with_∇C_unit_force(1,-0.01)]
 
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers =  [overdamped_xvf_evolver(1), overdamped_pq_evolver(1)]
@@ -15,7 +15,8 @@ function simulation()
     N=1000
     ϕ = 0.1
     L =  sqrt(N *  π * 1^2 / ϕ)
-    initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [1], [0.3], [0.001], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
+    compres = 0.1
+    initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [1], [0.3], [0.01], [rand(Uniform(-L/2*compres, L/2*compres)) , rand(Uniform(-L*compres/2,L*compres/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
 
     Lx=L
     Ly=L
@@ -37,7 +38,7 @@ function simulation()
     
     initial_field_state=[FuelField2d(1,1,bin_centers,C, C.*0, C.*0)]
     # [field_propulsion_3d_force(1,1e-2,0.01)]
-    field_updaters = [PeriodicDiffusion(1,1e-2), GhostSet(1)]
+    field_updaters = [PeriodicDiffusion(1,1), GhostSet(1)]
 
 
 
@@ -47,7 +48,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,5e-2, 6e2,Tsave=2e1, save_folder_path=joinpath(homedir(), "ADCA","simulations","anti-align","simdata"), save_functions=(save_2d_polar_p!,save_single_2d_field!), Tplot= 2e1, fps=120, plot_functions=(plot_field_magnitude!,plot_disks!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,5e-2, 6e2,Tsave=nothing, save_folder_path=joinpath(homedir(), "ADCA","simulations","anti-align","simdata"), save_functions=(save_2d_polar_p!,save_single_2d_field!), Tplot= 2e1, fps=120, plot_functions=(plot_field_magnitude!,plot_disks!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 
 end

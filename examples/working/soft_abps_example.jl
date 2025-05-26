@@ -3,17 +3,17 @@ function simulation()
 
     external_forces = [ABP_2d_propulsion_force(1), ABP_2d_angular_noise(1)]
 
-    pair_forces = [soft_disk_force(1,2)]
+    pair_forces = [soft_disk_force(1,1.)]
 
     
     
-    local_dofevolvers =  [overdamped_θω_evolver(1), overdamped_xvf_evolver(1)]
-    global_dofevolvers = []
+    local_dofevolvers =  [overdamped_θω_evolver(1)]#, overdamped_xvf_evolver(1)]
+    global_dofevolvers = [overdamped_pairdis_evolver(0.,1.)]
     
 
     #Initialize state
-    N=100
-    ϕ = 0.5
+    N=1000
+    ϕ = 1
     L=sqrt(N*pi/ϕ)
     poly = 15e-2
     seed = 1
@@ -32,7 +32,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system, 0.1,1000,Tplot=10, seed=2, Tsave = nothing, save_folder_path=joinpath("/Users/kammeraat/mounting/data1_kammeraat/testing/network", "prof_soft_abps"), save_functions=[save_2d_polar_θ!], fps=120, plot_functions=[plot_disks!, plot_directors!, plot_velocity_vectors!]);
+    sim = Euler_integrator(system, 0.1,300,Tplot=10, seed=2, Tsave = nothing, save_folder_path=joinpath("/Users/kammeraat/mounting/data1_kammeraat/testing/network", "prof_soft_abps"), save_functions=[save_2d_polar_θ!], fps=120, plot_functions=[plot_disks!, plot_directors!, plot_velocity_vectors!]);
     return sim
 end
 #
