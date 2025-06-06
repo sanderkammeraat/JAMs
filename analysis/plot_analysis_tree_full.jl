@@ -3,7 +3,7 @@ include(joinpath("..","src","Engine.jl"))
 include("AnalysisPipeline.jl")
 
 #base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
-base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_J_Dr/" 
+#base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/full/" 
 #base_folder = joinpath(homedir(), "sa", "phi_1", "Nlin_4", "vary_J_Dr")
 #base_folder = joinpath(homedir(), "sa","survey","hex_disordered", "phi_1", "Nlin_4", "vary_J_Dr")
 
@@ -11,7 +11,7 @@ base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_J_Dr
 #base_folder = joinpath(homedir(), "sa","survey","hex_ordered", "phi_1", "Nlin_4", "vary_J_Dr")
 
 #base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa", "phi_1", "Nlin_20", "vary_J_Dr")
-base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr")
+base_folder = joinpath(homedir(),"sa","survey","hex_disordered", "phi_1", "Nlin_20", "full")
 
 begin
 
@@ -25,7 +25,7 @@ begin
 
 analysis_base_folder = joinpath(base_folder, "analysis_FT")
 
-plot_base_folder = mkpath(joinpath(base_folder, "plots_FT_v2")) 
+plot_base_folder = mkpath(joinpath(base_folder, "plots_FT")) 
 
 tree = construct_folder_tree_param_param_seed(analysis_base_folder)
 
@@ -37,7 +37,7 @@ end
 
 function get_tag(seedanalysis_file)
 
-    v0 = v0 = seedanalysis_file["v0"]
+    v0 = seedanalysis_file["v0"]
 
     type = seedanalysis_file["type"]
 
@@ -282,7 +282,7 @@ function plot_t_v_projections(seed,seedanalysis_file)
     
 
     Dr = seedanalysis_file["Dr"]
-    J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+    J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_force"]["β"]
     v0 = seedanalysis_file["v0"]
     #if J==0.1
     with_theme(theme_latexfonts()) do 
@@ -325,7 +325,7 @@ function plot_t_v_projections(seed,seedanalysis_file)
 
     f[1,2]=Legend(f,ax, L"Mode numbers")
     Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
-    xlims!(1000, 5000)
+    xlims!(1000, 1200)
     #ylims!(-0.03, 0.03)
     display(f)
 
@@ -351,7 +351,7 @@ function plot_FT_px(seed,seedanalysis_file)
     
 
     Dr = seedanalysis_file["Dr"]
-    J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+    J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_force"]["β"]
     v0 = seedanalysis_file["v0"]
     #if J==0.1
     with_theme(theme_latexfonts()) do 
@@ -360,13 +360,14 @@ function plot_FT_px(seed,seedanalysis_file)
     eigvals = seedanalysis_file["modes"]["eigvals"]
     
     N = length(eigvals)/2
-
+    print(N)
     theory = sqrt( J*v0/(2*N) * sum(    1 ./ ( 1 ./ eigvals .+ 1/Dr)   ))
 
 
     v_projs = seedanalysis_file["v_projs"]
+    display(eigvals)
 
-    theory_empirical =  sqrt( J/(N*v0) * sum(  eigvals .* mean(v_projs[:,500:end].^2, dims=2)[:,1]) / sqrt(sum(mean(v_projs[:,500:end].^2, dims=2)[:,1]))  )
+    theory_empirical =  sqrt( J/(N*v0) * sum(  eigvals .* mean(v_projs[:,500:end].^2, dims=2)[:,1]) )
 
     
     
@@ -376,22 +377,22 @@ function plot_FT_px(seed,seedanalysis_file)
     t = seedanalysis_file["integration_info"]["save_tax"]
 
 
-    ax = Axis(f[1,1], yscale=log10, xlabel=L"\omega", ylabel=L"|  \mathcal{F}\{p_x(t)\}(\omega)|^2", title="J=$J, Dr=$Dr", xscale=log10);
+    ax = Axis(f[1,1], yscale=log10, xlabel=L"\omega", ylabel=L"|  \mathcal{F}\{p_x(t)\}(\omega)|^2", title="J=$J, Dr=$Dr");
     scatter!(ax, FT["ω"], FT["pavg_X2"])
     scatter!(ax,FT["ω_max"] , FT["max_X2"],label="max", color="orange")
 
-    #vlines!(ax,theory,label="theory 1st order J", color="green")
+    vlines!(ax,theory,label="theory 1st order J", color="green")
 
-    #vlines!(ax,theory_empirical,label="theory empirical projection", color="pink")
+    vlines!(ax,theory_empirical,label="theory empirical projection", color="pink")
 
     tag = get_tag(seedanalysis_file)
 
     Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
 
     f[1,2]=Legend(f,ax)
-    ylims!(ax, low=1e1,high= 1e7)
+    ylims!(ax, low=1e-1,high= 1e7)
 
-    xlims!(ax, low=1e-4,high= 3)
+    xlims!(ax, low=0,high= 0.1)
     display(f)
 
     save("temp.pdf",f)
@@ -403,7 +404,7 @@ function plot_FT_px(seed,seedanalysis_file)
 end
 end
 begin
-    collective_plot_file_name ="FT_px.pdf"
+    collective_plot_file_name   ="FT_px.pdf"
     try 
         rm(joinpath(plot_base_folder,collective_plot_file_name))
     catch

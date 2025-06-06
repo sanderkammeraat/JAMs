@@ -15,7 +15,7 @@ function simulation()
     N=1000
     ϕ = 0.1
     L =  sqrt(N *  π * 1^2 / ϕ)
-    compres = 0.1
+    compres = 1.
     initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [1], [0.3], [0.01], [rand(Uniform(-L/2*compres, L/2*compres)) , rand(Uniform(-L*compres/2,L*compres/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
 
     Lx=L

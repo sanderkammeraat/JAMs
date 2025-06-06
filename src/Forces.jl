@@ -170,6 +170,7 @@ struct pairABP_force{T1}<:Force
     ontypes::Union{Int64,Vector{Int64}}
     rfact::Float64
     marray::T1
+    torque::Bool
 end
 
 
@@ -501,7 +502,9 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::pairABP_force,r
 
             p_i.f.+= f
             #add torque
-            p_i.q.+= cross(cross(dx/dxn .*p_i.R[1], f),p_i.p)
+            if force.torque
+                p_i.q.+= cross(cross(dx/dxn .*p_i.R[1], f),p_i.p)
+            end
         end
     end
     return p_i

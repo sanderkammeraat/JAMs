@@ -51,7 +51,7 @@ function injection()
     Rs_ECM = rand(Uniform(1-poly, 1+poly),N_ECM)
     
 
-    N_sph=1000
+    N_sph=600
     ϕ_sph = 0.9
     Rs_sph = rand(Uniform(1-poly, 1+poly),N_sph)
 
@@ -95,10 +95,10 @@ inj = injection()
 function simulation(inj)
 
     external_forces = (ABP_perpendicular_angular_noise([1],[0,0,1]),)
-    pair_forces = (soft_atre_type_force([1,2],[1 0.4 ; 0.4 1 ],[1 1 ; 1 1 ]*0.15), pairABP_force([1,2],1.5,[1 1; 1 1]), pair_polar_alignment_force(1, 2.5, 0.5))
+    pair_forces = (soft_atre_type_force([1,2],[1 0.4 ; 0.4 1 ],[1 1 ; 1 1 ]*0.15), pairABP_force([1,2],1.5,[1 1; 1 1],false), pair_polar_alignment_force(1, 2.5, 0.1))
 
     local_dofevolvers = (overdamped_pq_evolver([1,2]),)
-    global_dofevolvers = (overdamped_pairdis_evolver(1,1.),)
+    global_dofevolvers =(overdamped_pairdis_evolver(1,1.),)
     field_dofevolvers = []
 
     sizes = inj.system.sizes
@@ -116,15 +116,15 @@ function simulation(inj)
 
         if p_i.type[1]==1
             p_i.Dr[1] = 0.01/2
-            p_i.v0[1] = 0.3
+            p_i.v0[1] = 0.5
         end
 
     end
 
-    system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,true,2.5);
+    system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,true,3.);
 
     #Run integration # 100000*1e-2
-    sim = Euler_integrator(system,1e-2,100000*1e-2, Tplot=10, fps=120,Tsave=200, plot_functions=(plot_disks_type!, plot_velocity_vectors!,plot_directors!), plotdim=2, save_folder_path=joinpath(homedir(),"sph","benchmark"),save_functions=[save_2d_polar_p!]); 
+    sim = Euler_integrator(system,1e-2,100000*1e-2, Tplot=10, fps=120,Tsave=nothing, plot_functions=(plot_disks_type!, plot_velocity_vectors!,plot_directors!), plotdim=2, save_folder_path=joinpath(homedir(),"sph","benchmark"),save_functions=[save_2d_polar_p!]); 
     return sim
 end
 
