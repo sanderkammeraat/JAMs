@@ -11,7 +11,7 @@ include("AnalysisPipeline.jl")
 #base_folder = joinpath(homedir(), "sa","survey","hex_ordered", "phi_1", "Nlin_4", "vary_J_Dr")
 
 #base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa", "phi_1", "Nlin_20", "vary_J_Dr")
-base_folder = joinpath(homedir(),"sa","survey","hex_disordered", "phi_1", "Nlin_20", "full")
+base_folder = joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_20", "full")
 
 begin
 
@@ -60,7 +60,7 @@ end
 
 
 
-#Individual plots
+#Individual plots   
 function plot_phi_over_time(seed,seedanalysis_file)
     f = Figure()
     Dr = seedanalysis_file["Dr"]
@@ -367,7 +367,7 @@ function plot_FT_px(seed,seedanalysis_file)
     v_projs = seedanalysis_file["v_projs"]
     display(eigvals)
 
-    theory_empirical =  sqrt( J/(N*v0) * sum(  eigvals .* mean(v_projs[:,500:end].^2, dims=2)[:,1]) )
+    theory_empirical =  sqrt(  J/(N*v0) * sum(  eigvals .* mean(v_projs[:,500:end].^2, dims=2)) )
 
     
     

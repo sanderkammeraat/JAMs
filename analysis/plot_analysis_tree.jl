@@ -2,16 +2,8 @@ include(joinpath("..","src","Engine.jl"))
 
 include("AnalysisPipeline.jl")
 
-#base_folder = "/data1/kammeraat/sa/phi_1/Nlin_20/vary_J_Dr/" 
-base_folder = "/data1/kammeraat/sa/survey/hex_disordered/phi_1/Nlin_20/vary_J_Dr/" 
-#base_folder = joinpath(homedir(), "sa", "phi_1", "Nlin_4", "vary_J_Dr")
-#base_folder = joinpath(homedir(), "sa","survey","hex_disordered", "phi_1", "Nlin_4", "vary_J_Dr")
 
-
-#base_folder = joinpath(homedir(), "sa","survey","hex_ordered", "phi_1", "Nlin_4", "vary_J_Dr")
-
-#base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa", "phi_1", "Nlin_20", "vary_J_Dr")
-base_folder = joinpath(homedir(),"mounting","data1_kammeraat","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr")
+base_folder = joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr")
 
 begin
 
@@ -25,7 +17,7 @@ begin
 
 analysis_base_folder = joinpath(base_folder, "analysis_FT")
 
-plot_base_folder = mkpath(joinpath(base_folder, "plots_FT_v2")) 
+plot_base_folder = mkpath(joinpath(base_folder, "plots_16_6")) 
 
 tree = construct_folder_tree_param_param_seed(analysis_base_folder)
 
@@ -33,7 +25,7 @@ tree = construct_folder_tree_param_param_seed(analysis_base_folder)
 using PDFmerger
 using CairoMakie
 
-end
+end 
 
 function get_tag(seedanalysis_file)
 
@@ -552,6 +544,9 @@ pxms = []
 
 Kms = []
 Kmstds = []
+
+ωmaxs = []
+
 tags=[]
 function collect_params(seed,seedanalysis_file)
 
@@ -566,6 +561,8 @@ function collect_params(seed,seedanalysis_file)
         push!(ϕms, mean((seedanalysis_file["mean_ϕ"])[t_ind_transient:end]))
 
         push!(pxms, mean((seedanalysis_file["mean_px"])[t_ind_transient:end]))
+        FT = seedanalysis_file["FT_px"]
+        push!(ωmaxs, FT["ω_max"])
 
         #push!(ψms, (seedanalysis_file["mean_ψ"])[t_ind_transient:end])
 
@@ -586,14 +583,14 @@ function Dr_J_heatmap(Drs, Js, vals, cbarlabel,tags,  save_path)
 
 
     f = Figure();
-    ax = Axis(f[1,1], xlabel="Dr", ylabel="J", xscale=Makie.pseudolog10, yscale=Makie.pseudolog10);
+    ax = Axis(f[1,1], xlabel="log_10(Dr)", ylabel="log_10(J)");
 
 
-    hm=heatmap!(ax,Drs[Drs .>  0], Js[Js .>  0], vals[(Drs .>  0) .&& (Js .>  0)])
+    hm=heatmap!(ax,log10.(Drs), log10.(Js), vals)
 
     Colorbar(f[:, end+1], hm,label=cbarlabel)
 
-    scatter!(ax, Drs[Drs .>  0], Js[Js .>  0], color=:white, strokecolor=:black, strokewidth=1)
+    scatter!(ax, log10.(Drs), log10.(Js), color=:white, strokecolor=:black, strokewidth=1)
 
 
     tag = tags[1]
@@ -611,6 +608,10 @@ Dr_J_heatmap(Drs, Js, ϕms, "⟨ ⟨ϕ⟩ ⟩",tags, save_path)
 
 save_path = joinpath(plot_base_folder,"abs_phi_Dr_J.pdf")
 Dr_J_heatmap(Drs, Js, abs.(ϕms), "|⟨ ⟨ϕ⟩ ⟩|",tags, save_path)
+
+
+save_path = joinpath(plot_base_folder,"px_omega_max_Dr_J.pdf")
+Dr_J_heatmap(Drs, Js, log10.(ωmaxs), "log_10(ω_max(px))",tags, save_path)
 end
 
 #save_path = joinpath(plot_base_folder,"psi_Dr_J.pdf")

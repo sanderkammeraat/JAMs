@@ -2,7 +2,7 @@
 using FFTW
 
 
-function temporal_Fourier_transform(dt, x;  min_t_ind=1)
+function temporal_Fourier_transform(dt, x;  min_t_ind=1, output_not_avg=false)
 
     #Calculate the Fourier transform along the time axis for a real signal
 
@@ -26,9 +26,12 @@ function temporal_Fourier_transform(dt, x;  min_t_ind=1)
     maxval, maxind = findmax(pavg_Xf2)
     ω_max = ω[maxind]
 
+    if output_not_avg
+        FT = Dict("Xf2"=>Xf2,  "ω"=>ω )
 
-    FT = Dict("pavg_X2"=>pavg_Xf2, "pstd_X2"=>pstd_Xf2, "pste_X2"=>pste_Xf2, "ω"=>ω, "max_X2"=>maxval, "max_X2_ind" =>maxind, "ω_max"=>ω_max )
-
+    else
+        FT = Dict("pavg_X2"=>pavg_Xf2, "pstd_X2"=>pstd_Xf2, "pste_X2"=>pste_Xf2, "ω"=>ω, "max_X2"=>maxval, "max_X2_ind" =>maxind, "ω_max"=>ω_max )
+    end
     return FT
 
 end
@@ -329,4 +332,30 @@ end
     xy_zip = collect(Iterators.flatten(zip(xi, yi)))
     proj = sum( xy_zip .* eigvec)
     return proj
+end
+
+
+function unwrap(angles)
+    θpc = zeros(size(angles))
+    θpc[:,1] = angles[:,1]
+
+    for p in 1:size(angles)[1]
+
+        θp = angles[p,:]
+
+        d = diff(θp)
+
+        for (i, di) in pairs(d) 
+            if -pi<di<pi
+                θpc[p,i+1] =  θpc[p,i] + di
+
+            elseif di>pi
+                θpc[p,i+1] =  θpc[p,i] + di-2*pi
+
+            elseif di<-pi
+                θpc[p,i+1] =  θpc[p,i] + di+2*pi
+            end
+        end
+    end
+    return θpc
 end

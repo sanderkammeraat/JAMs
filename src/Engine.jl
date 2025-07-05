@@ -352,7 +352,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         @warn ("JAMs: System is set to non-periodic: you should make sure particles always stay in system sizes for correctly working cell lists. The program will catch this by throwing an error if a particle is detected outside the box.")
     end
 
-    system, cells,cell_bin_centers,stencils = construct_cell_lists!(system)
+    system, cells,cell_bin_centers,stencils, lbins = construct_cell_lists!(system)
 
     Npair = length(system.pair_forces)
 
@@ -478,7 +478,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         end
 
 
-        current_particle_state,cells = update_cells!(current_particle_state, cells, cell_bin_centers,system)
+        current_particle_state,cells = update_cells!(current_particle_state, cells, cell_bin_centers,system,lbins)
 
         #DOF evolver fields
         for i in eachindex(current_field_state)
@@ -568,11 +568,13 @@ end
 function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cells,stencils,rngs_particles)
     
     dx = @MVector zeros(Float64,length(p_i.x))
-    neighbours= get_neighbours(p_i,cells,stencils)
-    if !isnothing(neighbours)
 
-        for n in neighbours
-
+    candidate_cell_ind=@MVector zeros(Int64, length(p_i.ci))
+    for stencil in stencils
+        for i in eachindex(candidate_cell_ind)
+            candidate_cell_ind[i]= p_i.ci[i] + stencil[i]
+        end
+        for n in cells[candidate_cell_ind...]
             if i!=n
                 p_j = current_particle_state[n]
 
@@ -592,15 +594,28 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cel
     return p_i
 end
 
+function construct_cell_list_centers(L,rcut_pair_global)
 
+    #Choose bin size slight larger if lbin does not divide box length
+    nbin = floor(Int64,L/rcut_pair_global)
+    lbin = L/nbin
+
+    bin_centers = Float64[-L-rcut_pair_global]
+    #0.1 factor to make sure the end point is inluded
+    bin_centers = append!(bin_centers,range(start=-(L-lbin)/2, stop=(L-lbin)/2+0.1*lbin, step=lbin))
+    bin_centers = append!(bin_centers,L+rcut_pair_global)
+
+    return bin_centers, lbin
+
+end
 
 function construct_cell_lists!(system)
 
     dim = length(system.sizes)
-    lbin = system.rcut_pair_global
 
     Lx = system.sizes[1]
     Ly = system.sizes[2]
+
     #First and last bin center should be far outside the simulation box so a particle is never associated in a ghost cell
     #via the minimal_image_closest_bin_center function. Note that system spans from -Li/2 to Li/2 so -Li should be
     #safely outside reach both when using periodic boundary conditions
@@ -608,13 +623,8 @@ function construct_cell_lists!(system)
     #In case system size is entered as Int64, without FLoat64 in front, the array will be typed as Int64,
     # not allowing appending the  float values in the next line. Therefore declare type as Float64[].
     # +lbin incase lbin is larger than one of the system sizes
-    x_bin_centers = Float64[-Lx-lbin]
-    x_bin_centers = append!(x_bin_centers,range(start=-Lx/2, stop=Lx/2, step=lbin).+lbin/2)
-    x_bin_centers = append!(x_bin_centers,Lx+lbin)
-
-    y_bin_centers = Float64[-Ly-lbin]
-    y_bin_centers = append!(y_bin_centers,range(start=-Ly/2, stop=Ly/2, step=lbin).+lbin/2)
-    y_bin_centers = append!(y_bin_centers,Ly+lbin)
+    x_bin_centers,x_lbin = construct_cell_list_centers(Lx,system.rcut_pair_global)
+    y_bin_centers, y_lbin = construct_cell_list_centers(Ly,system.rcut_pair_global)
     nx = length(x_bin_centers)
     ny = length(y_bin_centers)
     if dim==2
@@ -632,13 +642,13 @@ function construct_cell_lists!(system)
 
         end
         stencils = [ @SVector [ni, nj] for ni in -1:1 for nj in -1:1]
+
+        lbins=(x_lbin, y_lbin)
         
 
     elseif dim==3
         Lz = system.sizes[3]
-        z_bin_centers = Float64[-Lz-lbin]
-        z_bin_centers = append!(z_bin_centers,range(start=-Lz/2, stop=Lz/2, step=lbin).+lbin/2)
-        z_bin_centers = append!(z_bin_centers,Lz+lbin)
+        z_bin_centers,z_lbin = construct_cell_list_centers(Lz,system.rcut_pair_global)
         nz = length(z_bin_centers)
         cell_bin_centers = [x_bin_centers, y_bin_centers, z_bin_centers]
 
@@ -655,57 +665,16 @@ function construct_cell_lists!(system)
 
         end
         stencils = [ @SVector [ni, nj, nk] for ni in -1:1 for nj in -1:1 for nk in -1:1]
+
+        lbins=(x_lbin, y_lbin, z_lbin)
     end
     @views cells = update_ghost_cells!(cells,system)
 
-    return system, cells, cell_bin_centers, stencils
+    return system, cells, cell_bin_centers, stencils, lbins
 end
 
-function get_neighbours(p_i, cells, stencils)
-    candidate_cell_ind=@MVector zeros(Int64, length(p_i.ci))
-    n=0
-    #First check number
-    for stencil in stencils
+function find_new_bin_locations(current_particle_state, cell_bin_centers,system,lbins)
 
-        for i in eachindex(candidate_cell_ind)
-            candidate_cell_ind[i]= p_i.ci[i] + stencil[i]
-        end
-
-        if !isempty(cells[candidate_cell_ind...])
-            for id in cells[candidate_cell_ind...]
-                #push!(neighbours,id)
-                n+=1
-            end
-        end
-    end
-    #Then allocate
-    if n>0
-        neighbours = zeros(Int64, n)
-        m=1
-        for stencil in stencils
-
-            for i in eachindex(candidate_cell_ind)
-                candidate_cell_ind[i]= p_i.ci[i] + stencil[i]
-            end
-    
-            if !isempty(cells[candidate_cell_ind...])
-                for id in cells[candidate_cell_ind...]
-                    neighbours[m]=id
-                    m+=1
-                end
-            end
-        end
-    else
-        neighbours = nothing
-    end
-
-    return neighbours
-end
-
-
-function find_new_bin_locations(current_particle_state, cell_bin_centers,system)
-
-    lbin = system.rcut_pair_global
 
     #Collect old locations to preallocate for new one
     new_bin_locations = [copy(p_i.ci) for p_i in current_particle_state]
@@ -715,7 +684,7 @@ function find_new_bin_locations(current_particle_state, cell_bin_centers,system)
 
         for j in eachindex(p_i.ci)
 
-            new_bin_locations[i][j]+= round(Int64, (p_i.x[j] - cell_bin_centers[j][p_i.ci[j]])/lbin )
+            new_bin_locations[i][j]+= round(Int64, (p_i.x[j] - cell_bin_centers[j][p_i.ci[j]])/lbins[j] )
 
         end
 
@@ -725,9 +694,9 @@ function find_new_bin_locations(current_particle_state, cell_bin_centers,system)
 
 end
 
-function update_cells!(current_particle_state, cells, cell_bin_centers,system)
+function update_cells!(current_particle_state, cells, cell_bin_centers,system,lbins)
 
-    new_bin_locations=find_new_bin_locations(current_particle_state, cell_bin_centers,system)
+    new_bin_locations=find_new_bin_locations(current_particle_state, cell_bin_centers,system,lbins)
 
     #Updating the cell list is not threadsafe, hence put it outside the threaded loop
     #The cell list update must come *after* the DOF evolving of particles!
@@ -751,7 +720,7 @@ end
 
 
 
-@views function update_ghost_cells!(cells,system)
+function update_ghost_cells!(cells,system)
     
     if system.Periodic
         dims = length(system.sizes)
