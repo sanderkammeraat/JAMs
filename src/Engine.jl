@@ -598,7 +598,13 @@ function construct_cell_list_centers(L,rcut_pair_global)
 
     #Choose bin size slight larger if lbin does not divide box length
     nbin = floor(Int64,L/rcut_pair_global)
+
+    #In case user sets irrelevant dimension smaller than rcut_pair_global
+    if nbin==0
+        nbin=1
+    end
     lbin = L/nbin
+
 
     bin_centers = Float64[-L-rcut_pair_global]
     #0.1 factor to make sure the end point is inluded
