@@ -44,6 +44,9 @@ GLMakie.activate!()
 
     heatmap!(ax,field_x_centers, field_y_centers, field_C, alpha=0.2,colormap=:viridis,colorrange=(0,1))
 
+    vlines!(ax,field_x_centers, color="black", alpha=0.2)
+    hlines!(ax,field_y_centers, color="black", alpha=0.2)
+
     scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1, colormap=Reverse(:seismic))
 
 
@@ -68,7 +71,7 @@ GLMakie.activate!()
 
 
     display(f)
-    save_path = mkpath( joinpath(save_folder,"anti-align_to_chemical_gradient.mp4"))
+    save_path = mkpath( joinpath(save_folder,"movie.mp4"))
     record(f,save_path, frame_numbers; visible=true) do i 
 
         stri = string(i)
@@ -93,9 +96,22 @@ GLMakie.activate!()
     close(raw_data_file)
 end
 
-raw_data_file=jldopen(joinpath(homedir(),"ADCA","simulations","anti-align","simdata","raw_data.jld2"))
+mainpath = joinpath(homedir(),"surfdrive","ActivePolygonClusters","simulations")#,"c_align_dp_distr","phi_0p3")
 
+tree = construct_folder_tree_param_param_seed(mainpath)
 
+for (param1, subdict) in tree
 
+    for (param2, seeddict) in subdict
 
-make_movie(raw_data_file,joinpath(homedir(),"ADCA","simulations","anti-align","movies"))
+        if param1=="c_no_align_ndp_distr" || param1=="c_no_align_dp_distr"
+
+        print(param1)
+        print(param2)
+        raw_data_file=jldopen(joinpath(mainpath,param1, param2, "simdata","raw_data.jld2"))
+        make_movie(raw_data_file,joinpath(mainpath,param1, param2,"movies"))
+        end
+
+    end
+end
+

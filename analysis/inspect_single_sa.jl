@@ -62,20 +62,44 @@ qy = zeros(Np, Nt)
 end
 
 FT = temporal_Fourier_transform(t[2]-t[1],px,min_t_ind=100)
+
+
+
+
+using CairoMakie
+CairoMakie.activate!()
 begin
 f = Figure()
-ax = Axis(f[1,1], yscale=log10);
+ax = Axis(f[1,1],yscale=log10, xlabel="ω",ylabel=L"|  \mathcal{F}\{p_x(t)\}(\omega)|^2");
 scatter!(ax, FT["ω"], FT["pavg_X2"])
 scatter!(ax,FT["ω_max"] , FT["max_X2"],label="max")
 
-#tag = get_tag(seedanalysis_file)
-
-#Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
 
 
-vlines!(ax, sqrt(J*k*( sqrt(1+(k/(2*J))^2 ) - k/(2*J))))
+Label(f[2,1],"Dr = $Dr, J = $J, v_0 = $v0, k=$k, ", tellwidth=false, halign=:left, word_wrap = true)
 
+
+vlines!(ax, sqrt(J*k*( sqrt(1+(k/(2*J))^2 ) - k/(2*J))), label="theory", color="green")
 f[1,2]=Legend(f,ax)
 #ylims!(ax, low=1e-7,high= 1e2)
+save("single_particle_small_noise_unit_alignment.pdf",f)
+display(f)
+end
+begin
+f = Figure()
+ax = Axis(f[1,1],yscale=log10, xlabel="ω",ylabel=L"|  \mathcal{F}\{p_x(t)\}(\omega)|^2");
+scatter!(ax, FT["ω"], FT["pavg_X2"])
+scatter!(ax,FT["ω_max"] , FT["max_X2"],label="max")
+
+
+
+Label(f[2,1],"Dr = $Dr, J = $J, v_0 = $v0, k=$k, ", tellwidth=false, halign=:left, word_wrap = true)
+
+
+vlines!(ax, sqrt(J*k*( sqrt(1+(k/(2*J))^2 ) - k/(2*J))), label="theory", color="green")
+f[1,2]=Legend(f,ax)
+ylims!(ax, low=1,high= 1e8)
+xlims!(ax, low=0,high= 2)
+save("single_particle_small_noise_unit_alignment_zoomed.pdf",f)
 display(f)
 end

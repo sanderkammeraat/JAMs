@@ -14,6 +14,12 @@ struct EdgeSet<:FieldUpdater
 
 end
 
+struct AvgSetwoGhost<:FieldUpdater
+    ontypes::Union{Int64,Vector{Int64}}
+    Cset::Float64
+
+end
+
 struct GhostSet<:FieldUpdater
     ontypes::Union{Int64,Vector{Int64}}
 end
@@ -50,6 +56,17 @@ function contribute_field_update!(field_i, t, dt, field_updater::EdgeSet, rngs_f
     end
     return field_i
 end
+
+function contribute_field_update!(field_i, t, dt, field_updater::AvgSetwoGhost, rngs_fields)
+
+    if field_i.type in field_updater.ontypes
+
+        avg = mean(field_i.C[2:end-1,2:end-1])
+        field_i.C[2:end-1,2:end-1].+= field_updater.Cset - avg
+    end
+    return field_i
+end
+
 
 function contribute_field_update!(field_i, t, dt, field_updater::GhostSet, rngs_fields)
 

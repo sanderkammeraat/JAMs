@@ -14,6 +14,10 @@ struct overdamped_pq_evolver
     ontypes::Union{Int64,Vector{Int64}}
 end
 
+struct overdamped_2d_shape_evolver
+    ontypes::Union{Int64,Vector{Int64}}
+end
+
 struct overdamped_θω_evolver
     ontypes::Union{Int64,Vector{Int64}}
 end
@@ -46,6 +50,25 @@ function evolve_locally!(p_i, t, dt, dofevolver::overdamped_pq_evolver)
     end
     return p_i
 end
+
+
+function evolve_locally!(p_i, t, dt, dofevolver::overdamped_2d_shape_evolver)
+
+    if p_i.type[1] in dofevolver.ontypes
+
+        for j = 1:size(p_i.xe)[1]
+
+             xen =  p_i.xo[j,1]* p_i.p[1] -   p_i.xo[j,2] * p_i.p[2] 
+             yen = p_i.xo[j,1]* p_i.p[2]  +  p_i.xo[j,2] * p_i.p[1]
+
+             p_i.xe[j,1] = p_i.x[1] + xen
+             p_i.xe[j,2] = p_i.x[2] + yen
+        end
+    end
+    return p_i
+end
+
+
 
 function evolve_locally!(p_i, t, dt, dofevolver::overdamped_θω_evolver)
 

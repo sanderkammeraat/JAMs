@@ -4,24 +4,22 @@ function simulation()
 
     
 
-    pair_forces = [soft_disk_force([1,2],[1. 1. ; 1. 1.])]
+    pair_forces = [soft_disk_force(1,1)]
 
     #dofevolvers = [inertial_evolver!]
-    local_dofevolvers = (overdamped_xvf_evolver([1,2]),overdamped_pq_evolver([1,2]))
+    local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_evolver(1))
     global_dofevolvers = []
     field_dofevolvers = []
 
-    N=2000
-    ϕ = 0.9
+    N=1000
+    ϕ = 0.3
     poly=15e-2
     Rs = rand(Uniform(1-poly, 1+poly),N)
     display(size(Rs))
 
     L =  sqrt(pi *sum(Rs.^2) / ϕ)
-    Nal = 900
-    types = vcat(ones(Int64,Nal), ones(Int64,N-Nal) .*2)
 
-    initial_state = PolarParticle3d[ PolarParticle3d([i],[types[i]], [1], [1], [Rs[i]], [0.1], [0.01], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
+    initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [Rs[i]], [0.3], [0.00001], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
 
 
     display(L)
@@ -31,7 +29,7 @@ function simulation()
     field_forces = []
     field_updaters = []
 
-    external_forces = (ABP_3d_propulsion_force([1,2]), self_align_with_v_unit_force(1,1.0), self_align_with_v_unit_force(2,0.05),ABP_perpendicular_angular_noise([1,2],[0,0,1]))
+    external_forces = (oscillatory_3d_propulsion_force(1,0.01),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,2.5*(1+poly));
 

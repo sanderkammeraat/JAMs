@@ -11,13 +11,15 @@ simargs = ArgParseSettings()
 
 end
 
+display(Threads.nthreads())
+
 parsed_params = parse_args(simargs)
 n=parsed_params["ncores"]
 
-addprocs(n)
-@everywhere include(joinpath("..","src","Engine.jl"))
+#addprocs(n)
+include(joinpath("..","src","Engine.jl"))
 
-@everywhere function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing)
+function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing)
 
     external_forces = []#[thermal_translational_noise(1, 0 .*[1.,1.,0])]
 
@@ -108,13 +110,13 @@ addprocs(n)
     system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, field_dofevolvers, false,2.5*r*(1+poly));
 
     #Run integration
-    sim = Euler_integrator(system,1e-1, 5e3,Tsave=Tsave, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="rx")# , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-2, 1e3,Tsave=Tsave, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="rx", fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 
 end
 
 
-@everywhere function self_aligning_step(rx_step,J, Dr, seed,save_folder_path; Tsave=100, Tplot=nothing)
+function self_aligning_step(rx_step,J, Dr, seed,save_folder_path; Tsave=100, Tplot=nothing)
 
     external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
@@ -143,12 +145,12 @@ end
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,false,rx_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,1e-2, 5e3,Tsave=Tsave,seed=seed, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="sa" )#, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-2, 1e4,Tsave=Tsave,seed=seed, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="sa" , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 end
 
 
-@everywhere function relax_again_step(sa_step, save_folder_path; Tsave=100, Tplot=nothing)
+function relax_again_step(sa_step, save_folder_path; Tsave=100, Tplot=nothing)
 
     external_forces =[] # [thermal_translational_noise(1, 0 .*[1.,1.,0])]
 
@@ -177,7 +179,7 @@ end
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,false,sa_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,1e-1, 5e3,Tsave=Tsave,seed=nothing, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="ra")# , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-2, 1e3,Tsave=Tsave,seed=nothing, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="ra" , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 end
 
@@ -191,14 +193,14 @@ end
 
 
 
-Drs = [0.,0.001, 0.01,0.02,0.05, 0.1, 0.2, 0.5, 1, 10] 
-Js=[0, 0.01, 0.1, 0.2, 0.5, 1. ,2., 5.]
+Drs = [0.01] 
+Js=[ 0.1]
 
 seeds = reshape( collect(1:length(Drs)*length(Js)), (length(Drs),length(Js)) )
 
 for j in eachindex(Js)
-    @sync @distributed for i in eachindex(Drs)
-
+    for i in eachindex(Drs)
+        
         J = Js[j]
         Dr = Drs[i]
 
@@ -206,16 +208,16 @@ for j in eachindex(Js)
 
         display("Running")
 
-        base_path="/Users/kammeraat/"
+        base_path=joinpath("/Users/kammeraat/","test")
         #base_path = homedir()
-        save_folder_path = joinpath(base_path,"sa","survey","hex_disordered","phi_1","Nlin_20","vary_J_Dr","simdata", "J_$J","Dr_$Dr","seed_$seed");
+        save_folder_path = joinpath(base_path,"sa","survey","hex_disordered","phi_1","Nlin_20","long","simdata", "J_$J","Dr_$Dr","seed_$seed");
         print(save_folder_path)
 
-        rx_result = relaxation_step(save_folder_path,Tplot=nothing)
+        rx_result = relaxation_step(save_folder_path,Tplot=10)
 
-        sa_result = self_aligning_step(rx_result,J,Dr, seed, save_folder_path, Tplot=nothing);
+        sa_result = self_aligning_step(rx_result,J,Dr, seed, save_folder_path, Tplot=100);
 
-        ra_result=relax_again_step(sa_result, save_folder_path,Tplot=nothing);
+        ra_result=relax_again_step(sa_result, save_folder_path,Tplot=10);
 
 
     end

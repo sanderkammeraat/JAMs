@@ -1,11 +1,15 @@
+begin
 include(joinpath("..","src","Engine.jl"))
 include("AnalysisPipeline.jl")
 include("AnalysisFunctions.jl")
-
+using CairoMakie
+CairoMakie.activate!()
 
 #base_folder = joinpath(homedir(),"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr")
 
 base_folder = joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr")
+
+figure_save_folder = mkpath(joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr","exploratory_figures"))
 
 #base_folder = joinpath(homedir(),"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr")
 raw_data_base_folder = joinpath(base_folder, "simdata")
@@ -80,16 +84,342 @@ D = Symmetric(D_wb[1:2*interior_indmax,1:2*interior_indmax])
 
 modes = diagonalize_D(D)
 
+end
 
 
+function get_tag()
+
+
+    k =system["forces"]["pair_forces"]["soft_disk_force"]["karray"]
+
+    #Interior particles
+    Nint = sum(type .== 1)
+    ϕ = 1
+    #Check if all radii are the same, if so do, else , hardcoded 0.15, because I did not store the polydispersity of the initial conditions in the  analysis file
+    poly =  all( R .== R[1]) ? 0. : 0.15
+
+
+    tag = Dict("ϕ"=>ϕ, "v0"=> v0, "Nint"=> Nint, "poly"=>poly, "k"=>k, "Dr"=>Dr, "J"=>J)
+
+    return tag
+
+end
+begin
+f = Figure()
+ax = Axis(f[1,1], xlabel=L"t", ylabel=L"v/v_0")
+for i in 1:100:size(vx)[1]
+    lines!(ax, t[500:end], sqrt.(vx.^2 + vy.^2)[i,500:end]/v0)
+end
+#modenumbers = range(1,size(v_projs)[1])
+#heatmap!(ax, sqrt.(modes["eigvals"]),FT_v_projs["ω"], log10.(FT_v_projs["Xf2"]))
+tag = get_tag()
+Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+#f[1,2]=Legend(f,ax)
+save(joinpath(figure_save_folder,"mean_v_prediction_constant_speed_particles.pdf"),f)
+display(f)#
+
+end
+
+
+begin
+f = Figure()
+ax = Axis(f[1,1], xlabel=L"t", ylabel=L"v/v_0")
+
+scatter!(ax, t, mean(sqrt.(vx.^2 + vy.^2),dims=1)[1,:]/v0,label="average speed")
+
+scatter!(ax, t, sqrt.( mean((vx.^2 + vy.^2),dims=1)[1,:] )/v0,label="rms speed")
+
+interval = 1
+for (n,eigval) in pairs(modes["eigvals"][1:interval:10])
+    hlines!(ax, ( sqrt( 1 + (eigval/(2*J))^2 ) - eigval/(2*J) ),color="black", label="mode number $(1+(n-1)*interval)")
+end
+
+#ylims!(0,0.01)
+#modenumbers = range(1,size(v_projs)[1])
+#heatmap!(ax, sqrt.(modes["eigvals"]),FT_v_projs["ω"], log10.(FT_v_projs["Xf2"]))
+tag = get_tag()
+Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+
+f[1,2]=Legend(f,ax)
+save(joinpath(figure_save_folder,"mean_v_prediction_constant_speed.pdf"),f)
+display(f)#
+end
+
+dx = x .- x0int
+dy = y .- y0int
+d_projs = project_on_eigvecs(modes["eigvecs"], dx, dy)
 v_projs = project_on_eigvecs(modes["eigvecs"], vx,vy)
 p_projs = project_on_eigvecs(modes["eigvecs"], px,py)
+
+begin
+f = Figure()
+ax = Axis(f[1,1], xlabel=L"t", ylabel=L"\sum_{\rho}\lambda_{\rho}  (a_{\rho})^2")
+for i=1:10
+    #lines!(ax, t, d_projs[i,:].^2)
+end
+lines!(ax, t, sum(d_projs.^2,dims=1 )[1,:], color="black", label=L"\sum_{\rho} (a_{\rho})^2")
+lines!(ax, t, sum(modes["eigvals"] .* d_projs.^2,dims=1 )[1,:], color="red", label=L"\sum_{\rho}\lambda_{\rho}  (a_{\rho})^2")
+tag = get_tag()
+Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+
+f[1,2]=Legend(f,ax)
+save(joinpath(figure_save_folder,"sum_of_mode_amplitudes_squared_times_eigenvalues.pdf"),f)
+display(f)
+end
+
+begin
+f = Figure()
+ax = Axis(f[1,1], xlabel=L"t", ylabel=L"\gamma_{\nu}(v)")
+vm = mean(sqrt.(vx.^2 + vy.^2),dims=1)[1,:]
+vmm = mean(vm[100:end])
+interval=20
+maxn=100
+scatter!(ax, t[500:end], vm[500:end])
+for (n,eigval) in pairs(modes["eigvals"][1:interval:maxn])
+    lines!(ax,t[500:end], eigval .- J*v0 ./vm[500:end] .+ J .*vm[500:end] /v0,color=1+(n-1)*interval, label="mode number $(1+(n-1)*interval)", colorrange=(1,maxn))
+end
+
+tag = get_tag()
+Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+
+f[1,2]=Legend(f,ax)
+save("mode_dependent_damping_term.pdf",f)
+display(f)
+end
+
+
+begin
+f = Figure()
+ax = Axis(f[1,1], xlabel=L"\nu", ylabel=L"\gamma_{\nu}(v)")
+vm = mean(sqrt.(vx.^2 + vy.^2),dims=1)[1,:]
+vmm = mean(vm[100:end])
+interval=1
+maxn=200
+for (n,eigval) in pairs(modes["eigvals"][1:interval:maxn])
+
+    damping =  eigval .- J*v0 ./vmm .+ J .*vmm /v0
+
+    if damping<=0
+        scatter!(ax,n,damping, color="green")
+
+    else
+        scatter!(ax,n,damping, color="red")
+    end
+end
+
+tag = get_tag()
+Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+
+#f[1,2]=Legend(f,ax)
+save("mode_number_dependent_damping_term.pdf",f)
+display(f)
+end
+
+
+begin
+f = Figure()
+ax = Axis(f[1,1], xlabel=L"t", ylabel=L"\gamma_{\nu}(v)")
+vm = mean(sqrt.(vx.^2 + vy.^2),dims=1)[1,:]
+interval=1
+maxn=41
+scatter!(ax, t[500:2000], vm[500:2000]*30, label="mean v")
+for (n,eigval) in pairs(modes["eigvals"][1:interval:maxn])
+    lines!(ax,t[500:2000], v_projs[n,500:2000],color=1+(n-1)*interval, label="mode number $(1+(n-1)*interval)", colorrange=(1,maxn))
+end
+
+lines!(ax, t[500:2000],0.1* sin.(0.0265*t)[500:2000])
+
+#lines!(ax, )
+tag = get_tag()
+Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+
+f[1,2]=Legend(f,ax)
+save("t_mode.pdf",f)
+display(f)
+end
+
+
 
 #%% Above is already available in default analysis code
 
 dt = t[2] - t[1]
 FT_v_projs = temporal_Fourier_transform(dt, v_projs, min_t_ind = 500, output_not_avg=true)
 FT_p_projs = temporal_Fourier_transform(dt, p_projs, min_t_ind = 500, output_not_avg=true)
+
+begin
+f = Figure()
+ax = Axis(f[1,1], xlabel=L"ω_{ν}", ylabel=L"FT(v_{proj})^2")#, yscale=log10)
+#xlims!(ax, (0,.2))
+interval=1
+maxn=10
+#scatter!(ax, t[500:2000], vm[500:2000]*30)
+for (n,eigval) in pairs(modes["eigvals"][1:interval:maxn])
+    scatter!(ax, FT_v_projs["ω"], FT_v_projs["Xf2"][n,:],color=1+(n-1)*interval, colorrange=(1,maxn),label="mode $(1+(n-1)*interval)")
+
+    γ = eigval - J*v0/vmm + J*vmm/v0
+
+    Ω2  = J *vmm/v0 * eigval
+
+    #vlines!(ax, 2*abs(sqrt( Complex((γ/2)^2 -Ω2 ) ) ),color=1+(n-1)*interval, colorrange=(1,maxn))
+    #vlines!(ax, -eigval^2 + J*v0/vmm),color="red")#1+(n-1)*interval, colorrange=(1,maxn))
+    #vlines!(ax, 2 * sqrt(Ω2) ,color=1+(n-1)*interval, colorrange=(1,maxn))
+
+    vlines!(ax, sqrt(J*eigval*( sqrt(1+(eigval/(2*J))^2 ) - eigval/(2*J))), color=1+(n-1)*interval, colorrange=(1,maxn))
+end
+tag = get_tag()
+Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+
+f[1,2]=Legend(f,ax)
+save("Np_mode_v_proj_frequency_prediction.pdf",f)
+display(f)
+end
+
+begin
+f = Figure()
+ax = Axis(f[1,1], xlabel=L"ω_{ν}", ylabel=L"FT(v_{proj})^2", yscale=log10)
+xlims!(ax, (0,.2))
+interval=1
+maxn=41
+vmm=mean(vm[500:end])
+#scatter!(ax, t[500:2000], vm[500:2000]*30)
+for (n,eigval) in pairs(modes["eigvals"][1:50])
+
+    if n==40 || n==1
+        scatter!(ax, FT_v_projs["ω"], FT_v_projs["Xf2"][n,:],color=1+(n-1)*interval, colorrange=(1,maxn),label="mode $(1+(n-1)*interval)")
+
+        γ = eigval - J*v0/vmm + J*vmm/v0
+
+        Ω2  = J *vmm/v0 * eigval
+
+
+        vlines!(ax, 2*abs(sqrt( Complex((γ/2)^2 -Ω2 ) ) ),color=1+(n-1)*interval, colorrange=(1,maxn))
+    end
+    #vlines!(ax, -eigval^2 + J*v0/vmm),color="red")#1+(n-1)*interval, colorrange=(1,maxn))
+    #vlines!(ax, 2 * sqrt(Ω2) ,color=1+(n-1)*interval, colorrange=(1,maxn))
+end
+
+vlines!(ax,  sqrt( J*modes["eigvals"][40]*( sqrt(1+(modes["eigvals"][40]/(2*J))^2 ) - modes["eigvals"][40]/(2*J)) ),color="red")
+
+tag = get_tag()
+Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+
+f[1,2]=Legend(f,ax)
+save("Np_mode_v_proj_frequency_prediction.pdf",f)
+display(f)
+end
+
+
+
+
+
+
+
+FT = temporal_Fourier_transform(t[2]-t[1],px,min_t_ind=500)
+
+begin
+f = Figure()#
+ax = Axis(f[1,1],yscale=log10, xlabel="ω",ylabel=L"|  \mathcal{F}\{p_x(t)\}(\omega)|^2");
+scatter!(ax, FT["ω"], FT["pavg_X2"])
+scatter!(ax,FT["ω_max"] , FT["max_X2"],label="max")
+
+
+vlines!(ax,  sqrt( J*modes["eigvals"][40]*( sqrt(1+(modes["eigvals"][1]/(2*J))^2 ) - modes["eigvals"][40]/(2*J)) ),color="red")
+Label(f[2,1],"Dr = $Dr, J = $J, v_0 = $v0, k=$k, ", tellwidth=false, halign=:left, word_wrap = true)
+xlims!(ax, 0,0.2)
+
+#vlines!(ax, sqrt(J*k*( sqrt(1+(k/(2*J))^2 ) - k/(2*J))), label="theory", color="green")
+f[1,2]=Legend(f,ax)
+#ylims!(ax, low=1e-7,high= 1e2)
+#save("single_particle_small_noise_unit_alignment.pdf",f)
+display(f)
+end
+begin
+
+Nint = size(vx)[1]
+it = 1500
+
+B = zeros( 2* Nint, 2*Nint)
+C = zeros( 2* Nint, 2*Nint)
+
+
+for i in 1:2*Nint
+
+
+    B[i,i] = 1/vit[i]
+    C[i,i] = vit[i]
+
+end
+
+speedit = sqrt.( vx[:,it].^2 +  vy[:,it].^2)
+vit =collect(Iterators.flatten(zip(speedit, speedit)))
+
+begin
+f = Figure()
+ax = Axis(f[1,1]);
+
+hist!(ax, speedit/v0, normalization = :pdf)
+xlims!(ax, 0,2)
+display(f)
+end
+end
+
+
+
+dRDdVt = transpose((D * collect(Iterators.flatten(zip(vx[:,it], vy[:,it]))) )) * collect(Iterators.flatten(zip(dx[:,it], dy[:,it])))
+M = D - J*v0*B + J/v0 * C + J/v0 * B * dRDdVt
+
+begin
+f = Figure()#
+ax = Axis(f[1,1]);
+heatmap!(ax, D - J*v0*B + J/v0 * C, colorrange=(-1,1))
+
+display(f)
+    
+end
+begin
+f = Figure()#
+ax = Axis(f[1,1]);
+heatmap!(ax, D)
+
+display(f)
+    
+end
+begin
+f = Figure()#
+ax = Axis(f[1,1]);
+heatmap!(ax, B, colorrange=(-1,1))
+
+display(f)
+    
+end
+
+
+begin
+it=4000
+speedit = sqrt.( vx[:,it].^2 +  vy[:,it].^2)
+f = Figure()#
+ax = Axis(f[1,1]);
+scatter!(ax, x[:,it], y[:,it], color = speedit)
+
+display(f)
+    
+
+    
+end
+
+
+begin
+vals, inds = findmax(FT_v_projs["Xf2"], dims=2)
+max_ωs = FT_v_projs["ω"][getindex.(inds,2)][:,1]
+
+f = Figure()
+ax = Axis(f[1,1], xlabel=L"ω_{ν}", ylabel=L" ω_{max}")
+scatter!(ax, sqrt.(modes["eigvals"]),max_ωs)
+
+display(f)
+end
+
+
 begin
 f = Figure()
 ax = Axis(f[1,1], xlabel=L"ω_{ν}", ylabel=L"\omega")
@@ -106,17 +436,9 @@ heatmap!(ax, sqrt.(modes["eigvals"]),FT_p_projs["ω"], log10.(FT_p_projs["Xf2"])
 display(f)
 end
 
-vals, inds = findmax(FT_v_projs["Xf2"], dims=2)
-max_ωs = FT_v_projs["ω"][getindex.(inds,2)][:,1]
 
 vrms = sqrt( mean(vx.^2 + vy.^2) )
-begin
-f = Figure()
-ax = Axis(f[1,1], xlabel=L"ω_{ν}", ylabel=L" ω_{max}")
-scatter!(ax, sqrt.(modes["eigvals"]),max_ωs)
 
-display(f)
-end
 
 begin
 f = Figure()
@@ -267,23 +589,7 @@ lines!(ax, t, vx[1,:]/v0)
 display(f)
 end
 
-function get_tag()
 
-
-    k =system["forces"]["pair_forces"]["soft_disk_force"]["karray"]
-
-    #Interior particles
-    Nint = sum(type .== 1)
-    ϕ = 1
-    #Check if all radii are the same, if so do, else , hardcoded 0.15, because I did not store the polydispersity of the initial conditions in the  analysis file
-    poly =  all( R .== R[1]) ? 0. : 0.15
-
-
-    tag = Dict("ϕ"=>ϕ, "v0"=> v0, "Nint"=> Nint, "poly"=>poly, "k"=>k, "Dr"=>Dr, "J"=>J)
-
-    return tag
-
-end
 using CairoMakie
 begin
 f = Figure()

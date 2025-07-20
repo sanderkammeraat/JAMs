@@ -55,6 +55,17 @@ function plot_field_magnitude!(ax, cpsO, cfsO)
     return ax
 end
 
+function plot_field_magnitude_wgrid!(ax, cpsO, cfsO)
+    
+    field_centers1 = @lift($(cfsO)[1].bin_centers[1])
+    field_centers2 = @lift($(cfsO)[1].bin_centers[2])
+    field_C = @lift($(cfsO)[1].C)
+    heatmap!(ax,field_centers1,field_centers2,field_C, alpha=0.2,colormap=:viridis,colorrange=(0,1))
+
+    vlines!(ax,field_centers1, color="black", alpha=0.2)
+    hlines!(ax,field_centers2, color="black", alpha=0.2)
+    return ax
+end
 
 function plot_type_points!(ax, cpsO, cfsO)
 
@@ -74,6 +85,56 @@ function plot_type_points!(ax, cpsO, cfsO)
     end
     return ax
 end
+
+function plot_type_points!(ax, cpsO, cfsO)
+
+
+    x = @lift([p_i.x[1] for p_i in $cpsO])
+    y = @lift([p_i.x[2] for p_i in $cpsO])
+
+    c = @lift([ p_i.type[1] for p_i in $cpsO])
+    if length(cpsO[][1].x)>2
+        
+        z = @lift([p_i.x[3] for p_i in $cpsO])
+        meshscatter!(ax,x,y,z, color=c)
+
+    else
+        scatter!(ax,x,y, color=c)
+
+    end
+    return ax
+end
+
+function plot_shape_disks!(ax, cpsO, cfsO)
+    c = @lift([ p_i.id[1] for p_i in $cpsO])
+    for j = 1:size(cpsO[][1].xe)[1]
+
+        xes = @lift([p_i.xe[j,1] for p_i in $cpsO] )
+
+        yes = @lift([p_i.xe[j,2] for p_i in $cpsO] )
+
+        s = @lift([2*p_i.re[1] for p_i in $cpsO])
+    
+        scatter!(ax,xes,yes, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.5, strokecolor=:black, strokewidth=1)
+    end
+    return ax
+end
+function plot_shape_points!(ax, cpsO, cfsO)
+    c = @lift([ p_i.id[1] for p_i in $cpsO])
+    for j = 1:size(cpsO[][1].xe)[1]
+
+        xes = @lift([p_i.xe[j,1] for p_i in $cpsO] )
+
+        yes = @lift([p_i.xe[j,2] for p_i in $cpsO] )
+
+        s = @lift([p_i.re[1] for p_i in $cpsO])
+    
+        scatter!(ax,xes,yes, color=c)
+    end
+    return ax
+end
+
+
 
 
 function plot_Swarmalators!(ax, cpsO, cfsO)

@@ -18,7 +18,7 @@ catch LoadError
 end
 include("SaveFunctions.jl")
 
-@views function periodic!(p_i, systemsizes)
+@views function periodic!(p_i::Particle, systemsizes)
 
     for (i, xi) in pairs(p_i.x)
 
@@ -28,6 +28,33 @@ include("SaveFunctions.jl")
             p_i.x[i] = xi - systemsizes[i]
         end
     end
+    return p_i
+end
+
+@views function periodic!(p_i::RigidBody, systemsizes)
+
+    for (i, xi) in pairs(p_i.x)
+
+        if xi<-systemsizes[i]/2
+            p_i.x[i] = xi + systemsizes[i]
+        elseif xi>=systemsizes[i]/2
+            p_i.x[i] = xi - systemsizes[i]
+        end
+    end
+
+    for j=1:shape(p_i.xe)[1]
+        for (i, xi) in pairs(p_i.xe[j,:])
+
+            if xi<-systemsizes[i]/2
+                p_i.xe[j,i] = xi + systemsizes[i]
+            elseif xi>=systemsizes[i]/2
+                p_i.xe[j,i] = xi - systemsizes[i]
+            end
+        end
+    end
+
+
+    
     return p_i
 end
 
@@ -578,7 +605,7 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cel
             if i!=n
                 p_j = current_particle_state[n]
 
-                dx = minimal_image_difference!(dx, p_i.x, p_j.x, system.sizes, system.Periodic)
+                dx= minimal_image_difference!(dx, p_i.x, p_j.x, system.sizes, system.Periodic)
 
                 dxn = norm(dx)
                 
@@ -805,4 +832,46 @@ function update_ghost_cells!(cells,system)
 
     end
     return cells
+end
+
+
+function get_neighbours(p_i, cells, stencils)
+    candidate_cell_ind=@MVector zeros(Int64, length(p_i.ci))
+    n=0
+    #First check number
+    for stencil in stencils
+
+        for i in eachindex(candidate_cell_ind)
+            candidate_cell_ind[i]= p_i.ci[i] + stencil[i]
+        end
+
+        if !isempty(cells[candidate_cell_ind...])
+            for id in cells[candidate_cell_ind...]
+                #push!(neighbours,id)
+                n+=1
+            end
+        end
+    end
+    #Then allocate
+    if n>0
+        neighbours = zeros(Int64, n)
+        m=1
+        for stencil in stencils
+
+            for i in eachindex(candidate_cell_ind)
+                candidate_cell_ind[i]= p_i.ci[i] + stencil[i]
+            end
+    
+            if !isempty(cells[candidate_cell_ind...])
+                for id in cells[candidate_cell_ind...]
+                    neighbours[m]=id
+                    m+=1
+                end
+            end
+        end
+    else
+        neighbours = nothing
+    end
+
+    return neighbours
 end

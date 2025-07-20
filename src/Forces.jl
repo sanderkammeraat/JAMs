@@ -46,6 +46,11 @@ struct self_align_with_∇C_unit_force<:Force
     β::Float64
 end
 
+struct self_align_with_∇C_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    β::Float64
+end
+
 struct external_harmonic_pinning_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
     k::Float64
@@ -108,10 +113,15 @@ end
 struct ABP_3d_propulsion_force <:Force
     ontypes::Union{Int64,Vector{Int64}}
 end
+struct oscillatory_3d_propulsion_force <:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    ω::Float64
+end
 
 struct ABP_3d_angular_noise<:Force
     ontypes::Union{Int64,Vector{Int64}}
 end
+
 
 #Pair forces
 struct coulomb_force<:Force
@@ -136,6 +146,12 @@ struct soft_disk_force{T1} <: Force
     ontypes::Union{Int64,Vector{Int64}}
     karray::T1
 end
+struct soft_shape_disk_force{T1} <: Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+end
+
+
 
 struct morse_force{T1, T2}<:Force
     ontypes::Union{Int64,Vector{Int64}}
@@ -186,11 +202,14 @@ struct chain_force<:Force
     l::Float64
     
 end
+struct tangential_propulsion_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}    
+end
 
 
 struct spring_network_2d_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
-    l::Float64
+    l_network::Matrix{Float64}
     k_network::Matrix{Float64}
     
 end
@@ -259,6 +278,15 @@ function contribute_external_force!(p_i,t, dt, force::ABP_3d_propulsion_force,rn
 
     if p_i.type[1] in force.ontypes
     p_i.f.+= p_i.zeta[1] * p_i.v0[1] * p_i.p
+    end
+
+    return p_i
+end
+
+function contribute_external_force!(p_i,t, dt, force::oscillatory_3d_propulsion_force,rngs_particles)
+
+    if p_i.type[1] in force.ontypes
+    p_i.f.+= p_i.zeta[1] * p_i.v0[1] * p_i.p * cos(force.ω*t)
     end
 
     return p_i
@@ -370,6 +398,45 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_disk_force
     return p_i
 
 end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_shape_disk_force,rngs_particles)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        f = @MVector zeros(length(dx))
+        T = @MVector zeros(length(dx))
+
+
+        @views for m=1:length(p_i.re)
+
+            for n=1:length(p_j.re)
+                
+                d2R = p_i.re[m] + p_j.re[n]
+
+
+                dxe = p_j.xe[n,:] .- p_i.xe[m,:]
+
+                dxen = norm(dxe)
+
+                if dxen<d2R
+                    f.= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxen - d2R) * dxe/dxen
+                    T.=  cross( cross(p_i.xe[n,:] - p_i.x , f), p_i.p) 
+
+                    p_i.f.+= f
+                    p_i.q.+= T
+
+                end
+            end
+        end
+    end
+    return p_i
+
+end
+
+
+
+
+
+
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::morse_force,rngs_particles)
 
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
@@ -397,9 +464,19 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::chain_force,rng
 
 end
 
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::tangential_propulsion_force,rngs_particles)
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        if p_j.id[1] == p_i.id[1]+1
+            p_i.f.+= p_i.v0[1]*p_i.zeta[1] * dx/dxn
+        end
+    end
+    return p_i
+
+end
+
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::spring_network_2d_force,rngs_particles)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
-        p_i.f.+= force.k_network[p_i.id[1],p_j.id[1]] * (dxn-force.l) * dx/dxn
+        p_i.f.+= force.k_network[p_i.id[1],p_j.id[1]] * (dxn-force.l_network[p_i.id[1],p_j.id[1]]) * dx/dxn
     end
     return p_i
 
@@ -637,7 +714,20 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::asymme
 
 end
 
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::self_align_with_∇C_force, rngs_particles)
+    if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
 
+
+        x_index = field_indices[1]
+        y_index = field_indices[2]
+
+        ∇C = grad(field_j, x_index, y_index)
+
+        p_i.q.+= force.β*cross(cross(p_i.p, ∇C),p_i.p)
+    end
+
+    return p_i, field_j
+end
 
 
 function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::self_align_with_∇C_unit_force, rngs_particles)
