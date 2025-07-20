@@ -18,7 +18,7 @@ catch LoadError
 end
 include("SaveFunctions.jl")
 
-@views function periodic!(p_i::Particle, systemsizes)
+@views function periodic!(p_i, systemsizes)
 
     for (i, xi) in pairs(p_i.x)
 
@@ -31,32 +31,6 @@ include("SaveFunctions.jl")
     return p_i
 end
 
-@views function periodic!(p_i::RigidBody, systemsizes)
-
-    for (i, xi) in pairs(p_i.x)
-
-        if xi<-systemsizes[i]/2
-            p_i.x[i] = xi + systemsizes[i]
-        elseif xi>=systemsizes[i]/2
-            p_i.x[i] = xi - systemsizes[i]
-        end
-    end
-
-    for j=1:shape(p_i.xe)[1]
-        for (i, xi) in pairs(p_i.xe[j,:])
-
-            if xi<-systemsizes[i]/2
-                p_i.xe[j,i] = xi + systemsizes[i]
-            elseif xi>=systemsizes[i]/2
-                p_i.xe[j,i] = xi - systemsizes[i]
-            end
-        end
-    end
-
-
-    
-    return p_i
-end
 
 #Initialize unwrapped coordinates to save the user the hassle to set equal to the initial wrapped coordinates
 function init_unwrap!(p_i, t)
@@ -545,7 +519,7 @@ function particle_step!(i,p_i, current_particle_state,Npair,t, dt, system,cells,
     end
 
     for force in system.external_forces
-        p_i=contribute_external_force!(p_i, t, dt, force,rngs_particles)
+        p_i=contribute_external_force!(p_i, t, dt,rngs_particles, system, force)
     end
 
     return p_i
@@ -583,7 +557,7 @@ function contribute_field_forces!(p_i, current_field_state, t, dt,system, rngs_p
             
             field_indices = minimal_image_closest_bin_center!(field_indices, p_i.x, field_j.bin_centers, system.sizes, system.Periodic)
 
-            p_i, current_field_state[j] = contribute_field_force!(p_i, field_j, field_indices, t, dt, force,rngs_particles)
+            p_i, current_field_state[j] = contribute_field_force!(p_i, field_j, field_indices, t, dt,rngs_particles, system, force)
         end
     end
     return p_i, current_field_state
@@ -611,7 +585,7 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cel
                 
                 if dxn<=system.rcut_pair_global
                     for force in system.pair_forces
-                        p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force,rngs_particles)
+                        p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force)
                     end
                 end
 

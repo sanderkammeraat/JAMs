@@ -151,6 +151,12 @@ struct soft_shape_disk_force{T1} <: Force
     karray::T1
 end
 
+#Based on Wensink et al. PHYSICAL REVIEW E 89, 010302(R) (2014)
+struct exp_shape_disk_force{T1} <: Force
+    ontypes::Union{Int64,Vector{Int64}}
+    u0array::T1
+end
+
 
 
 struct morse_force{T1, T2}<:Force
@@ -242,7 +248,7 @@ end
 #Let's test the power of multiple dispatch
 
 
-function contribute_external_force!(p_i,t, dt, force::ABP_2d_propulsion_force,rngs_particles)
+function contribute_external_force!(p_i,t, dt, rngs_particles, system, force::ABP_2d_propulsion_force,)
 
     if p_i.type[1] in force.ontypes
     p_i.f[1]+= p_i.zeta[1] * p_i.v0[1] *cos(p_i.θ[1])
@@ -251,7 +257,7 @@ function contribute_external_force!(p_i,t, dt, force::ABP_2d_propulsion_force,rn
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::ABP_2d_angular_noise,rngs_particles)
+function contribute_external_force!(p_i, t, dt, rngs_particles, system, force::ABP_2d_angular_noise)
 
     if p_i.type[1] in force.ontypes
     ω=sqrt(2*p_i.Dr[1])*rand(rngs_particles[p_i.id[1]],Normal(0, 1))
@@ -262,7 +268,7 @@ function contribute_external_force!(p_i, t, dt, force::ABP_2d_angular_noise,rngs
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::thermal_translational_noise,rngs_particles)
+function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::thermal_translational_noise)
 
     if p_i.type[1] in force.ontypes
         for i in eachindex(p_i.f)
@@ -274,7 +280,7 @@ function contribute_external_force!(p_i, t, dt, force::thermal_translational_noi
     return p_i
 end
 
-function contribute_external_force!(p_i,t, dt, force::ABP_3d_propulsion_force,rngs_particles)
+function contribute_external_force!(p_i,t, dt,rngs_particles, system, force::ABP_3d_propulsion_force)
 
     if p_i.type[1] in force.ontypes
     p_i.f.+= p_i.zeta[1] * p_i.v0[1] * p_i.p
@@ -283,7 +289,7 @@ function contribute_external_force!(p_i,t, dt, force::ABP_3d_propulsion_force,rn
     return p_i
 end
 
-function contribute_external_force!(p_i,t, dt, force::oscillatory_3d_propulsion_force,rngs_particles)
+function contribute_external_force!(p_i,t, dt,rngs_particles,system, force::oscillatory_3d_propulsion_force)
 
     if p_i.type[1] in force.ontypes
     p_i.f.+= p_i.zeta[1] * p_i.v0[1] * p_i.p * cos(force.ω*t)
@@ -292,7 +298,7 @@ function contribute_external_force!(p_i,t, dt, force::oscillatory_3d_propulsion_
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::ABP_3d_angular_noise,rngs_particles)
+function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::ABP_3d_angular_noise)
     if p_i.type[1] in force.ontypes
     xi=sqrt(2*p_i.Dr[1])*normalize(rand(rngs_particles[p_i.id[1]],Normal(0, 1),3))
 
@@ -302,7 +308,7 @@ function contribute_external_force!(p_i, t, dt, force::ABP_3d_angular_noise,rngs
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::ABP_perpendicular_angular_noise,rngs_particles)
+function contribute_external_force!(p_i, t, dt, rngs_particles, system, force::ABP_perpendicular_angular_noise)
     if p_i.type[1] in force.ontypes
     η =sqrt(2*p_i.Dr[1])*rand(rngs_particles[p_i.id[1]],Normal(0, 1))
 
@@ -313,7 +319,7 @@ end
 
 
 
-function contribute_external_force!(p_i, t, dt, force::self_align_with_v_force,rngs_particles)
+function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::self_align_with_v_force)
     if p_i.type[1] in force.ontypes
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
     p_i.q.+= force.β*cross(cross(p_i.p, p_i.v ), p_i.p)
@@ -321,7 +327,7 @@ function contribute_external_force!(p_i, t, dt, force::self_align_with_v_force,r
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::self_align_with_v_unit_force,rngs_particles)
+function contribute_external_force!(p_i, t, dt,rngs_particles, system, force::self_align_with_v_unit_force)
     if p_i.type[1] in force.ontypes
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
         vnorm = norm(p_i.v)
@@ -334,7 +340,7 @@ function contribute_external_force!(p_i, t, dt, force::self_align_with_v_unit_fo
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::external_harmonic_force,rngs_particles)
+function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::external_harmonic_force)
     if p_i.type[1] in force.ontypes
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
     p_i.f.+= - force.k * p_i.x
@@ -342,7 +348,7 @@ function contribute_external_force!(p_i, t, dt, force::external_harmonic_force,r
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::electrode_force,rngs_particles)
+function contribute_external_force!(p_i, t, dt,rngs_particles, system, force::electrode_force)
     if p_i.type[1] in force.ontypes
         #compensate for the dt from the dof evolver, can be changed if the evolver also changes
         if p_i.x[3]+p_i.R[1]<=force.d/2 && p_i.x[3]-p_i.R[1]>=-force.d/2
@@ -359,7 +365,7 @@ function contribute_external_force!(p_i, t, dt, force::electrode_force,rngs_part
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::external_friction_force,rngs_particles)
+function contribute_external_force!(p_i, t, dt,rngs_particles, system, force::external_friction_force)
     if p_i.type[1] in force.ontypes
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
     p_i.f.+= - force.γ * p_i.v
@@ -367,7 +373,7 @@ function contribute_external_force!(p_i, t, dt, force::external_friction_force,r
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::external_harmonic_pinning_force,rngs_particles)
+function contribute_external_force!(p_i, t, dt,rngs_particles, system, force::external_harmonic_pinning_force)
     if p_i.type[1] in force.ontypes
         dxp = @MVector zeros(length(p_i.x))
         dxp.=p_i.x - force.pins[p_i.id[1],:]
@@ -384,7 +390,7 @@ end
 
 
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_disk_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::soft_disk_force)
 
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
     d2R = p_i.R[1]+p_j.R[1]
@@ -399,7 +405,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_disk_force
 
 end
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_shape_disk_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles ,system, force::soft_shape_disk_force)
 
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
         f = @MVector zeros(length(dx))
@@ -413,7 +419,9 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_shape_disk
                 d2R = p_i.re[m] + p_j.re[n]
 
 
-                dxe = p_j.xe[n,:] .- p_i.xe[m,:]
+                dxe =  @MVector zeros(length(dx))
+
+                dxe.= minimal_image_difference!(dxe, p_i.xe[m,:],p_j.xe[n,:],system.sizes, system.Periodic)
 
                 dxen = norm(dxe)
 
@@ -432,12 +440,49 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_shape_disk
 
 end
 
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles,system, force::exp_shape_disk_force)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        f = @MVector zeros(length(dx))
+        T = @MVector zeros(length(dx))
+
+
+        @views for m=1:length(p_i.re)
+
+            for n=1:length(p_j.re)
+                
+                #Note we use here the radius not the diameter
+                d2R = p_i.re[m] + p_j.re[n]
+
+
+                dxe =  @MVector zeros(length(dx))
+
+                dxe.= minimal_image_difference!(dxe, p_i.xe[m,:],p_j.xe[n,:],system.sizes, system.Periodic)
+
+                dxen = norm(dxe)
+
+                if dxen<d2R
+
+                    fact = -1*exp(-dxen/d2R)*(2*d2R +dxen )/(d2R * dxen^3)
+
+                    f.= force.u0array[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * fact * dxe/dxen
+                    T.=  cross( cross(p_i.xe[n,:] - p_i.x , f), p_i.p) 
+
+                    p_i.f.+= f
+                    p_i.q.+= T
+
+                end
+            end
+        end
+    end
+    return p_i
+
+end
 
 
 
 
-
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::morse_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::morse_force)
 
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
         re = p_i.R[1]+p_j.R[1]
@@ -454,7 +499,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::morse_force,rng
 
 end
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::chain_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::chain_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
         if p_j.id[1] == p_i.id[1]+1 || p_j.id[1] == p_i.id[1]-1
             p_i.f.+= force.k * (dxn-force.l) * dx/dxn
@@ -464,7 +509,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::chain_force,rng
 
 end
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::tangential_propulsion_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::tangential_propulsion_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
         if p_j.id[1] == p_i.id[1]+1
             p_i.f.+= p_i.v0[1]*p_i.zeta[1] * dx/dxn
@@ -474,7 +519,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::tangential_prop
 
 end
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::spring_network_2d_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::spring_network_2d_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
         p_i.f.+= force.k_network[p_i.id[1],p_j.id[1]] * (dxn-force.l_network[p_i.id[1],p_j.id[1]]) * dx/dxn
     end
@@ -482,7 +527,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::spring_network_
 
 end
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::periodic_chain_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::periodic_chain_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
         if p_j.id[1] == p_i.id[1]+1 || p_j.id[1] == p_i.id[1]-1
             p_i.f.+= force.k * (dxn-force.l) * dx/dxn
@@ -501,7 +546,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::periodic_chain_
 end
 
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_atre_type_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system, force::soft_atre_type_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
         bij = p_i.R[1]+p_j.R[1]
         f = @MVector zeros(length(dx))
@@ -529,7 +574,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_atre_type_
     return p_i
 
 end
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::coulomb_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::coulomb_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
     p_i.f.+= -force.k * (dx/dxn^3 * p_i.Q[1] * p_j.Q[1]) 
     end  
@@ -537,14 +582,14 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::coulomb_force,r
 end
 
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::swarm_pos_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::swarm_pos_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
     @views p_i.f.+= force.N_inv * (dx/dxn * (1 + force.J*cos(p_j.ϕ[1]-p_i.ϕ[1]) ) - dx/dxn^2)  
     end 
     return p_i
 end
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::swarm_angular_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::swarm_angular_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
     p_i.ψ.+= force.N_inv * force.K * sin(p_j.ϕ[1]-p_i.ϕ[1])/dxn
     end
@@ -554,7 +599,7 @@ end
 
 
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::Vicsek_align_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::Vicsek_align_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
         if dxn < force.r
             p_i.ωn[1] += p_j.θ[1]/dt
@@ -564,7 +609,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::Vicsek_align_fo
     return p_i
 end
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::pairABP_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::pairABP_force)
     
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
         d2a = p_i.R[1]+p_j.R[1]
@@ -587,7 +632,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::pairABP_force,r
     return p_i
 
 end
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::pair_polar_alignment_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system, force::pair_polar_alignment_force)
     
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
         #d2a = p_i.R[1]+p_j.R[1]
@@ -606,7 +651,7 @@ end
 
 
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::fluid_dipole_2d_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::fluid_dipole_2d_force)
     
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
 
@@ -619,7 +664,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::fluid_dipole_2d
 
 end
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::fluid_dipole_3d_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::fluid_dipole_3d_force)
     
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
 
@@ -631,7 +676,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::fluid_dipole_3d
 
 end
 
-function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_propulsion_force,rngs_particles)
+function contribute_field_force!(p_i,field_j,field_indices, t, dt,rngs_particles, system, force::field_propulsion_force)
     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
         x_index = field_indices[1]
         y_index = field_indices[2]
@@ -649,7 +694,7 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_
 
 end
 
-function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_propulsion_3d_force, rngs_particles)
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles,system, force::field_propulsion_3d_force)
     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
         x_index = field_indices[1]
         y_index = field_indices[2]
@@ -667,7 +712,7 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_
 
 end
 
-function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_propulsion_distr_force, rngs_particles)
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles,system, force::field_propulsion_distr_force)
     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
         x_index = field_indices[1]
         y_index = field_indices[2]
@@ -689,7 +734,7 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_
 
 end
 
-function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::asymmetric_field_propulsion_distr_force, rngs_particles)
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles,system, force::asymmetric_field_propulsion_distr_force)
     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
         x_index = field_indices[1]
         y_index = field_indices[2]
@@ -714,7 +759,7 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::asymme
 
 end
 
-function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::self_align_with_∇C_force, rngs_particles)
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles, system, force::self_align_with_∇C_force)
     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
 
 
@@ -730,7 +775,7 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::self_a
 end
 
 
-function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::self_align_with_∇C_unit_force, rngs_particles)
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles, system, force::self_align_with_∇C_unit_force)
     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
 
 
@@ -750,7 +795,7 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::self_a
     return p_i, field_j
 end
 
-function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::grad_field_propulsion_force, rngs_particles)
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles, system, force::grad_field_propulsion_force)
     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
 
 
