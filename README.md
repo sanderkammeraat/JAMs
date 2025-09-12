@@ -1,8 +1,6 @@
 # JAMs: Simple proof-of-concept simulations of Active Matter in Julia.
 
-
-![confined_self_align_soft_abps](https://github.com/user-attachments/assets/73d83dfb-de88-48e2-b186-7c6de5c93209)
-
+<img width="1398" height="1376" alt="sim_snapshot" src="https://github.com/user-attachments/assets/11490a11-a9f0-419b-9787-5ffa8049ed38" />
 
 **Disclaimer:** This code is a hobby project and one of the goals is to learn the Julia programming language, so it likely is not fully optimized (yet).  
 
