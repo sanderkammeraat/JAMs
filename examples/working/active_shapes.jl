@@ -8,13 +8,13 @@ function soft_disk_no_overlap()
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_2d_shape_evolver(1))
     global_dofevolvers = []
     field_dofevolvers = []
-    N=1000
-    ϕ =0.8
+    N=100
+    ϕ =0.1
     Rno=3
     L =  sqrt(pi * N*Rno^2 / ϕ)
     xo = Float64[ 1 0 0;  -1/2 -1/2*sqrt(3)   0 ;  -1/2 1/2*sqrt(3)   0]
 
-    initial_state = SoftPolarShape[SoftPolarShape([i],[1], [1], [1], [Rno], [0.3], [0.00], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0],deepcopy(xo),xo,[1,1,1]) for i=1:N ]
+    initial_state = PolarShape[PolarShape([i],[1], [1], [1], [Rno], [0.3], [0.001], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0],deepcopy(xo),xo,[1,1,1]) for i=1:N ]
 
     sizes = [L,L,4];
     initial_field_state=[]

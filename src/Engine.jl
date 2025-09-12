@@ -18,7 +18,7 @@ catch LoadError
 end
 include("SaveFunctions.jl")
 
-@views function periodic!(p_i, systemsizes)
+@views function periodic!(p_i::Particle, systemsizes)
 
     for (i, xi) in pairs(p_i.x)
 
@@ -31,6 +31,30 @@ include("SaveFunctions.jl")
     return p_i
 end
 
+@views function periodic!(p_i::RigidBody, systemsizes)
+
+    for (i, xi) in pairs(p_i.x)
+
+        if xi<-systemsizes[i]/2
+            p_i.x[i] = xi + systemsizes[i]
+        elseif xi>=systemsizes[i]/2
+            p_i.x[i] = xi - systemsizes[i]
+        end
+    end
+    #Deliberately not updating the extend points
+    # for j=1:size(p_i.xe)[1]
+    #     for (i, xi) in pairs(p_i.xe[j,:])
+
+    #         if xi<-systemsizes[i]/2
+    #             p_i.xe[j,i] = xi + systemsizes[i]
+    #         elseif xi>=systemsizes[i]/2
+    #             p_i.xe[j,i] = xi - systemsizes[i]
+    #         end
+    #     end
+    
+    # end    
+    return p_i
+end
 
 #Initialize unwrapped coordinates to save the user the hassle to set equal to the initial wrapped coordinates
 function init_unwrap!(p_i, t)

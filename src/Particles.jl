@@ -77,42 +77,12 @@ end
 #Parametrize on the shape extent (point defining the contour) 
 struct PolarShape<:RigidBody
 
-    
     id::MVector{1,Int64}
     type::MVector{1,Int64}
     m::MVector{1,Float64}
     zeta::MVector{1,Float64}
     R::MVector{1,Float64}
-    
-    v0::MVector{1,Float64}
-    Dr::MVector{1,Float64}
 
-    #com properties
-    x::MVector{3,Float64}
-    xuw::MVector{3,Float64}
-    v::MVector{3,Float64}
-    a::MVector{3,Float64}
-
-    f::MVector{3,Float64} #f->a->v->r
-
-    p::MVector{3,Float64}
-    q::MVector{3,Float64}
-    ci::MVector{3,Int64}
-    # Updated positions of subparticles
-    xe::Matrix{Float64}
-    # Initial positions of subparticles relative to com
-    xo::Matrix{Float64}
-    
-end
-
-struct SoftPolarShape<:Particle
-
-    id::MVector{1,Int64}
-    type::MVector{1,Int64}
-    m::MVector{1,Float64}
-    zeta::MVector{1,Float64}
-    R::MVector{1,Float64}
-    
     v0::MVector{1,Float64}
     Dr::MVector{1,Float64}
 
@@ -133,7 +103,7 @@ struct SoftPolarShape<:Particle
 
     # Radii of shape points for soft potential
     re::Vector{Float64}
-    
+
 end
 
 struct ConfinedPolarParticle3d<:Particle

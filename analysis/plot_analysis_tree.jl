@@ -17,7 +17,7 @@ begin
 
 analysis_base_folder = joinpath(base_folder, "analysis_FT")
 
-plot_base_folder = mkpath(joinpath(base_folder, "plots_15_7")) 
+plot_base_folder = mkpath(joinpath(base_folder, "plots_11_9")) 
 
 tree = construct_folder_tree_param_param_seed(analysis_base_folder)
 
@@ -691,6 +691,9 @@ begin
                             tau =1/Dr
                             theory = v0^2  ./ (2 .+ 2 .* ωs.^2 .* tau)
                             lines!(ax, ωs, theory ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:gist_rainbow), alpha=1, linestyle=:dash)
+
+
+                            
                         end
                         numerics =  mean(v_projs[:,500:end].^2, dims=2)[:,1]
                         scatterlines!(ax,ωs, numerics,  label="$Dr",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), linewidth=0.5, marker=marker_labels[marker_ind][1], )

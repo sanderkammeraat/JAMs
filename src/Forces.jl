@@ -412,9 +412,9 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles ,system,
         T = @MVector zeros(length(dx))
 
 
-        @views for m=1:length(p_i.re)
+        @views for m=1:size(p_i.xe)[1]
 
-            for n=1:length(p_j.re)
+            for n=1:size(p_j.xe)[1]
                 
                 d2R = p_i.re[m] + p_j.re[n]
 
@@ -446,10 +446,9 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles,system, 
         f = @MVector zeros(length(dx))
         T = @MVector zeros(length(dx))
 
+        @views for m=1:size(p_i.xe)[1]
 
-        @views for m=1:length(p_i.re)
-
-            for n=1:length(p_j.re)
+            for n=1:size(p_j.xe)[1]
                 
                 #Note we use here the radius not the diameter
                 d2R = p_i.re[m] + p_j.re[n]
