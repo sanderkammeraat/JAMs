@@ -408,130 +408,139 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         end
     end
 
+    raw_data_file = !isnothing(Tsave) ? jldopen(joinpath(save_folder_path, raw_data_file_name),"a+") : nothing
 
     #Loop over time
     #Variable to keep track of the number of frames saved
     frame_counter = 1
-    @showprogress dt = 1 desc="JAMming in progress..." showspeed=true for (n, t) in pairs(integration_tax)
-        #Threads.@threads 
-        #Loop over particles and write generalized forces to p_i in place!
-        Threads.@threads for i in eachindex(current_particle_state)
-            p_i = current_particle_state[i]
-            p_i=init_unwrap!(p_i, t)
-            p_i = particle_step!(i,p_i, current_particle_state,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
-            current_particle_state[i]=p_i
-        end
-
-
-        #Threadsafe field forces
-        if Nfield>0
-            for i in eachindex(current_particle_state)
+    try # Catch mechanism to close raw data file in case of an interruption
+        @showprogress dt = 1 desc="JAMming in progress..." showspeed=true for (n, t) in pairs(integration_tax)
+            #Threads.@threads 
+            #Loop over particles and write generalized forces to p_i in place!
+            Threads.@threads for i in eachindex(current_particle_state)
                 p_i = current_particle_state[i]
-                p_i, current_field_state = contribute_field_forces!(p_i, current_field_state, t, dt,system,rngs_particles)
+                p_i=init_unwrap!(p_i, t)
+                p_i = particle_step!(i,p_i, current_particle_state,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
                 current_particle_state[i]=p_i
             end
-        end
 
-        #Field update loop
-        for i in eachindex(current_field_state)
 
-            field_i = current_field_state[i]
+            #Threadsafe field forces
+            if Nfield>0
+                for i in eachindex(current_particle_state)
+                    p_i = current_particle_state[i]
+                    p_i, current_field_state = contribute_field_forces!(p_i, current_field_state, t, dt,system,rngs_particles)
+                    current_particle_state[i]=p_i
+                end
+            end
 
-            field_i = field_step!(i, field_i,current_field_state,Nfieldu,t,dt, system, rngs_fields)
+            #Field update loop
+            for i in eachindex(current_field_state)
 
-            current_field_state[i] = field_i
-        end
+                field_i = current_field_state[i]
 
-        if !isnothing(Tsave) && !isnothing(save_functions)
-            if (n-1)%Tsave==0
+                field_i = field_step!(i, field_i,current_field_state,Nfieldu,t,dt, system, rngs_fields)
 
-                jldopen(joinpath(save_folder_path, raw_data_file_name),"a+") do raw_data_file
- 
+                current_field_state[i] = field_i
+            end
+
+            if !isnothing(Tsave) && !isnothing(save_functions)
+                if (n-1)%Tsave==0
+    
                     for save_function in save_functions
 
                         raw_data_file=save_function(raw_data_file,current_particle_state,current_field_state, n, Tsave, t,frame_counter)
                         
                     end
-                end
 
-                frame_counter+=1
-            end
-        end
-        #Save the states before the final dof step
-
-        if n==n_final_save
-            if !isnothing(Tsave)
-                jldopen(joinpath(save_folder_path, JAMs_file_name),"a+") do JAMs_file
-
-                    JAMs_file["final_particle_state"] = current_particle_state
-        
-                    JAMs_file["final_field_state"] = current_field_state
-        
+                    frame_counter+=1
                 end
             end
-            final_particle_state = deepcopy(current_particle_state)
-            final_field_state = deepcopy(current_field_state)
-        end
+            #Save the states before the final dof step
 
+            if n==n_final_save
+                if !isnothing(Tsave)
+                    jldopen(joinpath(save_folder_path, JAMs_file_name),"a+") do JAMs_file
 
-        #Only now evolve dofs of every particle
-        #Local
-        Threads.@threads for i in eachindex(current_particle_state)
-            p_i = current_particle_state[i]
-            for dofevolver in system.local_dofevolvers
-                p_i=evolve_locally!(p_i, t, dt, dofevolver)
+                        JAMs_file["final_particle_state"] =  deepcopy(current_particle_state)
+            
+                        JAMs_file["final_field_state"] = deepcopy(current_field_state)
+            
+                    end
+                    close(raw_data_file)
+                end
+                final_particle_state = deepcopy(current_particle_state)
+                final_field_state = deepcopy(current_field_state)
+
+                
             end
-            current_particle_state[i] = p_i
-        end
-        #Or global
 
-        for dofevolver in system.global_dofevolvers
-            current_particle_state,current_field_state =evolve_globally!(current_particle_state, current_field_state, system, cells, stencils, dt, dofevolver)
-        end
 
-        #Perform checks
-        Threads.@threads for i in eachindex(current_particle_state)
-            p_i = current_particle_state[i]
-
-            #apply periodic boundary conditions
-            if system.Periodic
-                p_i=periodic!(p_i, system.sizes)
-            else
-                check_outside_system(p_i,system.sizes)
+            #Only now evolve dofs of every particle
+            #Local
+            Threads.@threads for i in eachindex(current_particle_state)
+                p_i = current_particle_state[i]
+                for dofevolver in system.local_dofevolvers
+                    p_i=evolve_locally!(p_i, t, dt, dofevolver)
+                end
+                current_particle_state[i] = p_i
             end
-            current_particle_state[i] = p_i
-        end
+            #Or global
 
-
-        current_particle_state,cells = update_cells!(current_particle_state, cells, cell_bin_centers,system,lbins)
-
-        #DOF evolver fields
-        for i in eachindex(current_field_state)
-
-            field_i = current_field_state[i]
-
-            for dofevolver in system.field_dofevolvers
-                field_i=evolve_field!(field_i, t, dt, dofevolver)
+            for dofevolver in system.global_dofevolvers
+                current_particle_state,current_field_state =evolve_globally!(current_particle_state, current_field_state, system, cells, stencils, dt, dofevolver)
             end
-        end
+
+            #Perform checks
+            Threads.@threads for i in eachindex(current_particle_state)
+                p_i = current_particle_state[i]
+
+                #apply periodic boundary conditions
+                if system.Periodic
+                    p_i=periodic!(p_i, system.sizes)
+                else
+                    check_outside_system(p_i,system.sizes)
+                end
+                current_particle_state[i] = p_i
+            end
 
 
-        cells = update_ghost_cells!(cells,system)
+            current_particle_state,cells = update_cells!(current_particle_state, cells, cell_bin_centers,system,lbins)
 
-        
-        if !isnothing(Tplot)
-            if fps!=0
-                if (n-1)%Tplot==0
-                    cpsO[] = current_particle_state
-                    cfsO[]= current_field_state
-                    tO[] = t
-                    sleep(1/fps)
+            #DOF evolver fields
+            for i in eachindex(current_field_state)
+
+                field_i = current_field_state[i]
+
+                for dofevolver in system.field_dofevolvers
+                    field_i=evolve_field!(field_i, t, dt, dofevolver)
                 end
             end
+
+
+            cells = update_ghost_cells!(cells,system)
+
+            
+            if !isnothing(Tplot)
+                if fps!=0
+                    if (n-1)%Tplot==0
+                        cpsO[] = current_particle_state
+                        cfsO[]= current_field_state
+                        tO[] = t
+                        sleep(1/fps)
+                    end
+                end
+            end
+
+        end
+        return SIM(final_particle_state, final_field_state, dt, t_stop, system);
+
+    catch
+        if !isnothing(Tsave)
+            close(raw_data_file)
         end
 
     end
-    return SIM(final_particle_state, final_field_state, dt, t_stop, system);
 end
 
 

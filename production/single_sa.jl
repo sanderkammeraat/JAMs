@@ -32,7 +32,9 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system, 0.01,5000,Tplot=nothing, seed=2, Tsave = 10, save_folder_path=joinpath("/Volumes/T7_Shield/sa/single", "Dr_0.001","J_0.5_v0_0.01_k_0.4","simdata"), save_functions = [save_2d_polar_p!], fps=120, plot_functions=[plot_points!, plot_directors!, plot_velocity_vectors!], plotdim=2);
+    #sim = Euler_integrator(system, 0.01,5000,Tplot=nothing, seed=2, Tsave = 10, save_folder_path=joinpath("/Volumes/T7_Shield/sa/single", "Dr_0.001","J_0.5_v0_0.01_k_0.4","simdata"), save_functions = [save_2d_polar_p!], fps=120, plot_functions=[plot_points!, plot_directors!, plot_velocity_vectors!], plotdim=2);
+
+    sim = Euler_integrator(system, 0.01,10000,Tplot=nothing, seed=2, Tsave = 10, save_folder_path=joinpath("/Volumes/T7_Shield/test_storage/store_v2_fail","simdata"), save_functions = [save_2d_polar_p!], fps=120, plot_functions=[plot_points!, plot_directors!, plot_velocity_vectors!], plotdim=2);
     return sim
 end
 
