@@ -8,32 +8,32 @@ include("AnalysisFunctions.jl")
 
 #base_folder = joinpath("/Volumes","T7_Shield","sa","single","Dr_0.1","J_0.5_v0_0.3_k_0.4")
 
-base_folder = joinpath("/Volumes","T7_Shield","sa","single","Dr_0.0001","J_0.5_v0_0.01_k_0.4")
-
+#base_folder = joinpath("/Volumes","T7_Shield","sa","single","Dr_0.0001","J_0.5_v0_0.01_k_0.4")
+base_folder=joinpath(homedir(),"test_hdf5", "run")
 #base_folder = joinpath("/Volumes","T7_Shield","sa","single","Dr_0.01","not_all_1")
-#base_folder = "/Volumes/T7_Shield/test_storage/store_v5_fail"
+base_folder = "/Volumes/T7_Shield/test_storage/store_vhdf5"
 
 figure_save_folder = mkpath(joinpath(base_folder, "figure_save_folder"))
 
 #base_folder = joinpath(homedir(),"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr")
 raw_data_base_folder = joinpath(base_folder, "simdata")
 
-raw_data_file_path = joinpath(raw_data_base_folder,"raw_data.jld2")
+raw_data_file_path = joinpath(raw_data_base_folder,"raw_data.h5")
 
-raw_data_file = jldopen(raw_data_file_path)
+raw_data_file = jldopen(raw_data_file_path,"r")
 
 JAMS_file =  jldopen(joinpath(raw_data_base_folder,"JAMs_container.jld2"))
 
-frames = deepcopy(raw_data_file["frames"])
-system = deepcopy(raw_data_file["system"])
-
+frames = raw_data_file["frames"]
+system = raw_data_file["system"]
+integration_info = raw_data_file["integration_info"]
 #frames_support = jldopen(joinpath(raw_data_base_folder,"J_0.1","Dr_0.01","seed_23","ra_raw_data.jld2"),"r")["frames"]
 
-t =  raw_data_file["integration_info"]["save_tax"]
+t =  integration_info["save_tax"]
 v0 = frames["1"]["v0"][1]
 Dr = frames["1"]["Dr"][1]
-J = system["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
-k = system["forces"]["external_forces"]["external_harmonic_force"]["k"]
+J = system["forces"]["external"]["self_align_with_v_unit_force"]["β"]
+k = system["forces"]["external"]["external_harmonic_force"]["k"]
 R = frames["1"]["R"]
 type = frames["1"]["type"]
 Nt = length(t)
@@ -85,7 +85,7 @@ vs = v0*( ( sqrt( 1+(k/(2*J))^2 ) - k/(2*J)) )
 using GLMakie
 GLMakie.activate!()
 
-its = 5000
+its = 50
 
 # Determine the phase by comparing a unit circle to the unit scale trajectory
 phase = angle( x[1, its]/r[1,its] + im * y[1, its]/r[1,its]) - ω_s * t[its]
@@ -108,7 +108,7 @@ scatter!(ax,x[1,its], y[1,its],label="steady state point")
 
 #scatter!(ax,xs, ys,label="circular orbit positions", color="purple")
 lines!(ax, [0,xs[its]],[0, ys[its]], label="circular orbit position at steady state point", color="purple")
-later = 2000
+later = 2
 lines!(ax, [0,xs[its+later]],[0, ys[its+later]], label="circular orbit position $later steps later", color="indigo")
 scatter!(ax,x[1,its+later], y[1,its+later],label="steady state point $later steps later", color="pink")
 

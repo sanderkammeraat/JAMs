@@ -1,104 +1,98 @@
 
-function save_single_2d_field!(file, current_particle_state, current_field_state, n, Tsave, t,framecounter)
+function save_single_2d_field!(current_frame_group, current_particle_state, current_field_state, n, Tsave, t,framecounter)
 
 
-    preamble = "frames/"*string(framecounter)*"/"
-    
+
+    current_frame_group["field_n"] = n
+
+    current_frame_group["field_t"] = t
 
 
-    file[preamble*"field_n"] = n
+    current_frame_group["field_id"] = [field.id for field in current_field_state]
 
-    file[preamble*"field_t"] = t
+    current_frame_group["field_type"] = [field.type for field in current_field_state]
+    current_frame_group["field_bin_centers"] = [field.bin_centers for field in current_field_state]
 
-
-    file[preamble*"field_id"] = [field.id for field in current_field_state]
-
-    file[preamble*"field_type"] = [field.type for field in current_field_state]
-    file[preamble*"field_bin_centers"] = [field.bin_centers for field in current_field_state]
-
-    file[preamble*"field_C"] = [field.C for field in current_field_state]
+    current_frame_group["field_C"] = [field.C for field in current_field_state]
 
 
-    return file
+    return current_frame_group
 
 end
 
-function save_2d_polar_p!(file, current_particle_state, current_field_state, n, Tsave, t,framecounter)
-
-    preamble = "frames/"*string(framecounter)*"/"
-    
+function save_2d_polar_p!(current_frame_group, current_particle_state, current_field_state, n, Tsave, t,framecounter)
 
 
-    file[preamble*"n"] = n
 
-    file[preamble*"t"] = t
 
-    file[preamble*"id"] = [p_i.id[1] for p_i in current_particle_state]
+    current_frame_group["n"] = n
 
-    file[preamble*"type"] = [p_i.type[1] for p_i in current_particle_state]
+    current_frame_group["t"] = t
 
-    file[preamble*"v0"] = [p_i.v0[1] for p_i in current_particle_state]
+    current_frame_group["id"] = [p_i.id[1] for p_i in current_particle_state]
 
-    file[preamble*"Dr"] = [p_i.Dr[1] for p_i in current_particle_state]
+    current_frame_group["type"] = [p_i.type[1] for p_i in current_particle_state]
 
-    file[preamble*"R"] = [p_i.R[1] for p_i in current_particle_state]
+    current_frame_group["v0"] = [p_i.v0[1] for p_i in current_particle_state]
 
-    file[preamble*"structtype"] = [string(nameof(typeof(p_i))) for p_i in current_particle_state]
+    current_frame_group["Dr"] = [p_i.Dr[1] for p_i in current_particle_state]
 
-    file[preamble*"x"] = [p_i.x[1] for p_i in current_particle_state]
-    file[preamble*"y"] = [p_i.x[2] for p_i in current_particle_state]
+    current_frame_group["R"] = [p_i.R[1] for p_i in current_particle_state]
 
-    file[preamble*"xuw"] = [p_i.xuw[1] for p_i in current_particle_state]
-    file[preamble*"yuw"] = [p_i.xuw[2] for p_i in current_particle_state]
+    current_frame_group["structtype"] = [string(nameof(typeof(p_i))) for p_i in current_particle_state]
 
-    file[preamble*"vx"] = [p_i.v[1] for p_i in current_particle_state]
-    file[preamble*"vy"] = [p_i.v[2] for p_i in current_particle_state]
+    current_frame_group["x"] = [p_i.x[1] for p_i in current_particle_state]
+    current_frame_group["y"] = [p_i.x[2] for p_i in current_particle_state]
 
-    file[preamble*"px"] = [p_i.p[1] for p_i in current_particle_state]
-    file[preamble*"py"] = [p_i.p[2] for p_i in current_particle_state]
+    current_frame_group["xuw"] = [p_i.xuw[1] for p_i in current_particle_state]
+    current_frame_group["yuw"] = [p_i.xuw[2] for p_i in current_particle_state]
 
-    file[preamble*"qx"] = [p_i.q[1] for p_i in current_particle_state]
-    file[preamble*"qy"] = [p_i.q[2] for p_i in current_particle_state]
+    current_frame_group["vx"] = [p_i.v[1] for p_i in current_particle_state]
+    current_frame_group["vy"] = [p_i.v[2] for p_i in current_particle_state]
 
-    return file
+    current_frame_group["px"] = [p_i.p[1] for p_i in current_particle_state]
+    current_frame_group["py"] = [p_i.p[2] for p_i in current_particle_state]
+
+    current_frame_group["qx"] = [p_i.q[1] for p_i in current_particle_state]
+    current_frame_group["qy"] = [p_i.q[2] for p_i in current_particle_state]
+
+    return current_frame_group
 
 
 end
 
-function save_2d_polar_θ!(file, current_particle_state, current_field_state, n, Tsave, t, framecounter)
-
-    preamble = "frames/"*string(framecounter)*"/"
+function save_2d_polar_θ!(current_frame_group, current_particle_state, current_field_state, n, Tsave, t, framecounter)
 
 
-    file[preamble*"n"] = n
+    current_frame_group["n"] = n
 
-    file[preamble*"t"] = t
+    current_frame_group["t"] = t
 
-    file[preamble*"id"] = [p_i.id[1] for p_i in current_particle_state]
+    current_frame_group["id"] = [p_i.id[1] for p_i in current_particle_state]
 
-    file[preamble*"type"] = [p_i.type[1] for p_i in current_particle_state]
+    current_frame_group["type"] = [p_i.type[1] for p_i in current_particle_state]
 
-    file[preamble*"v0"] = [p_i.v0[1] for p_i in current_particle_state]
+    current_frame_group["v0"] = [p_i.v0[1] for p_i in current_particle_state]
 
-    file[preamble*"Dr"] = [p_i.Dr[1] for p_i in current_particle_state]
+    current_frame_group["Dr"] = [p_i.Dr[1] for p_i in current_particle_state]
 
-    file[preamble*"R"] = [p_i.R[1] for p_i in current_particle_state]
+    current_frame_group["R"] = [p_i.R[1] for p_i in current_particle_state]
 
-    file[preamble*"structtype"] = [string(nameof(typeof(p_i))) for p_i in current_particle_state]
+    current_frame_group["structtype"] = [string(nameof(typeof(p_i))) for p_i in current_particle_state]
 
-    file[preamble*"x"] = [p_i.x[1] for p_i in current_particle_state]
-    file[preamble*"y"] = [p_i.x[2] for p_i in current_particle_state]
+    current_frame_group["x"] = [p_i.x[1] for p_i in current_particle_state]
+    current_frame_group["y"] = [p_i.x[2] for p_i in current_particle_state]
 
-    file[preamble*"xuw"] = [p_i.xuw[1] for p_i in current_particle_state]
-    file[preamble*"yuw"] = [p_i.xuw[2] for p_i in current_particle_state]
+    current_frame_group["xuw"] = [p_i.xuw[1] for p_i in current_particle_state]
+    current_frame_group["yuw"] = [p_i.xuw[2] for p_i in current_particle_state]
 
-    file[preamble*"vx"] = [p_i.v[1] for p_i in current_particle_state]
-    file[preamble*"vy"] = [p_i.v[2] for p_i in current_particle_state]
+    current_frame_group["vx"] = [p_i.v[1] for p_i in current_particle_state]
+    current_frame_group["vy"] = [p_i.v[2] for p_i in current_particle_state]
 
-    file[preamble*"θ"] = [p_i.θ[1] for p_i in current_particle_state]
-    file[preamble*"ω"] = [p_i.ω[1] for p_i in current_particle_state]
+    current_frame_group["θ"] = [p_i.θ[1] for p_i in current_particle_state]
+    current_frame_group["ω"] = [p_i.ω[1] for p_i in current_particle_state]
 
-    return file
+    return current_frame_group
 
 
 end

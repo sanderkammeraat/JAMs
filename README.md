@@ -22,12 +22,13 @@ See https://code.visualstudio.com/docs/languages/julia for detailed instructions
 -GLMakie (for plotting)  
 -Observables (for live plotting)  
 -Distributions (for noise and random initial positions)  
--JLD2 (for saving/loading simulations: phase space trajectories + simulation settings)  
+-JLD2 to save simulation settings for loading simulations within Julia  and to use JLD2 features when loading the raw simulation data.   
+-HDF5 (for outputting raw simulation data and metadata in HDF5 format).  
 -CodecZlib (for saving with compression)  
 -ProgressMeter (for providing a progressbar, ETA and it/s)  
 
 The packages mentioned above can be installed in one go by using the REPL command:  
-`add StaticArrays GLMakie Observables Distributions JLD2 CodecZlib ProgressMeter`  
+`add StaticArrays GLMakie Observables Distributions JLD2 HDF5 CodecZlib ProgressMeter`  
 
 Probably pre-installed:  
 -LinearAlgebra (for doing linear algebra)  

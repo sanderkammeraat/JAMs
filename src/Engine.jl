@@ -2,6 +2,7 @@ using StaticArrays
 using SparseArrays
 using Observables
 using JLD2
+using HDF5
 using CodecZlib
 using ProgressMeter
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
@@ -181,93 +182,121 @@ function save_raw_force_data!(file, preamble, force)
     return file
 end
 
-function save_raw_dofevolver_data!(file, preamble, dofevolver)
+function save_raw_obj_data!(file_group, obj)
 
-    dofevolver_name = string(nameof(typeof(dofevolver)))
+    obj_name = string(nameof(typeof(obj)))
 
-    field_names = fieldnames(typeof(dofevolver))
+    field_names = fieldnames(typeof(obj))
+
+    obj_group = create_group(file_group, obj_name)
 
     for field_name in field_names
 
         name = string(field_name)
-        val = getfield(dofevolver, field_name)
+        val = getfield(obj, field_name)
 
-
-        file[preamble*dofevolver_name*"/"*name] = val
+        obj_group[name] = val
 
     end
 
-    return file
+    return file_group
 end
 
 
 function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_tax, master_seed)
 
+    create_group(file, "system")
+
+    create_group(file["system"],"forces")
+
+    create_group(file["system"]["forces"],"external")
+
+    create_group(file["system"]["forces"],"pair")
+
+    create_group(file["system"]["forces"],"field")
+
+
     for force in system.external_forces
 
-        preamble = "system/forces/external_forces/"
+        group = file["system"]["forces"]["external"]
 
-        save_raw_force_data!(file,preamble, force)
+        save_raw_obj_data!(group, force)
 
     end
     for force in system.pair_forces
 
-        preamble = "system/forces/pair_forces/"
+        group = file["system"]["forces"]["pair"]
 
-        save_raw_force_data!(file,preamble, force)
+        save_raw_obj_data!(group, force)
 
     end
     for force in system.field_forces
 
-        preamble = "system/forces/field_forces/"
+        group = file["system"]["forces"]["field"]
 
-        save_raw_force_data!(file,preamble, force)
+        save_raw_obj_data!(group, force)
 
     end
+
+    create_group(file["system"],"field_updaters")
+
+
     for fieldupdater in system.field_updaters
 
-        preamble = "system/field_updaters/"
+        group = file["system"]["field_updaters"]
 
-        save_raw_force_data!(file,preamble, fieldupdater)
+        save_raw_obj_data!(group, fieldupdater)
 
     end
+
+    create_group(file["system"],"dofevolvers")
+
+    create_group(file["system"]["dofevolvers"],"local")
+
+    create_group(file["system"]["dofevolvers"],"global")
+
+    create_group(file["system"]["dofevolvers"],"field")
+
 
     for dofevolver in system.local_dofevolvers
 
-        preamble = "system/dofevolvers/local_dofevolvers/"
+        group = file["system"]["dofevolvers"]["local"]
 
-        save_raw_dofevolver_data!(file,preamble, dofevolver)
+        save_raw_obj_data!(group, dofevolver)
     end
 
     for dofevolver in system.global_dofevolvers
 
-        preamble = "system/dofevolvers/global_dofevolvers/"
+        group = file["system"]["dofevolvers"]["global"]
 
-        save_raw_dofevolver_data!(file,preamble, dofevolver)
+       save_raw_obj_data!(group, dofevolver)
     end
 
     for dofevolver in system.field_dofevolvers
 
-        preamble = "system/dofevolvers/field_dofevolvers/"
+        group = file["system"]["dofevolvers"]["field"]
 
-        save_raw_dofevolver_data!(file,preamble, dofevolver)
+        save_raw_obj_data!(group, dofevolver)
     end
 
-    file["integration_info/integration_tax"] = integration_tax
-
-    file["integration_info/Tsave"] = Tsave
-
-    file["integration_info/save_tax"] = save_tax
-
-    file["integration_info/dt"] = dt
-
-    file["integration_info/t_stop"] = t_stop
-
-    file["integration_info/master_seed"] = master_seed
+    create_group(file, "integration_info")
 
 
-    file["system/sizes"] = system.sizes
-    file["system/rcut_pair_global"] = system.rcut_pair_global
+    file["integration_info"]["integration_tax"] = integration_tax
+
+    file["integration_info"]["Tsave"] = Tsave
+
+    file["integration_info"]["save_tax"] = save_tax
+
+    file["integration_info"]["dt"] = dt
+
+    file["integration_info"]["t_stop"] = t_stop
+
+    file["integration_info"]["master_seed"] = master_seed
+
+
+    file["system"]["sizes"] = system.sizes
+    file["system"]["rcut_pair_global"] = system.rcut_pair_global
 
     return file
 
@@ -309,11 +338,11 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         if isnothing(save_tag)
             JAMs_file_name = "JAMs_container.jld2"
             
-            raw_data_file_name = "raw_data.jld2"
+            raw_data_file_name = "raw_data.h5"
         else
             JAMs_file_name = save_tag * "_"* "JAMs_container.jld2"
             
-            raw_data_file_name = save_tag * "_"*"raw_data.jld2"
+            raw_data_file_name = save_tag * "_"*"raw_data.h5"
         end
 
         if isfile(joinpath(save_folder_path, JAMs_file_name)) || isfile(joinpath(save_folder_path, raw_data_file_name))
@@ -359,7 +388,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         end
 
         #Store similar info in raw_data container
-        jldopen(joinpath(save_folder_path, raw_data_file_name),"a+") do raw_data_file
+        h5open(joinpath(save_folder_path, raw_data_file_name),"cw") do raw_data_file
 
             save_raw_metadata!(raw_data_file, system, integration_tax,dt, t_stop, Tsave,save_tax,master_seed)
 
@@ -408,7 +437,11 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         end
     end
 
-    raw_data_file = !isnothing(Tsave) ? jldopen(joinpath(save_folder_path, raw_data_file_name),"a+") : nothing
+    #Open the files to update over simulation run time
+    raw_data_file = !isnothing(Tsave) ? h5open(joinpath(save_folder_path, raw_data_file_name),"r+") : nothing
+
+    #Store frame data here
+    frame_group = !isnothing(Tsave) ? create_group(raw_data_file, "frames") : nothing
 
     JAMs_file =  !isnothing(Tsave) ? jldopen(joinpath(save_folder_path, JAMs_file_name),"a+") : nothing
 
@@ -448,10 +481,13 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
             if !isnothing(Tsave) && !isnothing(save_functions)
                 if (n-1)%Tsave==0
+
+                    #Add a new subgroup for this specific frame
+                    current_frame_group=create_group(frame_group, string(frame_counter))
     
                     for save_function in save_functions
 
-                        raw_data_file=save_function(raw_data_file,current_particle_state,current_field_state, n, Tsave, t,frame_counter)
+                        raw_data_file=save_function(current_frame_group,current_particle_state,current_field_state, n, Tsave, t,frame_counter)
                         
                     end
 
