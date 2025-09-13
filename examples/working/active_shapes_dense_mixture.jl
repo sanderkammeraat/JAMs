@@ -8,13 +8,20 @@ function soft_disk_no_overlap()
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_2d_shape_evolver(1))
     global_dofevolvers = []
     field_dofevolvers = []
-    N=300
-    ϕ =1.5
+    N1=200
+    ϕ =0.9
     Rno=5
     L =  sqrt(pi * N*Rno^2 / ϕ)
     xo = Float64[ -2 0 0 ; -1 0 0 ; 0 0 0 ;1 0 0; 2 0 0 ]
 
-    initial_state = PolarShape[PolarShape([i],[1], [1], [1], [Rno], [0.3], [0.00], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0],deepcopy(xo),xo,1*ones(size(xo)[1])) for i=1:N ]
+    initial_state = PolarShape[PolarShape([i],[1], [1], [1], [Rno], [0.3], [0.00], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0],deepcopy(xo),xo,1*ones(size(xo)[1])) for i=1:N1 ]
+
+    N2 =200
+
+    xo_inv = 
+    for i=N1+1:N2+N1
+        push!(initial_state, PolarShape([i],[1], [1], [1], [Rno], [0.3], [0.00], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0],deepcopy(xo),xo,1*ones(size(xo)[1])))
+    end
 
     sizes = [L,L,4];
     initial_field_state=[]

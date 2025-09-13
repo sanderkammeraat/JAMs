@@ -113,12 +113,43 @@ function plot_shape_disks!(ax, cpsO, cfsO)
 
         yes = @lift([p_i.xe[j,2] for p_i in $cpsO] )
 
-        s = @lift([2*p_i.re[1] for p_i in $cpsO])
+        s = @lift([2*p_i.re[j] for p_i in $cpsO])
     
         scatter!(ax,xes,yes, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.5, strokecolor=:black, strokewidth=1)
     end
     return ax
 end
+
+function plot_shape_disks_orientation!(ax, cpsO, cfsO)
+    c = @lift([ angle(p_i.p[1]+1im*p_i.p[2]) for p_i in $cpsO])
+    for j = 1:size(cpsO[][1].xe)[1]
+
+        xes = @lift([p_i.xe[j,1] for p_i in $cpsO] )
+
+        yes = @lift([p_i.xe[j,2] for p_i in $cpsO] )
+
+        s = @lift([2*p_i.re[j] for p_i in $cpsO])
+    
+        scatter!(ax,xes,yes, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.5, strokecolor=:black, strokewidth=1,colormap=:hsv,colorrange=(-pi,pi))
+    end
+    return ax
+end
+
+function plot_shape_disks_type!(ax, cpsO, cfsO)
+    c = @lift([ p_i.type[1] for p_i in $cpsO])
+    for j = 1:size(cpsO[][1].xe)[1]
+
+        xes = @lift([p_i.xe[j,1] for p_i in $cpsO] )
+
+        yes = @lift([p_i.xe[j,2] for p_i in $cpsO] )
+
+        s = @lift([2*p_i.re[j] for p_i in $cpsO])
+    
+        scatter!(ax,xes,yes, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.5, strokecolor=:black, strokewidth=1,colormap=Reverse(:seismic))
+    end
+    return ax
+end
+
 function plot_shape_points!(ax, cpsO, cfsO)
     c = @lift([ p_i.id[1] for p_i in $cpsO])
     for j = 1:size(cpsO[][1].xe)[1]

@@ -86,6 +86,12 @@ struct external_harmonic_force<:Force
     
 end
 
+struct external_anisotropic_harmonic_force{T1}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+    
+end
+
 struct external_friction_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
     γ::Float64
@@ -342,8 +348,15 @@ end
 
 function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::external_harmonic_force)
     if p_i.type[1] in force.ontypes
-    #compensate for the dt from the dof evolver, can be changed if the evolver also changes
     p_i.f.+= - force.k * p_i.x
+    end
+    return p_i
+end
+
+function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::external_anisotropic_harmonic_force)
+    if p_i.type[1] in force.ontypes
+    #Dot product
+    p_i.f.+= - force.karray * p_i.x
     end
     return p_i
 end
@@ -427,7 +440,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles ,system,
 
                 if dxen<d2R
                     f.= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxen - d2R) * dxe/dxen
-                    T.=  cross( cross(p_i.xe[n,:] - p_i.x , f), p_i.p) 
+                    T.=  cross( cross(p_i.xo[m,:] +dxe/dxen*p_i.re[m] , f), p_i.p) 
 
                     p_i.f.+= f
                     p_i.q.+= T
@@ -465,7 +478,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles,system, 
                     fact = -1*exp(-dxen/d2R)*(2*d2R +dxen )/(d2R * dxen^3)
 
                     f.= force.u0array[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * fact * dxe/dxen
-                    T.=  cross( cross(p_i.xe[n,:] - p_i.x , f), p_i.p) 
+                    T.=  cross( cross(p_i.xe[m,:] +dxe/dxen*p_i.re[m] - p_i.x , f), p_i.p) 
 
                     p_i.f.+= f
                     p_i.q.+= T

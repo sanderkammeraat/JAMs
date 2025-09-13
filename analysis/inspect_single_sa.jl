@@ -8,10 +8,10 @@ include("AnalysisFunctions.jl")
 
 #base_folder = joinpath("/Volumes","T7_Shield","sa","single","Dr_0.1","J_0.5_v0_0.3_k_0.4")
 
-base_folder = joinpath("/Volumes","T7_Shield","sa","single","Dr_0.001","J_0.5_v0_0.01_k_0.4")
+base_folder = joinpath("/Volumes","T7_Shield","sa","single","Dr_0.0001","J_0.5_v0_0.01_k_0.4")
 
 #base_folder = joinpath("/Volumes","T7_Shield","sa","single","Dr_0.01","not_all_1")
-base_folder = "/Volumes/T7_Shield/test_storage/store_v2_fail"
+#base_folder = "/Volumes/T7_Shield/test_storage/store_v5_fail"
 
 figure_save_folder = mkpath(joinpath(base_folder, "figure_save_folder"))
 
@@ -121,7 +121,7 @@ display(f)
 end
 
 
-    begin
+begin
 f = Figure()
 ax = Axis(f[1,1]);
 

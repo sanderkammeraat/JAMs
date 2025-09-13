@@ -9,7 +9,7 @@ CairoMakie.activate!()
 
 base_folder = joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr")
 
-figure_save_folder = mkpath(joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr","exploratory_figures"))
+figure_save_folder = mkpath(joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr","exploratory_figures_12_9"))
 
 #base_folder = joinpath(homedir(),"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr")
 raw_data_base_folder = joinpath(base_folder, "simdata")
@@ -279,26 +279,30 @@ f = Figure()
 ax = Axis(f[1,1], xlabel=L"ω_{ν}", ylabel=L"FT(v_{proj})^2", yscale=log10)
 xlims!(ax, (0,.2))
 interval=1
-maxn=41
+maxn=50
 vmm=mean(vm[500:end])
 #scatter!(ax, t[500:2000], vm[500:2000]*30)
-for (n,eigval) in pairs(modes["eigvals"][1:50])
+for (n,eigval) in pairs(modes["eigvals"][1:maxn])
 
-    if n==40 || n==1
+    if n%1===0 && n < maxn
         scatter!(ax, FT_v_projs["ω"], FT_v_projs["Xf2"][n,:],color=1+(n-1)*interval, colorrange=(1,maxn),label="mode $(1+(n-1)*interval)")
 
         γ = eigval - J*v0/vmm + J*vmm/v0
 
         Ω2  = J *vmm/v0 * eigval
 
+        prediction = sqrt( J * ( sqrt( 1+(eigval/(2*J))^2 ) - eigval/(2*J) ) * eigval )
 
-        vlines!(ax, 2*abs(sqrt( Complex((γ/2)^2 -Ω2 ) ) ),color=1+(n-1)*interval, colorrange=(1,maxn))
+
+        #vlines!(ax, 2*abs(sqrt( Complex((γ/2)^2 -Ω2 ) ) ),color=1+(n-1)*interval, colorrange=(1,maxn))
+
+        vlines!(ax, prediction,color=1+(n-1)*interval, colorrange=(1,maxn))
     end
     #vlines!(ax, -eigval^2 + J*v0/vmm),color="red")#1+(n-1)*interval, colorrange=(1,maxn))
     #vlines!(ax, 2 * sqrt(Ω2) ,color=1+(n-1)*interval, colorrange=(1,maxn))
 end
 
-vlines!(ax,  sqrt( J*modes["eigvals"][40]*( sqrt(1+(modes["eigvals"][40]/(2*J))^2 ) - modes["eigvals"][40]/(2*J)) ),color="red")
+#vlines!(ax,  sqrt( J*modes["eigvals"][40]*( sqrt(1+(modes["eigvals"][40]/(2*J))^2 ) - modes["eigvals"][40]/(2*J)) ),color="red")
 
 tag = get_tag()
 Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)

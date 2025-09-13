@@ -410,6 +410,8 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
     raw_data_file = !isnothing(Tsave) ? jldopen(joinpath(save_folder_path, raw_data_file_name),"a+") : nothing
 
+    JAMs_file =  !isnothing(Tsave) ? jldopen(joinpath(save_folder_path, JAMs_file_name),"a+") : nothing
+
     #Loop over time
     #Variable to keep track of the number of frames saved
     frame_counter = 1
@@ -460,14 +462,10 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
             if n==n_final_save
                 if !isnothing(Tsave)
-                    jldopen(joinpath(save_folder_path, JAMs_file_name),"a+") do JAMs_file
-
-                        JAMs_file["final_particle_state"] =  deepcopy(current_particle_state)
-            
-                        JAMs_file["final_field_state"] = deepcopy(current_field_state)
-            
-                    end
-                    close(raw_data_file)
+                    
+                    JAMs_file["final_particle_state"] =  deepcopy(current_particle_state)
+        
+                    JAMs_file["final_field_state"] = deepcopy(current_field_state)
                 end
                 final_particle_state = deepcopy(current_particle_state)
                 final_field_state = deepcopy(current_field_state)
@@ -498,6 +496,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
                 #apply periodic boundary conditions
                 if system.Periodic
                     p_i=periodic!(p_i, system.sizes)
+                    check_outside_system(p_i,system.sizes)
                 else
                     check_outside_system(p_i,system.sizes)
                 end
@@ -533,12 +532,22 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
             end
 
         end
-        return SIM(final_particle_state, final_field_state, dt, t_stop, system);
 
-    catch
         if !isnothing(Tsave)
             close(raw_data_file)
+            close(JAMs_file)
         end
+
+
+        return SIM(final_particle_state, final_field_state, dt, t_stop, system);
+
+    catch e
+        if !isnothing(Tsave)
+            close(raw_data_file)
+            close(JAMs_file)
+        end
+        println("Safely aborting")
+        rethrow(e)
 
     end
 end
