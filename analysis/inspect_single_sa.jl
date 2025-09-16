@@ -11,7 +11,7 @@ include("AnalysisFunctions.jl")
 #base_folder = joinpath("/Volumes","T7_Shield","sa","single","Dr_0.0001","J_0.5_v0_0.01_k_0.4")
 base_folder=joinpath(homedir(),"test_hdf5", "run")
 #base_folder = joinpath("/Volumes","T7_Shield","sa","single","Dr_0.01","not_all_1")
-base_folder = "/Volumes/T7_Shield/test_storage/store_vhdf5"
+base_folder = "/Volumes/T7_Shield/test_storage/store_vhdf5_v5"
 
 figure_save_folder = mkpath(joinpath(base_folder, "figure_save_folder"))
 
@@ -20,7 +20,7 @@ raw_data_base_folder = joinpath(base_folder, "simdata")
 
 raw_data_file_path = joinpath(raw_data_base_folder,"raw_data.h5")
 
-raw_data_file = jldopen(raw_data_file_path,"r")
+raw_data_file = h5open(raw_data_file_path,"r")
 
 JAMS_file =  jldopen(joinpath(raw_data_base_folder,"JAMs_container.jld2"))
 

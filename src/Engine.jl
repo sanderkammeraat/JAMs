@@ -575,7 +575,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         end
 
 
-        return SIM(final_particle_state, final_field_state, dt, t_stop, system);
+        return SIM(deepcopy(final_particle_state), deepcopy(final_field_state), deepcopy(dt), deepcopy(t_stop), deepcopy(system));
 
     catch e
         if !isnothing(Tsave)

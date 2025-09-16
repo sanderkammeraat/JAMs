@@ -37,7 +37,7 @@ function simulation()
     
    # sim = Euler_integrator(system, 0.01,100000,Tplot=nothing, seed=2, Tsave = 10, save_folder_path=joinpath(homedir(),"test_hdf5_long", "run","simdata"), save_functions = [save_2d_polar_p!], fps=120, plot_functions=[plot_points!, plot_directors!, plot_velocity_vectors!], plotdim=2);
 
-    sim = Euler_integrator(system, 0.01,1000000,Tplot=nothing, seed=2, Tsave = 100, save_folder_path=joinpath("/Volumes/T7_Shield/test_storage/store_vhdf5","simdata"), save_functions = [save_2d_polar_p!], fps=120, plot_functions=[plot_points!, plot_directors!, plot_velocity_vectors!], plotdim=2);
+    sim = Euler_integrator(system, 0.01,1000000,Tplot=nothing, seed=2, Tsave = 100, save_folder_path=joinpath("/Volumes/T7_Shield/test_storage/store_vhdf5_v5","simdata"), save_functions = [save_2d_polar_p!], fps=120, plot_functions=[plot_points!, plot_directors!, plot_velocity_vectors!], plotdim=2);
     return sim
 end
 

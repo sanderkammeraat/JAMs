@@ -54,13 +54,19 @@ dr = sqrt.(dx.^2 + dy.^2)
 using GLMakie
 GLMakie.activate!()
 
+
+
 begin
 f = Figure();
-fidmax = 1000
-pid = 10
-ax = Axis(f[1,1], aspect=DataAspect())
+fidmax = Nt
 
-scatterlines!(ax, dx[pid,1:fidmax], dy[pid,1:fidmax], color = t[1:fidmax], colormap=:rainbow)
+
+#pid = 10
+ax = Axis(f[1,1], aspect=DataAspect())
+for pid=1:19    
+scatter!(ax, x[pid,1:fidmax], y[pid,1:fidmax], color = t[1:fidmax], colormap=:rainbow, markersize =2,marker = Circle, markerspace=:data, alpha=0.1)
+scatterlines!(ax, x[pid,1:fidmax], y[pid,1:fidmax], color = t[1:fidmax], colormap=:rainbow)
+end
 display(f)          
 end
 
@@ -71,6 +77,7 @@ begin
     ax = Axis(f[1,1])
     
     scatterlines!(ax,t[1:fidmax], dx[pid,1:fidmax])
+    
     display(f)          
 end
 

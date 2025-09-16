@@ -120,6 +120,104 @@ display(f)#
 
 end
 
+using LinearAlgebra
+
+
+P = D - diagm(1=>diag(D, 1)) - diagm(-1=>diag(D, -1)) - diagm(diag(D, 0))
+
+K = D - P
+
+GLMakie.activate!()
+begin
+    heatmap(P)
+end
+
+begin
+    heatmap(D)
+end
+
+begin
+    heatmap(K)
+end
+
+
+i=Nt
+
+ri = sqrt.( x[:,i] .^2 + y[:,i].^2 )
+
+xyi = collect(Iterators.flatten(zip(x[:,i] - x0int, y[:,i] - y0int)))
+
+vxyi = collect(Iterators.flatten(zip(vx[:,i], vy[:,i])))
+
+PdR = P * xyi
+
+PdRdot = P * vxyi
+
+normPdR = norm(PdR)
+normPdRdot = norm(PdRdot)
+
+normdR = norm(xyi)
+
+
+vi = sqrt.(vxyi .* vxyi)
+
+C = diagm(vi)
+
+ns = J/v0.* C * PdR + PdRdot
+
+
+norm(ns)
+
+GLMakie.activate!()
+begin
+f = Figure()
+ax = Axis(f[1,1])
+scatter!(ax,J/v0 .* C * K*xyi, color="blue")
+
+scatter!(ax,ns, color="red")    
+scatter!(ax,J/v0.* C * PdR, color="green")
+scatter!(ax,PdRdot, color="purple")
+scatter!(ax,K * vxyi, color="pink")
+
+scatter!(ax,K * vxyi - J*v0*inv(C) * vxyi + J/v0 * C * vxyi, color="orange")
+
+
+
+hlines!(ax,norm(J/v0 .* C * K*xyi), color="blue")
+hlines!(ax,norm(ns), color="red")
+hlines!(ax,norm(J/v0.* C * PdR), color="green")
+hlines!(ax,norm(PdRdot), color="purple")
+
+display(f)
+end
+
+GLMakie.activate!()
+begin
+f = Figure()
+ax = Axis(f[1,1])
+scatter!(ax,mean(sqrt.(vx.^2 + vy.^2), dims=2)[:,1]/v0, color=ri)
+scatter!(ax, (sqrt.( 1 .+ (diag(K)[1:2:end]/(2*J)) .^2 ) - diag(K)[1:2:end]/(2*J)) )
+
+
+
+display(f)
+end
+begin
+f = Figure()
+ax = Axis(f[1,1])
+scatter!(ax,mean(sqrt.((x .- x0int).^2 + (y .- y0int).^2), dims=2)[:,1], color=ri)
+scatter!(ax, v0* sqrt.((sqrt.( 1 .+ (diag(K)[1:2:end]/(2*J)) .^2 ) - diag(K)[1:2:end]/(2*J)))/sqrt.(J .* diag(K)[1:2:end] ) )
+#
+
+
+display(f)
+end
+
+
+
+
+
+
 
 begin
 f = Figure()
@@ -211,12 +309,12 @@ tag = get_tag()
 Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
 
 #f[1,2]=Legend(f,ax)
-save("mode_number_dependent_damping_term.pdf",f)
+#save("mode_number_dependent_damping_term.pdf",f)
 display(f)
 end
 
 
-begin
+#begin
 f = Figure()
 ax = Axis(f[1,1], xlabel=L"t", ylabel=L"\gamma_{\nu}(v)")
 vm = mean(sqrt.(vx.^2 + vy.^2),dims=1)[1,:]
