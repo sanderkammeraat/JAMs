@@ -11,15 +11,15 @@ function soft_disk_no_overlap()
     N1=200
     N2 = 200
     N= N1+N2
-    ϕ =0.2
+    ϕ =0.6
     Rno=3
     L =  sqrt(pi * N*Rno^2 / ϕ)
-    xo = Float64[ -1 0 0;  1/2 -1/2*sqrt(3)   0 ;  1/2 1/2*sqrt(3)   0] .* 1
+    xo = Float64[ -1 0 0;  1/2 -1/2*sqrt(3)   0 ;  1/2 1/2*sqrt(3)   0] .* 0.5
 
     initial_state = PolarShape[PolarShape([i],[1], [1], [1], [Rno], [0.3], [0.01], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0],deepcopy(xo),xo,[1,1,1]) for i=1:N1 ]
 
 
-    xo_inv = Float64[ 1 0 0;  -1/2 -1/2*sqrt(3)   0 ;  -1/2 1/2*sqrt(3)   0] .* 1
+    xo_inv = Float64[ 1 0 0;  -1/2 -1/2*sqrt(3)   0 ;  -1/2 1/2*sqrt(3)   0] .* 0.5
     for i=N1+1:N2+N1
         push!(initial_state, PolarShape([i],[2], [1], [1], [Rno], [0.3], [0.01], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0],deepcopy(xo_inv),xo_inv,1*ones(size(xo_inv)[1])))
     end

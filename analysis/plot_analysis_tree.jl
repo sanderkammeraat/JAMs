@@ -17,7 +17,7 @@ begin
 
 analysis_base_folder = joinpath(base_folder, "analysis_FT")
 
-plot_base_folder = mkpath(joinpath(base_folder, "plots_11_9")) 
+plot_base_folder = mkpath(joinpath(base_folder, "plots_30_9")) 
 
 tree = construct_folder_tree_param_param_seed(analysis_base_folder)
 
@@ -653,6 +653,9 @@ begin
         rm(joinpath(plot_base_folder,collective_plot_file_name))
     catch
     end
+
+
+    
     for (param1,_) in sort(tree)
 
 
@@ -679,27 +682,39 @@ begin
                 for (seed, seedpath) in tree[param1][param2]
                     jldopen(seedpath, "r") do seedanalysis_file
                         Dr = seedanalysis_file["Dr"]
+                        if Dr!=0 && Dr>=0.01
                         
-                        J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
-                        v0 = seedanalysis_file["v0"]
-                        v_projs = seedanalysis_file["v_projs"]
-                        if all(seedanalysis_file["modes"]["eigvals"].>0)
-                        ωs = sqrt.(seedanalysis_file["modes"]["eigvals"])
-                        
-                        t = seedanalysis_file["integration_info"]["save_tax"]
-                        if Dr!=0
+                            J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+                            v0 = seedanalysis_file["v0"]
+                            v_projs = seedanalysis_file["v_projs"]
+
+
+                            vm = sqrt.(mean( 2 .* v_projs[:,500:end].^2))
+
+                            a = vm/v0
+                            if all(seedanalysis_file["modes"]["eigvals"].>0)
+                            ωs = sqrt.(seedanalysis_file["modes"]["eigvals"])
+                            
+                            t = seedanalysis_file["integration_info"]["save_tax"]
+
+                            numerics =  mean(v_projs[:,500:end].^2, dims=2)[:,1]
+                            #scatterlines!(ax,ωs, numerics,  label="$Dr",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), linewidth=0.5, marker=marker_labels[marker_ind][1], alpha=0.05)
+                            scatter!(ax,ωs, numerics,  label="$Dr",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), alpha=1,markersize=2)
+                            
+                            ylims!(ax,low=1e-6,high=1e-2)
+                            xlims!(ax,low=0,high=2.5)
+                            
                             tau =1/Dr
                             theory = v0^2  ./ (2 .+ 2 .* ωs.^2 .* tau)
                             lines!(ax, ωs, theory ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:gist_rainbow), alpha=1, linestyle=:dash)
 
+                            theory_J =  theory + J * tau * v0^2 /a .* 1 ./(2 * (1 .+ tau * ωs.^2).^2)
+
+                            lines!(ax, ωs, theory_J ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:gist_rainbow), alpha=1)
+                            marker_ind+=1
 
                             
                         end
-                        numerics =  mean(v_projs[:,500:end].^2, dims=2)[:,1]
-                        scatterlines!(ax,ωs, numerics,  label="$Dr",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), linewidth=0.5, marker=marker_labels[marker_ind][1], )
-                        marker_ind+=1
-                        ylims!(ax,low=5e-9,high=1e-1)
-                        xlims!(ax,low=0,high=2.5)
                         global tag = get_tag(seedanalysis_file)
                         end
                     end
@@ -715,6 +730,101 @@ begin
         end
     end
 end
+
+
+##
+begin
+    collective_plot_file_name ="Dr_omega_v_proj.pdf"
+    try 
+        rm(joinpath(plot_base_folder,collective_plot_file_name))
+    catch
+    end
+
+
+    
+    #for (param1,_) in sort(tree)
+    for (param2,_) in sort(tree["J_0.01"])
+
+        
+        with_theme(theme_latexfonts()) do 
+            f = Figure()
+            ax = Axis(f[1,1], xlabel=L"ω_n", ylabel= L"Vel. proj.: $\langle \lambda_n|\delta \dot{R} \rangle^2$", title="$param2", yscale=log10)#, xscale=log10)
+
+            
+            marker_ind=1
+
+            marker_labels=[
+                (:circle, ":circle"),
+                (:rect, ":rect"),
+                (:diamond, ":diamond"),
+                (:hexagon, ":hexagon"),
+                (:cross, ":cross"),
+                (:xcross, ":xcross"),
+                (:utriangle, ":utriangle"),
+                (:dtriangle, ":dtriangle"),
+                (:ltriangle, ":ltriangle"),
+                (:rtriangle, ":rtriangle"),
+                (:pentagon, ":pentagon")]
+            for (param1,_) in sort(tree)
+                
+                    for (seed, seedpath) in tree[param1][param2]
+                        jldopen(seedpath, "r") do seedanalysis_file
+                            Dr = seedanalysis_file["Dr"]
+                            
+                            
+                                J = seedanalysis_file["system"]["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+                                v0 = seedanalysis_file["v0"]
+                                v_projs = seedanalysis_file["v_projs"]
+
+
+                                vm = sqrt.(mean( 2 .* v_projs[:,500:end].^2))
+
+                                a = vm/v0
+                                if all(seedanalysis_file["modes"]["eigvals"].>0)
+                                ωs = sqrt.(seedanalysis_file["modes"]["eigvals"])
+                                
+                                t = seedanalysis_file["integration_info"]["save_tax"]
+
+                                numerics =  mean(v_projs[:,500:end].^2, dims=2)[:,1]
+                                #scatterlines!(ax,ωs, numerics,  label="$Dr",colormap=Reverse(:gist_rainbow),color=marker_ind, colorrange=(1,length(tree[param1])), linewidth=0.5, marker=marker_labels[marker_ind][1], alpha=0.05)
+                                scatter!(ax,ωs, numerics,  label="$J",colormap=Reverse(:brg),color=marker_ind, colorrange=(1,length(tree[param1])), alpha=1,markersize=2)
+                                
+                                #ylims!(ax,low=1e-6,high=1e-2)
+                                #xlims!(ax,low=0,high=2.5)
+                                if Dr!=0 && Dr>=0.01
+                                tau =1/Dr
+                                theory = v0^2  ./ (2 .+ 2 .* ωs.^2 .* tau)
+                                lines!(ax, ωs, theory ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:brg), alpha=1, linestyle=:dash)
+
+                                theory_J =  theory + J * tau * v0^2 /a .* 1 ./(2 * (1 .+ tau * ωs.^2).^2)
+
+                                lines!(ax, ωs, theory_J ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:brg), alpha=1)
+                                
+                                end
+                                marker_ind+=1
+                                
+                                end
+                            global tag = get_tag(seedanalysis_file)
+                            end
+                        end
+                    end
+            f[1,2]=Legend(f,ax, L"J")
+            Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+            display(f)
+            save("temp.pdf",f)
+            append_pdf!( joinpath(plot_base_folder,collective_plot_file_name), "temp.pdf", cleanup=true)
+            subfolder_path = mkpath(joinpath(plot_base_folder, "$param2"))
+            save(joinpath(subfolder_path,"omega_v_proj.pdf"),f )
+
+        end
+    end
+end
+
+
+
+
+
+
 
 begin
     collective_plot_file_name ="J_n_v_proj.pdf"

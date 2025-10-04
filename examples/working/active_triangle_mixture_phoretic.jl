@@ -16,12 +16,12 @@ function soft_disk_no_overlap()
     L =  sqrt(pi * N*Rno^2 / ϕ)
     xo = Float64[ -1 0 0;  1/2 -1/2*sqrt(3)   0 ;  1/2 1/2*sqrt(3)   0]
 
-    initial_state = PolarShape[PolarShape([i],[1], [1], [1], [Rno], [0.3], [0.01], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0],deepcopy(xo),xo,[1,1,1]) for i=1:N1 ]
+    initial_state = PolarShape[PolarShape([i],[1], [1], [1], [Rno], [0.3], [0.001], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0],deepcopy(xo),xo,[1,1,1]) for i=1:N1 ]
 
 
     xo_inv = Float64[ 1 0 0;  -1/2 -1/2*sqrt(3)   0 ;  -1/2 1/2*sqrt(3)   0]
     for i=N1+1:N2+N1
-        push!(initial_state, PolarShape([i],[2], [1], [1], [Rno], [0.3], [0.01], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0],deepcopy(xo_inv),xo_inv,1*ones(size(xo_inv)[1])))
+        push!(initial_state, PolarShape([i],[2], [1], [1], [Rno], [0.3], [0.001], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0],deepcopy(xo_inv),xo_inv,1*ones(size(xo_inv)[1])))
     end
     sizes = [L,L,4];
     initial_field_state=[]
@@ -82,7 +82,7 @@ function simulation(soft_disk_no_overlap_result)
     initial_field_state=[FuelField2d(1,1,bin_centers,C, C.*0, C.*0)]
     # [field_propulsion_3d_force(1,1e-2,0.01)]
     field_updaters = (PeriodicDiffusion(1,1e-1),AvgSetwoGhost(1,1.), GhostSet(1))
-    field_forces = (field_propulsion_distr_force(1,0.01,1.,0.4,100),self_align_with_∇C_force(1,-1))
+    field_forces = (field_propulsion_distr_force(1,0.2,1.,0.5,1),self_align_with_∇C_force(1,-1))
 
     external_forces = (ABP_perpendicular_angular_noise([1,2],[0,0,1]), )
 

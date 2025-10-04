@@ -14,6 +14,10 @@ struct overdamped_pq_evolver
     ontypes::Union{Int64,Vector{Int64}}
 end
 
+struct overdamped_pq_xyc_evolver
+    ontypes::Union{Int64,Vector{Int64}}
+end
+
 struct overdamped_2d_shape_evolver
     ontypes::Union{Int64,Vector{Int64}}
 end
@@ -41,6 +45,8 @@ end
 function evolve_locally!(p_i, t, dt, dofevolver::overdamped_pq_evolver)
 
     if p_i.type[1] in dofevolver.ontypes
+
+
         #evolve
         p_i.p .+= p_i.q * dt
         p_i.p .=normalize(p_i.p)
@@ -50,7 +56,25 @@ function evolve_locally!(p_i, t, dt, dofevolver::overdamped_pq_evolver)
     end
     return p_i
 end
+#constraint to be in xy
+function evolve_locally!(p_i, t, dt, dofevolver::overdamped_pq_xyc_evolver)
 
+    if p_i.type[1] in dofevolver.ontypes
+
+
+        dθ = p_i.q[3] * dt
+        #evolve
+        pxc = copy(p_i.p[1])
+        pyc = copy(p_i.p[2])
+        p_i.p[1] = cos(dθ) * pxc  - sin(dθ) *  pyc
+        p_i.p[2]= sin(dθ) * pxc  + cos(dθ) *  pyc
+        p_i.p .=normalize(p_i.p)
+
+        #reinitialize
+        p_i.q.*= 0.
+    end
+    return p_i
+end
 
 function evolve_locally!(p_i, t, dt, dofevolver::overdamped_2d_shape_evolver)
 

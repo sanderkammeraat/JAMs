@@ -9,7 +9,7 @@ CairoMakie.activate!()
 
 base_folder = joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr")
 
-figure_save_folder = mkpath(joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr","exploratory_figures_12_9"))
+figure_save_folder = mkpath(joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr","exploratory_figures_30_9_v5"))
 
 #base_folder = joinpath(homedir(),"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr")
 raw_data_base_folder = joinpath(base_folder, "simdata")
@@ -226,11 +226,13 @@ ax = Axis(f[1,1], xlabel=L"t", ylabel=L"v/v_0")
 scatter!(ax, t, mean(sqrt.(vx.^2 + vy.^2),dims=1)[1,:]/v0,label="average speed")
 
 scatter!(ax, t, sqrt.( mean((vx.^2 + vy.^2),dims=1)[1,:] )/v0,label="rms speed")
-
+vmean = mean(sqrt.( mean((vx.^2 + vy.^2), dims=1)[1,500:end] ))
 interval = 1
-for (n,eigval) in pairs(modes["eigvals"][1:interval:10])
-    hlines!(ax, ( sqrt( 1 + (eigval/(2*J))^2 ) - eigval/(2*J) ),color="black", label="mode number $(1+(n-1)*interval)")
-end
+# for (n,eigval) in pairs(modes["eigvals"][1:interval:10])
+#     hlines!(ax, ( sqrt( 1 + (eigval/(2*J))^2 ) - eigval/(2*J) ),color="black", label="mode number $(1+(n-1)*interval)")
+# end
+
+hlines!(ax, vmean/v0, color="black")
 
 #ylims!(0,0.01)
 #modenumbers = range(1,size(v_projs)[1])
@@ -248,6 +250,31 @@ dy = y .- y0int
 d_projs = project_on_eigvecs(modes["eigvecs"], dx, dy)
 v_projs = project_on_eigvecs(modes["eigvecs"], vx,vy)
 p_projs = project_on_eigvecs(modes["eigvecs"], px,py)
+
+
+begin
+f = Figure()
+ωs = sqrt.(modes["eigvals"])
+ax = Axis(f[1,1], xlabel=L"ω_n", ylabel=L"vproj", yscale=log10)
+                        
+tau =1/Dr
+theory = v0^2  ./ (2 .+ 2 .* ωs.^2 .* tau)
+
+a = vmean/v0
+theory_corrected = theory + J * tau * v0^2 /a .* 1 ./(2 * (1 .+ tau * ωs.^2).^2)
+
+numerics =  mean(v_projs[:,500:end].^2, dims=2)[:,1]
+scatterlines!(ax,ωs, numerics,  label="$Dr", linewidth=0.5 )
+tag = get_tag()
+Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
+
+f[1,2]=Legend(f,ax)
+lines!(ax, ωs, theory, alpha=1, linestyle=:dash, color="black")
+lines!(ax, ωs, theory_corrected, alpha=1, color = "orange")
+display(f)
+end
+
+
 
 begin
 f = Figure()
@@ -314,7 +341,7 @@ display(f)
 end
 
 
-#begin
+begin
 f = Figure()
 ax = Axis(f[1,1], xlabel=L"t", ylabel=L"\gamma_{\nu}(v)")
 vm = mean(sqrt.(vx.^2 + vy.^2),dims=1)[1,:]
@@ -339,36 +366,50 @@ end
 
 
 #%% Above is already available in default analysis code
-
+min_t_ind = 1000
 dt = t[2] - t[1]
-FT_v_projs = temporal_Fourier_transform(dt, v_projs, min_t_ind = 500, output_not_avg=true)
-FT_p_projs = temporal_Fourier_transform(dt, p_projs, min_t_ind = 500, output_not_avg=true)
+FT_v_projs = temporal_Fourier_transform(dt, v_projs, min_t_ind = min_t_ind, output_not_avg=true)
+FT_p_projs = temporal_Fourier_transform(dt, p_projs, min_t_ind = min_t_ind, output_not_avg=true)
 
+CairoMakie.activate!()
 begin
 f = Figure()
-ax = Axis(f[1,1], xlabel=L"ω_{ν}", ylabel=L"FT(v_{proj})^2")#, yscale=log10)
+ax = Axis(f[1,1], xlabel=L"ω_{ν}", ylabel=L"FT(v_{proj})^2", yscale=log10, xscale=log10)
 #xlims!(ax, (0,.2))
 interval=1
 maxn=10
 #scatter!(ax, t[500:2000], vm[500:2000]*30)
 for (n,eigval) in pairs(modes["eigvals"][1:interval:maxn])
-    scatter!(ax, FT_v_projs["ω"], FT_v_projs["Xf2"][n,:],color=1+(n-1)*interval, colorrange=(1,maxn),label="mode $(1+(n-1)*interval)")
+    scatter!(ax, FT_v_projs["ω"], FT_v_projs["Xf2"][n,:],color=1+(n-1)*interval, colorrange=(1,maxn),label="mode $(1+(n-1)*interval)",alpha=0.2)
 
-    γ = eigval - J*v0/vmm + J*vmm/v0
+    a = vmean/v0
 
-    Ω2  = J *vmm/v0 * eigval
 
-    #vlines!(ax, 2*abs(sqrt( Complex((γ/2)^2 -Ω2 ) ) ),color=1+(n-1)*interval, colorrange=(1,maxn))
-    #vlines!(ax, -eigval^2 + J*v0/vmm),color="red")#1+(n-1)*interval, colorrange=(1,maxn))
-    #vlines!(ax, 2 * sqrt(Ω2) ,color=1+(n-1)*interval, colorrange=(1,maxn))
+    ω = FT_v_projs["ω"][1:end]
 
-    vlines!(ax, sqrt(J*eigval*( sqrt(1+(eigval/(2*J))^2 ) - eigval/(2*J))), color=1+(n-1)*interval, colorrange=(1,maxn))
+
+    theory =ω.^2 .* ( 1 .+  2 * J/a * eigval ./ (ω.^2 .+ eigval^2) .+ 0* J^2 * a^2 * (eigval^2 .+ ω.^2 .* (1 - 1/a^2)^2) ./ (ω.^4 + ω.^2 .* eigval^2)) .* 1 ./(eigval^2 .+ ω.^2) .*2*pi*1/Dr * v0^2 ./(1 .+ (ω ./ Dr).^2) *  (length(t)-min_t_ind)/(2*pi)
+    
+    theory_J0 = ω.^2 .* ( 1) .* 1 ./(eigval^2 .+ ω.^2) .*2*pi*1/Dr * v0^2 ./(1 .+ (ω ./ Dr).^2) *  (length(t)-min_t_ind)/(2*pi)
+
+    subterm = (eigval + J * a * (1 - 1/a^2))
+
+    subterm = (eigval )
+    denominator = (ω.^2 .-  J * a * eigval).^2 .+ ω.^2 .* subterm^2
+
+    #theory_v2 = ω.^2 .* ( 1 .+1* 2* J * a * ( eigval .* ω.^2  .- ω.^2 .* (1 - 1/a^2) .* subterm .- J* a * eigval^2  )./ denominator .+1*  J^2 * a^2*(eigval^2  .+ ω.^2 .*  (1 - 1/a^2)^2 )./denominator  ).* 1 ./(eigval^2 .+ ω.^2) .*2*pi*1/Dr * v0^2 ./(1 .+ (ω ./ Dr).^2) *  (length(t)-min_t_ind)/(2*pi)
+
+    
+    lines!(ω, theory,color=1+(n-1)*interval, colorrange=(1,maxn),label="mode $(1+(n-1)*interval)")
+
+    lines!(ω, theory_J0 ,color=1+(n-1)*interval, colorrange=(1,maxn),label="mode $(1+(n-1)*interval)", linestyle=:dash)
 end
+#xlims!(ax, (0,.2))
 tag = get_tag()
 Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
 
 f[1,2]=Legend(f,ax)
-save("Np_mode_v_proj_frequency_prediction.pdf",f)
+save(joinpath(figure_save_folder,"Np_mode_v_proj_frequency_prediction.pdf"),f)
 display(f)
 end
 

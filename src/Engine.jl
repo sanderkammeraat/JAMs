@@ -292,7 +292,7 @@ function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_t
 
     file["integration_info"]["t_stop"] = t_stop
 
-    file["integration_info"]["master_seed"] = master_seed
+    file["integration_info"]["master_seed"] = string(master_seed)
 
 
     file["system"]["sizes"] = system.sizes
@@ -443,7 +443,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     #Store frame data here
     frame_group = !isnothing(Tsave) ? create_group(raw_data_file, "frames") : nothing
 
-    JAMs_file =  !isnothing(Tsave) ? jldopen(joinpath(save_folder_path, JAMs_file_name),"a+") : nothing
+    #JAMs_file =  !isnothing(Tsave) ? jldopen(joinpath(save_folder_path, JAMs_file_name),"a+") : nothing
 
     #Loop over time
     #Variable to keep track of the number of frames saved
@@ -497,12 +497,14 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
             #Save the states before the final dof step
 
             if n==n_final_save
-                if !isnothing(Tsave)
+                # if !isnothing(Tsave)
+                #     jldopen(joinpath(save_folder_path, JAMs_file_name),"r+") do JAMs_file
                     
-                    JAMs_file["final_particle_state"] =  deepcopy(current_particle_state)
+                #     JAMs_file["final_particle_state"] =  deepcopy(current_particle_state)
         
-                    JAMs_file["final_field_state"] = deepcopy(current_field_state)
-                end
+                #     JAMs_file["final_field_state"] = deepcopy(current_field_state)
+                #     end
+                # end
                 final_particle_state = deepcopy(current_particle_state)
                 final_field_state = deepcopy(current_field_state)
 
@@ -571,7 +573,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
         if !isnothing(Tsave)
             close(raw_data_file)
-            close(JAMs_file)
+            #close(JAMs_file)
         end
 
 
@@ -580,7 +582,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     catch e
         if !isnothing(Tsave)
             close(raw_data_file)
-            close(JAMs_file)
+            #close(JAMs_file)
         end
         println("Safely aborting")
         rethrow(e)

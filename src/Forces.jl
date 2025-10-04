@@ -309,16 +309,17 @@ function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::ABP
     xi=sqrt(2*p_i.Dr[1])*normalize(rand(rngs_particles[p_i.id[1]],Normal(0, 1),3))
 
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
-    p_i.q.+= cross(p_i.p, xi ) * sqrt(dt)/dt
+    p_i.q.+=  xi .* sqrt(dt)/dt
     end
     return p_i
 end
 
+# We will treat the noise purely angular, but reconstruct the torque from it that is later used to rotate the vector
 function contribute_external_force!(p_i, t, dt, rngs_particles, system, force::ABP_perpendicular_angular_noise)
     if p_i.type[1] in force.ontypes
     η =sqrt(2*p_i.Dr[1])*rand(rngs_particles[p_i.id[1]],Normal(0, 1))
 
-    p_i.q.+= η*cross(p_i.p, force.perpendicular_vector ) * sqrt(dt)/dt
+    p_i.q.+= η .*force.perpendicular_vector .* sqrt(dt)/dt 
     end
     return p_i
 end
@@ -328,7 +329,7 @@ end
 function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::self_align_with_v_force)
     if p_i.type[1] in force.ontypes
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
-    p_i.q.+= force.β*cross(cross(p_i.p, p_i.v ), p_i.p)
+    p_i.q.+= force.β*cross(p_i.p, p_i.v )
     end
     return p_i
 end
@@ -338,9 +339,9 @@ function contribute_external_force!(p_i, t, dt,rngs_particles, system, force::se
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
         vnorm = norm(p_i.v)
         if vnorm!=0
-            p_i.q.+= force.β*cross(cross(p_i.p,  p_i.v), p_i.p)./vnorm
+            p_i.q.+= force.β*cross(p_i.p,  p_i.v)./vnorm
         else
-            p_i.q.+= force.β*cross(cross(p_i.p,  p_i.v), p_i.p)
+            p_i.q.+= force.β*cross(p_i.p,  p_i.v)
         end
     end 
     return p_i
@@ -440,7 +441,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles ,system,
 
                 if dxen<d2R
                     f.= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxen - d2R) * dxe/dxen
-                    T.=  cross( cross(p_i.xo[m,:] +dxe/dxen*p_i.re[m] , f), p_i.p) 
+                    T.=  cross(p_i.xo[m,:] +dxe/dxen*p_i.re[m] , f)
 
                     p_i.f.+= f
                     p_i.q.+= T
@@ -478,7 +479,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles,system, 
                     fact = -1*exp(-dxen/d2R)*(2*d2R +dxen )/(d2R * dxen^3)
 
                     f.= force.u0array[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * fact * dxe/dxen
-                    T.=  cross( cross(p_i.xe[m,:] +dxe/dxen*p_i.re[m] - p_i.x , f), p_i.p) 
+                    T.=  cross(p_i.xe[m,:] +dxe/dxen*p_i.re[m] - p_i.x , f)
 
                     p_i.f.+= f
                     p_i.q.+= T
@@ -637,7 +638,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
             p_i.f.+= f
             #add torque
             if force.torque
-                p_i.q.+= cross(cross(dx/dxn .*p_i.R[1], f),p_i.p)
+                p_i.q.+= cross(dx/dxn .*p_i.R[1], f)
             end
         end
     end
@@ -652,7 +653,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system
         if dxn < force.rcut
 
             #add torque
-            p_i.q.+=force.J*cross(cross(p_i.p, p_j.p),p_i.p)
+            p_i.q.+=force.J*cross(p_i.p, p_j.p)
         end
     end
     return p_i
@@ -780,7 +781,7 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particle
 
         ∇C = grad(field_j, x_index, y_index)
 
-        p_i.q.+= force.β*cross(cross(p_i.p, ∇C),p_i.p)
+        p_i.q.+= force.β*cross(p_i.p, ∇C)
     end
 
     return p_i, field_j
@@ -798,9 +799,9 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particle
 
         vnorm = norm(∇C)
         if vnorm!=0
-            p_i.q.+= force.β*cross(cross(p_i.p, ∇C),p_i.p)./vnorm
+            p_i.q.+= force.β*cross(p_i.p, ∇C)./vnorm
         else
-            p_i.q.+= force.β*cross(cross(p_i.p,  ∇C), p_i.p)
+            p_i.q.+= force.β*cross(p_i.p,  ∇C)
         end
     end
 

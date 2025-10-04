@@ -5,7 +5,7 @@ include(joinpath("..","src","Engine.jl"))
 
 function simulation()
 
-    external_forces = (ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,0.5),ABP_perpendicular_angular_noise(1,[0,0,1]),external_harmonic_force(1,0.4)) #,external_anisotropic_harmonic_force(1,[0.8 0 0 ; 0 0.7  0; 0 0 0 ]))
+    external_forces = (ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,0.1),ABP_perpendicular_angular_noise(1,[0,0,1]),external_harmonic_force(1,0.4)) #,external_anisotropic_harmonic_force(1,[0.8 0 0 ; 0 0.7  0; 0 0 0 ]))
 
     pair_forces = []
 
@@ -18,7 +18,7 @@ function simulation()
     #Initialize state
     L=10.
 
-    initial_state = [PolarParticle3d([1],[1], [1], [1], [1.], [0.1], [0.0001], [0,0,0],[0,0,0],[0.,0.,0.], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0])];
+    initial_state = [PolarParticle3d([1],[1], [1], [1], [1.], [0.1], [0.001], [0,0,0],[0,0,0],[0.,0.,0.], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0])];
 
     size = [L,L,L];
     initial_field_state=[]
@@ -37,7 +37,7 @@ function simulation()
     
    # sim = Euler_integrator(system, 0.01,100000,Tplot=nothing, seed=2, Tsave = 10, save_folder_path=joinpath(homedir(),"test_hdf5_long", "run","simdata"), save_functions = [save_2d_polar_p!], fps=120, plot_functions=[plot_points!, plot_directors!, plot_velocity_vectors!], plotdim=2);
 
-    sim = Euler_integrator(system, 0.01,1000000,Tplot=nothing, seed=2, Tsave = 100, save_folder_path=joinpath("/Volumes/T7_Shield/test_storage/store_vhdf5_v5","simdata"), save_functions = [save_2d_polar_p!], fps=120, plot_functions=[plot_points!, plot_directors!, plot_velocity_vectors!], plotdim=2);
+    sim = Euler_integrator(system, 0.01,1000000,Tplot=100, seed=2, Tsave = nothing, save_folder_path=joinpath("/Volumes/T7_Shield/test_storage/store_vhdf5_v5","simdata"), save_functions = [save_2d_polar_p!], fps=120, plot_functions=[plot_points!, plot_directors!, plot_velocity_vectors!], plotdim=2);
     return sim
 end
 

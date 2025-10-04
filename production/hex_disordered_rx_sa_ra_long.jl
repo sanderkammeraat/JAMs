@@ -193,8 +193,8 @@ end
 
 
 
-Drs = [0.01] 
-Js=[ 0.1]
+Drs = [0.0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0 ,10.0 ] 
+Js=[0.0, 0.01, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0]
 
 seeds = reshape( collect(1:length(Drs)*length(Js)), (length(Drs),length(Js)) )
 
@@ -208,16 +208,16 @@ for j in eachindex(Js)
 
         display("Running")
 
-        base_path=joinpath("/Users/kammeraat/","test")
+        base_path=joinpath("/Volumes", "T7_Shield")
         #base_path = homedir()
-        save_folder_path = joinpath(base_path,"sa","survey","hex_disordered","phi_1","Nlin_20","long","simdata", "J_$J","Dr_$Dr","seed_$seed");
+        save_folder_path = joinpath(base_path,"sa","survey","hex_disordered","phi_1","Nlin_20","Ito","simdata", "J_$J","Dr_$Dr","seed_$seed");
         print(save_folder_path)
 
-        rx_result = relaxation_step(save_folder_path,Tplot=10)
+        rx_result = relaxation_step(save_folder_path,Tplot=nothing)
 
-        sa_result = self_aligning_step(rx_result,J,Dr, seed, save_folder_path, Tplot=100);
+        sa_result = self_aligning_step(rx_result,J,Dr, seed, save_folder_path, Tplot=nothing);
 
-        ra_result=relax_again_step(sa_result, save_folder_path,Tplot=10);
+        ra_result=relax_again_step(sa_result, save_folder_path,Tplot=nothing);
 
 
     end
