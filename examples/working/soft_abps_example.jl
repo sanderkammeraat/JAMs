@@ -1,7 +1,4 @@
 include(joinpath(pwd(),"src","Engine.jl"))
-
-
-
 function simulation()
 
     external_forces = (ABP_2d_propulsion_force(1), ABP_2d_angular_noise(1))
@@ -21,7 +18,7 @@ function simulation()
     poly = 15e-8
     seed = 1
     Random.seed!(seed)
-    initial_state = [ PolarParticle2dMtl([i],[1],[1],[0.3],[0.01],rand(Uniform(-L/2, L/2),2),[0,0],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],rand(Uniform(1-poly, 1+poly),1),[1.],[0.,0.],[0.,0.],[0,0]) for i=1:N];
+    initial_state = PolarParticle2d[ PolarParticle2d([i],[1],[1],[0.3],[0.01],rand(Uniform(-L/2, L/2),2),[0,0],[0.,0.],[0.,0.],[rand(Uniform(-pi, pi))],[0.],rand(Uniform(1-poly, 1+poly),1),[1.],[0.,0.],[0.,0.],[0,0]) for i=1:N];
 
     size = [L,L];
     initial_field_state=[]
