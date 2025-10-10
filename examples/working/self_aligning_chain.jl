@@ -7,11 +7,11 @@ function simulation()
     pair_forces = [soft_disk_force([1,2],[ 1 1 ; 1 1]), chain_force([1,2],1,2)]
 
     #dofevolvers = [inertial_evolver!]
-    local_dofevolvers =(overdamped_xvf_evolver([1,2]),overdamped_pq_evolver([1,2]))
+    local_dofevolvers =(overdamped_xvf_evolver([1,2]),overdamped_pq_xyc_evolver([1,2]))
     global_dofevolvers = []
-    N=2
-    L=20#4 * N*1.
-    v0 =  0.3
+    N=40
+    L=4 * N*1.
+    v0 =  0.1
     Dr=0.01
     initial_state = [PolarParticle3d([1],[1], [1], [1], [1],[v0], [Dr], [0 , N,0],[0,0,0],[0.,0.,0.], [0,0,0],[0,0,0],normalize(rand(Normal(0, 1),3)).*[1,1,0],[0,0,0],[0,0,0])];
 

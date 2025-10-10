@@ -11,7 +11,7 @@ function simulation()
 
     
     
-    local_dofevolvers =  [overdamped_pq_evolver(1),overdamped_xvf_evolver(1)]
+    local_dofevolvers =  [overdamped_pq_xyc_evolver(1),overdamped_xvf_evolver(1)]
     global_dofevolvers = []
     
 

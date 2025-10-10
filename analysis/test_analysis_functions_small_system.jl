@@ -7,9 +7,9 @@ CairoMakie.activate!()
 
 #base_folder = joinpath(homedir(),"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr")
 
-base_folder = joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr")
+base_folder = joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_4", "vary_J_Dr")
 
-figure_save_folder = mkpath(joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr","exploratory_figures_09_10"))
+figure_save_folder = mkpath(joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_4", "vary_J_Dr","exploratory_figures_09_10"))
 
 #base_folder = joinpath(homedir(),"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr")
 raw_data_base_folder = joinpath(base_folder, "simdata")
@@ -17,14 +17,14 @@ raw_data_base_folder = joinpath(base_folder, "simdata")
 #Make tree to navigate simulation data folder structure
 tree = construct_folder_tree_param_param_seed(raw_data_base_folder)
 
-raw_data_file_path = joinpath(raw_data_base_folder,"J_0.1","Dr_0.01","seed_23","sa_raw_data.jld2")
+raw_data_file_path = joinpath(raw_data_base_folder,"J_2.0","Dr_0.01","seed_63","sa_raw_data.jld2")
 
 raw_data_file = jldopen(raw_data_file_path, "r")
 
 frames = raw_data_file["frames"]
 system = raw_data_file["system"]
 
-frames_support = jldopen(joinpath(raw_data_base_folder,"J_0.1","Dr_0.01","seed_23","ra_raw_data.jld2"),"r")["frames"]
+frames_support = jldopen(joinpath(raw_data_base_folder,"J_2.0","Dr_0.01","seed_63","ra_raw_data.jld2"),"r")["frames"]
 
 t =  raw_data_file["integration_info"]["save_tax"]
 v0 = frames["1"]["v0"][1]
@@ -226,7 +226,7 @@ ax = Axis(f[1,1], xlabel=L"t", ylabel=L"v/v_0")
 scatter!(ax, t, mean(sqrt.(vx.^2 + vy.^2),dims=1)[1,:]/v0,label="average speed")
 
 scatter!(ax, t, sqrt.( mean((vx.^2 + vy.^2),dims=1)[1,:] )/v0,label="rms speed")
-vmean = mean(sqrt.( mean((vx.^2 + vy.^2), dims=1)[1,2000:end] ))
+vmean = mean(sqrt.( mean((vx.^2 + vy.^2), dims=1)[1,500:end] ))
 interval = 1
 # for (n,eigval) in pairs(modes["eigvals"][1:interval:10])
 #     hlines!(ax, ( sqrt( 1 + (eigval/(2*J))^2 ) - eigval/(2*J) ),color="black", label="mode number $(1+(n-1)*interval)")
@@ -251,7 +251,7 @@ d_projs = project_on_eigvecs(modes["eigvecs"], dx, dy)
 v_projs = project_on_eigvecs(modes["eigvecs"], vx,vy)
 p_projs = project_on_eigvecs(modes["eigvecs"], px,py)
 
-CairoMakie.activate!()
+
 begin
 f = Figure()
 ωs = sqrt.(modes["eigvals"])
@@ -265,7 +265,7 @@ theory_corrected = theory + J * tau * v0^2 /a .* 1 ./(2 * (1 .+ tau * ωs.^2).^2
 
 theory_chiral = v0^2 /2 .*  (1 .- (ωs.^2 .* (Dr .+  ωs.^2)) ./ ((Dr .+  ωs.^2).^2  .+ J^2  * (1 - a^2) ))
 
-numerics =  mean(v_projs[:,4900:end].^2, dims=2)[:,1]
+numerics =  mean(v_projs[:,500:end].^2, dims=2)[:,1]
 scatterlines!(ax,ωs, numerics,  label="$Dr", linewidth=0.5 )
 tag = get_tag()
 Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
@@ -278,7 +278,6 @@ end
 
 
 
-CairoMakie.activate!()
 begin
 f = Figure()
 ax = Axis(f[1,1], xlabel=L"t", ylabel=L"\sum_{\rho}\lambda_{\rho}  (a_{\rho})^2")
@@ -286,13 +285,12 @@ for i=1:10
     #lines!(ax, t, d_projs[i,:].^2)
 end
 lines!(ax, t, sum(d_projs.^2,dims=1 )[1,:], color="black", label=L"\sum_{\rho} (a_{\rho})^2")
-lines!(ax, t, sum(modes["eigvals"] .* d_projs.^2,dims=1
- )[1,:], color="red", label=L"\sum_{\rho}\lambda_{\rho}  (a_{\rho})^2")
+lines!(ax, t, sum(modes["eigvals"] .* d_projs.^2,dims=1 )[1,:], color="red", label=L"\sum_{\rho}\lambda_{\rho}  (a_{\rho})^2")
 tag = get_tag()
 Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
 
 f[1,2]=Legend(f,ax)
-#save(joinpath(figure_save_folder,"sum_of_mode_amplitudes_squared_times_eigenvalues.pdf"),f)
+save(joinpath(figure_save_folder,"sum_of_mode_amplitudes_squared_times_eigenvalues.pdf"),f)
 display(f)
 end
 
@@ -472,9 +470,9 @@ scatter!(ax,FT["ω_max"] , FT["max_X2"],label="max")
 
 vlines!(ax, J*sqrt(1 - vmean^2/v0^2),color="red")
 Label(f[2,1],"Dr = $Dr, J = $J, v_0 = $v0, k=$k, ", tellwidth=false, halign=:left, word_wrap = true)
-xlims!(ax, 0,0.2)
+#xlims!(ax, 0,0.2)
 
-#vlines!(ax, sqrt(J*k*( sqrt(1+(k/(2*J))^2 ) - k/(2*J))), label="theory", color="green")
+vlines!(ax, sqrt(J*k[1,1]*( sqrt(1 + (k[1,1]/(2*J))^2 ) - k[1,1]/(2*J))), label="theory", color="green")
 f[1,2]=Legend(f,ax)
 #ylims!(ax, low=1e-7,high= 1e2)
 #save("single_particle_small_noise_unit_alignment.pdf",f)

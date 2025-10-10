@@ -17,7 +17,7 @@ begin
 
 analysis_base_folder = joinpath(base_folder, "analysis_FT")
 
-plot_base_folder = mkpath(joinpath(base_folder, "plots_30_9")) 
+plot_base_folder = mkpath(joinpath(base_folder, "plots_09_10")) 
 
 tree = construct_folder_tree_param_param_seed(analysis_base_folder)
 
@@ -374,7 +374,11 @@ function plot_FT_px(seed,seedanalysis_file)
 
     #vlines!(ax,theory,label="theory 1st order J", color="green")
 
-    #vlines!(ax,theory_empirical,label="theory empirical projection", color="pink")
+    vm = sqrt.(mean( 2 .* v_projs[:,500:end].^2))
+
+    a = vm/v0
+
+    vlines!(ax,J*sqrt(1-a^2),label="theory empirical projection", color="pink")
 
     tag = get_tag(seedanalysis_file)
 
@@ -710,7 +714,9 @@ begin
 
                             theory_J =  theory + J * tau * v0^2 /a .* 1 ./(2 * (1 .+ tau * ωs.^2).^2)
 
-                            lines!(ax, ωs, theory_J ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:gist_rainbow), alpha=1)
+                            theory_chiral = v0^2 /2 .*  (1 .- (ωs.^2 .* (Dr .+  ωs.^2)) ./ ((Dr .+  ωs.^2).^2  .+ J^2  * (1 - a^2) ))
+
+                            lines!(ax, ωs, theory_chiral ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:gist_rainbow), alpha=1)
                             marker_ind+=1
 
                             
@@ -798,7 +804,9 @@ begin
 
                                 theory_J =  theory + J * tau * v0^2 /a .* 1 ./(2 * (1 .+ tau * ωs.^2).^2)
 
-                                lines!(ax, ωs, theory_J ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:brg), alpha=1)
+                                theory_chiral = v0^2 /2 .*  (1 .- (ωs.^2 .* (Dr .+  ωs.^2)) ./ ((Dr .+  ωs.^2).^2  .+ J^2  * (1 - a^2) ))
+
+                                lines!(ax, ωs, theory_chiral ,color=marker_ind, colorrange=(1,length(tree[param1])),colormap=Reverse(:brg), alpha=1)
                                 
                                 end
                                 marker_ind+=1

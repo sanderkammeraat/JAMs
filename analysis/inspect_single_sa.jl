@@ -20,7 +20,7 @@ raw_data_base_folder = joinpath(base_folder, "simdata")
 
 raw_data_file_path = joinpath(raw_data_base_folder,"raw_data.h5")
 
-raw_data_file = h5open(raw_data_file_path,"r")
+raw_data_file = jldopen(raw_data_file_path,"r")
 
 JAMS_file =  jldopen(joinpath(raw_data_base_folder,"JAMs_container.jld2"))
 
@@ -53,7 +53,7 @@ py = zeros(Np, Nt)
 qx = zeros(Np, Nt)
 qy = zeros(Np, Nt)
 
-@views for i in 1:Nt
+@views for i in 1:19000
     x[:,i] = extract_frame_data_for_type("x", 1, frames[string(i)])
     y[:,i] = extract_frame_data_for_type("y", 1, frames[string(i)])
 
@@ -301,13 +301,39 @@ scatter!(ax,FT_x["ω_max"] , FT_x["max_X2"],label="max")
 Label(f[2,1],"Dr = $Dr, J = $J, v_0 = $v0, k=$k, ", tellwidth=false, halign=:left, word_wrap = true)
 
 vlines!(ax, sqrt(J*k*( sqrt(1+(k/(2*J))^2 ) - k/(2*J))), label="theory", color="green")
-vlines!(ax, ω_s, label="theory", color="purple")
+vlines!(ax, ω_s, label="theory", color="orange")
+
+vm = mean(sqrt.(vx.^2 .+ vy.^2)[1:19000])  # v0*(sqrt(1+(k/(2*J))^2 ) - k/(2*J))
+vlines!(ax, J * sqrt(1 - vm^2/v0^2), label="theory", color="purple")
 f[1,2]=Legend(f,ax)
 #ylims!(ax, low=1e-7,high= 1e2)
 #save(joinpath(figure_save_folder,"single_particle_small_noise_unit_alignment.pdf"),f)
 display(f)
 end
 
+
+
+begin
+
+f = Figure()
+ax = Axis(f[1,1]);
+
+
+Label(f[2,1],"Dr = $Dr, J = $J, v_0 = $v0, k=$k, ", tellwidth=false, halign=:left, word_wrap = true)
+
+
+
+vm =  v0*(sqrt(1+(k/(2*J))^2 ) - k/(2*J))
+
+scatter!(t[1:19000],  sqrt.(vx.^2 .+ vy.^2)[1:19000])
+
+hlines!(ax, vm, label="theory", color="green")
+f[1,2]=Legend(f,ax)
+#ylims!(ax, low=1e-7,high= 1e2)
+#save(joinpath(figure_save_folder,"single_particle_small_noise_unit_alignment.pdf"),f)
+display(f)
+    
+end
 
 
 
