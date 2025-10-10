@@ -201,12 +201,27 @@ struct pairABP_force{T1}<:Force
     torque::Bool
 end
 
+struct pairAN_force{T1,T2}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    rfact::Float64
+    k_per::T1
+    k_par::T2
+    torque::Bool
+end
+
 
 struct pair_polar_alignment_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
     rcut::Float64
     J::Float64
 end
+
+struct pair_nematic_alignment_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    rcut::Float64
+    J::Float64
+end
+
 
 struct chain_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
@@ -645,6 +660,45 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
     return p_i
 
 end
+
+#needs proper general normal vector
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::pairAN_force)
+    
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        d2a = p_i.R[1]+p_j.R[1]
+
+        r = force.rfact*d2a::Float64
+
+        if dxn < r
+
+            f = @MVector zeros(length(dx))
+            β = 1 - dxn/r
+            rij_cap = dx/dxn
+
+            Cij = dot(rij_cap, p_i.p .+ p_j.p)
+
+            Sij = cross(rij_cap, p_i.p .+ p_j.p)[3]
+
+            Dij = dot(rij_cap, p_i.p .- p_j.p)
+
+            Eij = cross(rij_cap, p_i.p .- p_j.p)[3]
+
+            f.= β* ( (force.k_par * Dij + force.k_per * Eij) .* (p_i.p .- p_j.p) .+ (force.k_par * Cij + force.k_per * Sij) .* (p_i.p .+ p_j.p)) 
+
+            p_i.f.+= f
+            #add torque
+            if force.torque
+                p_i.q.+= cross(dx/dxn .*p_i.R[1], f)
+            end
+        end
+    end
+    return p_i
+
+end
+
+
+
+
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system, force::pair_polar_alignment_force)
     
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
@@ -654,6 +708,21 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system
 
             #add torque
             p_i.q.+=force.J*cross(p_i.p, p_j.p)
+        end
+    end
+    return p_i
+
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system, force::pair_nematic_alignment_force)
+    
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        #d2a = p_i.R[1]+p_j.R[1]
+
+        if dxn < force.rcut
+
+            #add torque
+            p_i.q.+=force.J*cross(p_i.p, p_j.p) .* (dot(p_i.p,p_j.p))
         end
     end
     return p_i
