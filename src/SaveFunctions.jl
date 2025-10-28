@@ -1,4 +1,5 @@
 
+#Currently only supporting a single field only
 function save_single_2d_field!(current_frame_group, current_particle_state, current_field_state, n, Tsave, t,framecounter)
 
 
@@ -11,9 +12,10 @@ function save_single_2d_field!(current_frame_group, current_particle_state, curr
     current_frame_group["field_id"] = [field.id for field in current_field_state]
 
     current_frame_group["field_type"] = [field.type for field in current_field_state]
-    current_frame_group["field_bin_centers"] = [field.bin_centers for field in current_field_state]
+    current_frame_group["field_bin_centers_x"] = current_field_state[1].bin_centers[1]
+    current_frame_group["field_bin_centers_y"] = current_field_state[1].bin_centers[2]
 
-    current_frame_group["field_C"] = [field.C for field in current_field_state]
+    current_frame_group["field_C"] = current_field_state[1].C
 
 
     return current_frame_group

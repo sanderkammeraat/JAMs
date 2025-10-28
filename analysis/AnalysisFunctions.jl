@@ -23,13 +23,18 @@ function temporal_Fourier_transform(dt, x;  min_t_ind=1, output_not_avg=false)
     @views pste_Xf2 = pstd_Xf2 ./ sqrt(size(Xf2)[1])
 
 
-    maxval, maxind = findmax(pavg_Xf2)
-    ω_max = ω[maxind]
+
 
     if output_not_avg
-        FT = Dict("Xf2"=>Xf2,  "ω"=>ω )
+
+            maxval, maxind = findmax(Xf2, dims=2)
+            ω_max = [ω[ci[2]] for ci in maxind[:,1] ]
+
+        FT = Dict("Xf2"=>Xf2,  "ω"=>ω,"max_X2"=>maxval, "max_X2_ind" =>maxind, "ω_max"=>ω_max )
 
     else
+        maxval, maxind = findmax(pavg_Xf2)
+        ω_max = ω[maxind]
         FT = Dict("pavg_X2"=>pavg_Xf2, "pstd_X2"=>pstd_Xf2, "pste_X2"=>pste_Xf2, "ω"=>ω, "max_X2"=>maxval, "max_X2_ind" =>maxind, "ω_max"=>ω_max )
     end
     return FT
@@ -314,9 +319,9 @@ end
 
     projs = zeros(Neigvecs, Nt)
 
-    @showprogress dt = 1 desc="Projection on eigvecs" showspeed=true for i in 1:Nt
+    @showprogress dt = 1 desc="Projection on eigvecs" showspeed=true   for i in 1:Nt
 
-         for j in 1:Neigvecs
+         Threads.@threads for j in 1:Neigvecs
              projs[j,i] =  project_on_eigvec(eigvecs[:,j], xinterior[:,i], yinterior[:,i])
 
         end

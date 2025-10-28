@@ -1,7 +1,6 @@
-
 include(joinpath("..","src","Engine.jl"))
 
-function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing)
+function relaxation_step(save_folder_path; Tsave=1000, Tplot=nothing)
 
     external_forces = []#[thermal_translational_noise(1, 0 .*[1.,1.,0])]
 
@@ -17,7 +16,7 @@ function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing)
     xs = []
     ys = []
     r=1.0
-    ϕ=1.1
+    ϕ=1.3
     l = 2* sqrt(pi*sqrt(3)/(6*ϕ))# 2*r
 
 
@@ -57,7 +56,7 @@ function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing)
     N = length(x)
     println(N)
 
-    poly=0.15*1e0
+    poly=0.15*1e-6
     Rs = rand(Uniform((1-poly)*r, (1+poly)*r),N)
     while mean(Rs)<1 || mean(Rs)>1+ 1e-2
         Rs = rand(Uniform((1-poly)*r, (1+poly)*r),N)
@@ -71,7 +70,7 @@ function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing)
 
         if types[i]==1
             
-            push!(initial_state, PolarParticle3d([id], [types[i]], [1], [1], [Rs[i]], [0.], [0.], vcat(rand(Uniform(-2*l*Nlin/4,2*l*Nlin/4),2),[0.]),[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
+            push!(initial_state, PolarParticle3d([id], [types[i]], [1], [1], [Rs[i]], [0.], [0.], vcat(rand(Uniform(-l*Nlin/3,l*Nlin/3),2),[0.]),[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
             id+=1
         end
     end
@@ -92,13 +91,13 @@ function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing)
     system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, field_dofevolvers, false,2.5*r*(1+poly));
 
     #Run integration
-    sim = Euler_integrator(system,1e-1, 2e3,Tsave=Tsave, Tplot=Tplot, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,5e-2, 5e3,Tsave=Tsave, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="rx"); 
     return sim
 
 end
 
 
-function self_aligning_step(rx_step,J,v0, Dr, seed,save_folder_path; Tsave=100, Tplot=nothing)
+function self_aligning_step(rx_step,J,v0, Dr, seed,save_folder_path; Tsave=1000, Tplot=nothing)
 
     external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
@@ -127,12 +126,12 @@ function self_aligning_step(rx_step,J,v0, Dr, seed,save_folder_path; Tsave=100, 
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,false,rx_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,1e-2, 1e5,Tsave=Tsave,seed=seed, Tplot=Tplot, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-2, 1e4,Tsave=Tsave,seed=seed, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="sa"); 
     return sim
 end
 
 
-function relax_again_step(sa_step, save_folder_path; Tsave=100, Tplot=nothing)
+function relax_again_step(sa_step, save_folder_path; Tsave=1000, Tplot=nothing)
 
     external_forces =[] # [thermal_translational_noise(1, 0 .*[1.,1.,0])]
 
@@ -161,15 +160,17 @@ function relax_again_step(sa_step, save_folder_path; Tsave=100, Tplot=nothing)
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,false,sa_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,1e-1, 5e3,Tsave=Tsave,seed=nothing, Tplot=Tplot)# , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,5e-2, 5e3,Tsave=Tsave,seed=nothing, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="ra")# , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 end
 
 
-rx_result= relaxation_step("",Tsave=nothing, Tplot=10)
-sa_result=self_aligning_step(rx_result,.1,0.0001, 0.000,1, ""; Tsave=nothing, Tplot=100);
 
-ra_result=relax_again_step(sa_result, ""; Tsave=nothing, Tplot=100);
+save_folder_path = "/Volumes/T7_Shield/sa/survey/hex_disordered/phi_1_3/Nlin_50/simdata/"
+rx_result= relaxation_step(save_folder_path)
+sa_result=self_aligning_step(rx_result,.1,0.0001, 0.001,1, save_folder_path);
+
+ra_result=relax_again_step(sa_result, save_folder_path);
 
 
 

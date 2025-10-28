@@ -3,26 +3,27 @@ include(joinpath("..","..","src","Engine.jl"))
 function simulation()
 
     
-
+    
     #pair_forces = (soft_disk_force(1,1),pairAN_force(1,1.2,0.3,0.3,true), pair_nematic_alignment_force(1,2.5,0.1))
     #type, torque, rfact, kpar, kper
-    pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,1.3, -1, 0., 0.3), pair_nematic_alignment_force(1,2.5,0.15))
+    pair_forces = (soft_disk_force(1,1.),pairAN_force(1,true,1.3, 0., 0., 0.1), pair_nematic_alignment_force(1,2.5,0.0))
 
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1))
     global_dofevolvers = []
     field_dofevolvers = []
 
-    N=2000
-    ϕ = 1.0
-    poly=15e-6
-    Rs = rand(Uniform(1-poly, 1+poly),N)
-    display(size(Rs))
+    L =  10
 
-    L =  sqrt(pi *sum(Rs.^2) / ϕ)
+    nx1 =1. 
+    ny1 = 0
+    nx2 = 1.
+    ny2= 0
+    R1=1.
+    R2 = 1.
 
-    initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [Rs[i]], [0.1], [0.01], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
-
+    initial_state = PolarParticle3d[ PolarParticle3d([1],[1], [1], [1], [R1], [0.1], [0.00], [-R1 , 0.,0.],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],[nx1, ny1, 0],[0,0,0],[0,0,0])];
+    push!(initial_state, PolarParticle3d([2],[1], [1], [1], [R2], [0.1], [0.00], [R2, 0.,0.],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],[nx2,ny2,0],[0,0,0],[0,0,0]))
 
     display(L)
     sizes = [L,L,4];
@@ -34,7 +35,7 @@ function simulation()
     #β=-1 interesting!
     external_forces = (ABP_perpendicular_angular_noise(1,[0,0,1]),)
 
-    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,2.5*(1+poly));
+    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,2.5);
 
     #Run integration
     #Use plot_disks! for nice visualss

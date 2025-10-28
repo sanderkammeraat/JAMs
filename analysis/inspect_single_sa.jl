@@ -9,16 +9,16 @@ include("AnalysisFunctions.jl")
 #base_folder = joinpath("/Volumes","T7_Shield","sa","single","Dr_0.1","J_0.5_v0_0.3_k_0.4")
 
 #base_folder = joinpath("/Volumes","T7_Shield","sa","single","Dr_0.0001","J_0.5_v0_0.01_k_0.4")
-base_folder=joinpath(homedir(),"test_hdf5", "run")
-#base_folder = joinpath("/Volumes","T7_Shield","sa","single","Dr_0.01","not_all_1")
-base_folder = "/Volumes/T7_Shield/test_storage/store_vhdf5_v5"
+#base_folder=joinpath(homedir(),"test_hdf5", "run")
+base_folder = joinpath("/Volumes","T7_Shield","sa","single","Dr_0.01","not_all_1")
+#base_folder = "/Volumes/T7_Shield/test_storage/store_vhdf5_v5"
 
-figure_save_folder = mkpath(joinpath(base_folder, "figure_save_folder"))
+figure_save_folder = mkpath(joinpath(base_folder, "figure_save_folder_23_10"))
 
 #base_folder = joinpath(homedir(),"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr")
 raw_data_base_folder = joinpath(base_folder, "simdata")
 
-raw_data_file_path = joinpath(raw_data_base_folder,"raw_data.h5")
+raw_data_file_path = joinpath(raw_data_base_folder,"raw_data.jld2")
 
 raw_data_file = jldopen(raw_data_file_path,"r")
 
@@ -30,10 +30,11 @@ integration_info = raw_data_file["integration_info"]
 #frames_support = jldopen(joinpath(raw_data_base_folder,"J_0.1","Dr_0.01","seed_23","ra_raw_data.jld2"),"r")["frames"]
 
 t =  integration_info["save_tax"]
+t[2]-t[1]
 v0 = frames["1"]["v0"][1]
 Dr = frames["1"]["Dr"][1]
-J = system["forces"]["external"]["self_align_with_v_unit_force"]["β"]
-k = system["forces"]["external"]["external_harmonic_force"]["k"]
+J = system["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+k = system["forces"]["external_forces"]["external_harmonic_force"]["k"]
 R = frames["1"]["R"]
 type = frames["1"]["type"]
 Nt = length(t)
@@ -53,7 +54,7 @@ py = zeros(Np, Nt)
 qx = zeros(Np, Nt)
 qy = zeros(Np, Nt)
 
-@views for i in 1:19000
+@views for i in 1:length(t)
     x[:,i] = extract_frame_data_for_type("x", 1, frames[string(i)])
     y[:,i] = extract_frame_data_for_type("y", 1, frames[string(i)])
 
@@ -282,14 +283,52 @@ Label(f[2,1],"Dr = $Dr, J = $J, v_0 = $v0, k=$k, ", tellwidth=false, halign=:lef
 display(f)
 end
 
-it_max = round(Int64,1500/(t[2] - t[1]))
-FT_x = temporal_Fourier_transform(t[2]-t[1],x[:,1:it_max],min_t_ind=its)
+#it_max = round(Int64,1500/(t[2] - t[1]))
+its=3000
+FT_vx = temporal_Fourier_transform(t[2]-t[1],vx,min_t_ind=its)
 
+FT_vy = temporal_Fourier_transform(t[2]-t[1],vy,min_t_ind=its)
+
+using CairoMakie
+CairoMakie.activate!()
+begin
+f = Figure()
+ax = Axis(f[1,1],yscale=log10,xscale=log10, xlabel="ω",ylabel=L"|  \mathcal{F}\{v_x(t)\}(\omega)|^2");
+scatter!(ax, FT_vx["ω"], FT_vx["pavg_X2"], label="vx")
+
+scatter!(ax, FT_vy["ω"], FT_vy["pavg_X2"], color="orange", label="vy")
+scatter!(ax,FT_vx["ω_max"] , FT_vx["max_X2"],label="max")
+
+vm = mean(sqrt.(vx.^2 .+ vy.^2)[its:end])  # v0*(sqrt(1+(k/(2*J))^2 ) - k/(2*J))
+tau = 1/Dr
+a = vm/v0
+
+ω = FT_vx["ω"]
+
+theory_433 =   ω.^2 .* v0^2 * 2/tau * 2 * pi ./ ( ( (1/tau + J * a)*k .- ω.^2).^2 .+ ω.^2 .* (k - J/a + 1/tau + J * a)^2)
+
+
+theory_433_no_J =   ω.^2 .* v0^2 * 2/tau * 2 * pi ./ ( ( (1/tau + 0*J * a)*k .- ω.^2).^2 .+ ω.^2 .* (k - 0*J/a + 1/tau + 0*J * a)^2)
+#lines!(ω, theory_433*(length(t)-its) ,label="theory", linestyle=:dash, color="black")
+lines!(ω, theory_433*((length(t)-its)/2/pi),label="theory", linestyle=:solid, color="black")
+lines!(ω, theory_433_no_J*((length(t)-its)/2/pi),label="theory, J=0", linestyle=:dash, color="purple")
+Label(f[2,1],"Dr = $Dr, J = $J, v_0 = $v0, k=$k, ", tellwidth=false, halign=:left, word_wrap = true)
+
+#vlines!(ax, sqrt(J*k*( sqrt(1+(k/(2*J))^2 ) - k/(2*J))), label="theory", color="green")
+#vlines!(ax, ω_s, label="theory", color="orange")
+
+xlims!(ax, low=1e-2, high=ω[end])
+
+f[1,2]=Legend(f,ax)
+#ylims!(ax, low=1e-7,high= 1e2)
+#save(joinpath(figure_save_folder,"approximation_analogy_spectrum.pdf"),f)
+display(f)
+end
 
 
 
 #CairoMakie.activate!()
-GLMakie.activate!
+    GLMakie.activate!
 begin
 f = Figure()
 ax = Axis(f[1,1],yscale=log10, xlabel="ω",ylabel=L"|  \mathcal{F}\{x(t)\}(\omega)|^2");
@@ -543,3 +582,25 @@ display(f)
 end 
 
 
+
+
+xg = collect(range(0,10,1000))
+
+yg = ones((1,length(xg)))
+w= 30
+yg[1,:]=cos.(w.* xg) 
+
+FT_yg = temporal_Fourier_transform(xg[2]-xg[1], yg)
+
+
+begin
+f = Figure()
+ax = Axis(f[1,1],yscale=log10, xlabel="ω",ylabel=L"|  \mathcal{F}\{p_x(t)\}(\omega)|^2");
+
+scatter!(ax, FT_yg["ω"], FT_yg["pavg_X2"])
+
+hlines!(ax, (yg[1]*2*pi*1/2)^2 *(length(xg)/2/pi)^2   , color="red")
+vlines!(ax,w)
+display(f)
+
+end 

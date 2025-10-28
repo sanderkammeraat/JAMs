@@ -14,6 +14,13 @@ struct EdgeSet<:FieldUpdater
 
 end
 
+struct IndSet{T1, T2}<:FieldUpdater
+    ontypes::Union{Int64,Vector{Int64}}
+    inds::T1
+    Cset::T2
+
+end
+
 struct AvgSetwoGhost<:FieldUpdater
     ontypes::Union{Int64,Vector{Int64}}
     Cset::Float64
@@ -56,6 +63,17 @@ function contribute_field_update!(field_i, t, dt, field_updater::EdgeSet, rngs_f
     end
     return field_i
 end
+
+
+function contribute_field_update!(field_i, t, dt, field_updater::IndSet, rngs_fields)
+
+    if field_i.type in field_updater.ontypes
+    field_i.C[field_updater.inds...]= field_updater.Cset
+
+    end
+    return field_i
+end
+
 
 function contribute_field_update!(field_i, t, dt, field_updater::AvgSetwoGhost, rngs_fields)
 

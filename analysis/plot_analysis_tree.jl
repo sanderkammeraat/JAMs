@@ -17,7 +17,7 @@ begin
 
 analysis_base_folder = joinpath(base_folder, "analysis_FT")
 
-plot_base_folder = mkpath(joinpath(base_folder, "plots_09_10")) 
+plot_base_folder = mkpath(joinpath(base_folder, "plots_17_10")) 
 
 tree = construct_folder_tree_param_param_seed(analysis_base_folder)
 

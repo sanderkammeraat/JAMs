@@ -10,81 +10,91 @@ function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing)
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1))
     global_dofevolvers = []
     field_dofevolvers = []
-    #First make stair
-    Nlin=50
-    Nrows = 2*Nlin
+
+
+   
+
+
+    #First  fixed outline
+    Nlin=20
+
+    xs = range(-(Nlin-1),(Nlin-1), step=2)
+
+    ys = range(-(Nlin-1),(Nlin-1), step=2)
+
+
+
+    xsq = []
+    ysq = []
+    #Loop clockwise
+    for xi in xs
+        push!(xsq, xi)
+        push!(ysq, ys[end])
+    end
+
+    for yi in reverse(ys)[2:end]
+        push!(xsq, xs[end])
+        push!(ysq, yi)
+    end
+
+    for xi in reverse(xs)[2:end]
+        push!(xsq, xi)
+        push!(ysq, ys[1])
+    end
+
+    for yi in ys[2:end-1]
+        push!(xsq, xs[1])
+        push!(ysq, yi)
+    end
+    print(xs)
+    print(xsq)
+
+
+
     initial_state = Union{PolarParticle3d,ConfinedPolarParticle3d}[]
-    xs = []
-    ys = []
+
     r=1.0
-    ϕ=1.1
-    l = 2* sqrt(pi*sqrt(3)/(6*ϕ))# 2*r
-
-
+    ϕ=0.9
     typess = []
 
-    for row in 1:Nlin
+    x = xsq
+    y = ysq
+    Nfix = length(x)
 
-        push!(xs, [xi-(Nlin+1)*l/2-(row-1)*l/2 for xi in l.*range(1,Nlin+row-1) ])
-
-        push!(ys, [-(Nlin-row)/2*l*sqrt(3) for n in xs[row] ])
-
-        if row==1
-            rowtypes=2*ones(Nlin)
-
-        else
-            rowtypes = ones(length(xs[row]))
-            rowtypes[1]=2
-            rowtypes[end]=2
-
-        end
-        push!(typess,rowtypes )
-
-        
+    print(Nfix)
+    poly=0.15
+    Rsfix = rand(Uniform((1-poly)*r, (1+poly)*r),Nfix)
+    while mean(Rsfix)<1 || mean(Rsfix)>1+ 1e-2
+        Rsfix = rand(Uniform((1-poly)*r, (1+poly)*r),Nfix)
+        println(mean(Rsfix))
     end
 
-    for row in 1:Nlin-1
-        push!(xs, xs[Nlin-row])
-        push!(ys, ys[Nlin][1].-ys[Nlin-row])
+    initial_state = Union{PolarParticle3d,ConfinedPolarParticle3d}[]
+    id=1
 
-        push!(typess, typess[Nlin-row])
-
+    for i=1:Nfix
+        push!(initial_state,ConfinedPolarParticle3d([id],[2], [1],[1], [Rsfix[i]], [0.], [0.], [x[i] , y[i],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]))
+        id+=1
     end
 
-    x = vcat(xs...)
-    y = vcat(ys...)
-    types= vcat(typess...)
-    N = length(x)
-    println(N)
+    N = round(Int64,( (2*Nlin)^2 - pi * sum(Rsfix.^2)/2 )*ϕ/pi )
+    print(N)
 
-    poly=0.15*1e0
     Rs = rand(Uniform((1-poly)*r, (1+poly)*r),N)
     while mean(Rs)<1 || mean(Rs)>1+ 1e-2
         Rs = rand(Uniform((1-poly)*r, (1+poly)*r),N)
         println(mean(Rs))
     end
-
-    initial_state = Union{PolarParticle3d,ConfinedPolarParticle3d}[]
-    id=1
-    #First loop over normal particles
+    #Then loop over normal particles
     for i=1:N
 
-        if types[i]==1
             
-            push!(initial_state, PolarParticle3d([id], [types[i]], [1], [1], [Rs[i]], [0.], [0.], vcat(rand(Uniform(-2*l*Nlin/4,2*l*Nlin/4),2),[0.]),[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
-            id+=1
-        end
+        push!(initial_state, PolarParticle3d([id], [1], [1], [1], [Rs[i]], [0.], [0.], vcat(rand(Uniform(-Nlin//2,Nlin//2),2),[0.]),[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
+        id+=1
     end
 
-    for i=1:N
 
-        if types[i]==2
-            push!(initial_state,ConfinedPolarParticle3d([id],[2], [1],[1], [Rs[i]], [0.], [0.], [x[i] , y[i],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]))
-            id+=1
-        end
-    end
-
-    size = [Nrows*l+2*l,Nrows*l+2*l,1];
+    size = [Nlin*2+3, Nlin*2+3,1];
     initial_field_state=[]
     field_forces = []
     field_updaters = []
@@ -100,15 +110,15 @@ end
 
 function self_aligning_step(rx_step,J,v0, Dr, seed,save_folder_path; Tsave=100, Tplot=nothing)
 
-    external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
+    external_forces =( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
-    pair_forces = [soft_disk_force([1, 2],[1 1; 1 1])]
+    pair_forces = (soft_disk_force([1, 2],[1 1.; 1. 1]),)
 
     local_dofevolvers = [overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1)]
     global_dofevolvers = []
     field_dofevolvers = []
 
-    sizes = rx_step.system.sizes
+    sizes = 2 .* rx_step.system.sizes
     initial_field_state=[]
     field_forces = []
     field_updaters = []
@@ -165,9 +175,8 @@ function relax_again_step(sa_step, save_folder_path; Tsave=100, Tplot=nothing)
     return sim
 end
 
-
-rx_result= relaxation_step("",Tsave=nothing, Tplot=10)
-sa_result=self_aligning_step(rx_result,.1,0.0001, 0.000,1, ""; Tsave=nothing, Tplot=100);
+rx_result= relaxation_step("",Tsave=nothing, Tplot=100)
+sa_result=self_aligning_step(rx_result,1,0.001, 0.00,1, ""; Tsave=nothing, Tplot=100);
 
 ra_result=relax_again_step(sa_result, ""; Tsave=nothing, Tplot=100);
 

@@ -16,9 +16,9 @@ GLMakie.activate!()
 
     t = Observable(0.)
 
-    field_C = Observable(frames["1"]["field_C"][1])
-    field_x_centers = frames["1"]["field_bin_centers"][1][1]
-    field_y_centers = frames["1"]["field_bin_centers"][1][2]
+    field_C = Observable(frames["1"]["field_C"])
+    field_x_centers = frames["1"]["field_bin_centers_x"]
+    field_y_centers = frames["1"]["field_bin_centers_y"]
     x = Observable(frames["1"]["x"])
     y = Observable(frames["1"]["y"]) 
 
@@ -89,7 +89,7 @@ GLMakie.activate!()
         px[] = frames[stri]["px"]
         py[] = frames[stri]["py"]
 
-        field_C[] = frames[stri]["field_C"][1]
+        field_C[] = frames[stri]["field_C"]
 
         
     end
@@ -114,4 +114,6 @@ for (param1, subdict) in tree
 
     end
 end
-
+base_folder = "/Users/kammeraat/surfdrive/ActivePolygonClusters/simulations/align_phoretic/phi_0p1/"
+raw_data_file = jldopen(joinpath(base_folder,"simdata","raw_data.h5"),"r",iotype=IOStream )
+make_movie(raw_data_file,joinpath(base_folder,"movies"))

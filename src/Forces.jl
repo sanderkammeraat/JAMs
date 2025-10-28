@@ -7,7 +7,6 @@ using StaticArrays
 
 abstract type Force end
 
-
 #Single-particle forces
 struct field_propulsion_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
@@ -201,12 +200,13 @@ struct pairABP_force{T1}<:Force
     torque::Bool
 end
 
-struct pairAN_force{T1,T2}<:Force
+struct pairAN_force{T1,T2, T3}<:Force
     ontypes::Union{Int64,Vector{Int64}}
-    rfact::Float64
-    k_per::T1
-    k_par::T2
     torque::Bool
+    rfact::Float64
+    k_par::T1
+    k_per::T2
+    parray::T3
 end
 
 
@@ -661,7 +661,42 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
 
 end
 
-#needs proper general normal vector
+#needs proper general normal vector (old implementation)
+# function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::pairAN_force)
+    
+#     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+#         d2a = p_i.R[1]+p_j.R[1]
+
+#         r = force.rfact*d2a::Float64
+
+#         if dxn < r
+
+#             f = @MVector zeros(length(dx))
+#             β = 1 - dxn/r
+#             rij_cap = dx/dxn
+
+#             Cij = dot(rij_cap, p_i.p .+ p_j.p)
+
+#             Sij = cross(rij_cap, p_i.p .+ p_j.p)[3]
+
+#             Dij = dot(rij_cap, p_i.p .- p_j.p)
+
+#             Eij = cross(rij_cap, p_i.p .- p_j.p)[3]
+
+#             f.= β* ( (force.k_par * Dij + force.k_per * Eij) .* (p_i.p .- p_j.p) .+ (force.k_par * Cij + force.k_per * Sij) .* (p_i.p .+ p_j.p)) 
+
+#             p_i.f.+= f
+#             #add torque
+#             if force.torque
+#                 p_i.q.+= cross(dx/dxn .*p_i.R[1], f)
+#             end
+#         end
+#     end
+#     return p_i
+
+# end
+
+
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::pairAN_force)
     
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
@@ -671,19 +706,23 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
 
         if dxn < r
 
+            z_hat = @SVector [0,0,1]
+
             f = @MVector zeros(length(dx))
             β = 1 - dxn/r
-            rij_cap = dx/dxn
+            #rij_cap = dx/dxn
 
-            Cij = dot(rij_cap, p_i.p .+ p_j.p)
 
-            Sij = cross(rij_cap, p_i.p .+ p_j.p)[3]
+            sigma_i_dot_dx = force.parray[p_i.type[1]] *  dot(p_i.p,dx) .* p_i.p
 
-            Dij = dot(rij_cap, p_i.p .- p_j.p)
+            sigma_j_dot_dx = force.parray[p_j.type[1]] * dot(p_j.p, dx) .* p_j.p
 
-            Eij = cross(rij_cap, p_i.p .- p_j.p)[3]
+            sigma_i_dot_dx_perp = force.parray[p_i.type[1]] *  dot(p_i.p,cross(dx,z_hat)) .* p_i.p
 
-            f.= β* ( (force.k_par * Dij + force.k_per * Eij) .* (p_i.p .- p_j.p) .+ (force.k_par * Cij + force.k_per * Sij) .* (p_i.p .+ p_j.p)) 
+            sigma_j_dot_dx_perp = force.parray[p_j.type[1]] *  dot(p_j.p,cross(dx,z_hat)).* p_j.p
+
+
+            f.= β .*  ( force.k_par .* (sigma_i_dot_dx .+ sigma_j_dot_dx )  .+ force.k_per .* (sigma_i_dot_dx_perp .+ sigma_j_dot_dx_perp .* p_j.p ))
 
             p_i.f.+= f
             #add torque
@@ -758,6 +797,8 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
 
 end
 
+
+
 function contribute_field_force!(p_i,field_j,field_indices, t, dt,rngs_particles, system, force::field_propulsion_force)
     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
         x_index = field_indices[1]
@@ -803,7 +844,7 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particle
 
 
         if field_j.C[x_index, y_index]>0
-            v0fact = force.v0max * force.σ/(force.σ+(log10(field_j.C[x_index, y_index]))^2)
+            v0fact = force.v0max * force.σ/(force.σ^2+(log10(field_j.C[x_index, y_index]) - force.cmid)^2)
             p_i.f[1]+= p_i.zeta[1] * (v0fact) *p_i.p[1]
             p_i.f[2]+= p_i.zeta[1] * (v0fact) *p_i.p[2]
             field_j.Cf[x_index, y_index]+=-force.consumption
@@ -887,9 +928,7 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particle
         ∇C = grad(field_j, x_index, y_index)
 
         if field_j.C[x_index, y_index]>0
-            v0fact = force.μ * norm(∇C)
-            p_i.f[1]+= p_i.zeta[1] * (v0fact) *p_i.p[1]
-            p_i.f[2]+= p_i.zeta[1] * (v0fact) *p_i.p[2]
+            p_i.f.+= force.μ * ∇C
             field_j.Cf[x_index, y_index]+=-force.consumption
         else
             field_j.Cf[x_index, y_index]=0
