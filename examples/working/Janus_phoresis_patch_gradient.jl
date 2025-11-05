@@ -13,7 +13,7 @@ function simulation(save_path)
     field_dofevolvers = [overdamped_CCvCf_evolver(1)]
     N=1
     ϕ = 0.1
-    L =  10.
+    L =  20.
     initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [1], [0.3], [0.001], [0.,L/3,0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
 
     Lx=L*3

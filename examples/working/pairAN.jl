@@ -6,7 +6,9 @@ function simulation()
 
     #pair_forces = (soft_disk_force(1,1),pairAN_force(1,1.2,0.3,0.3,true), pair_nematic_alignment_force(1,2.5,0.1))
     #type, torque, rfact, kpar, kper
-    pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,1.3, -1, 0., 0.3), pair_nematic_alignment_force(1,2.5,0.15))
+    #1.3 -1 0 0.3
+    #pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,1.3, 1, 0., 0.3), pair_nematic_alignment_force(1,2.5,0.15))
+    pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,1.3, -1, -1., 0.3), pair_nematic_alignment_force(1,2.5,0.3))
 
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1))
@@ -43,7 +45,6 @@ function simulation()
     return sim;
 
 end
-
 
 sim = simulation()  
 
