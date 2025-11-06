@@ -5,13 +5,13 @@ function relaxation_step(save_folder_path; Tsave=1000, Tplot=10)
 
     external_forces = []#[thermal_translational_noise(1, 0 .*[1.,1.,0])]
 
-    pair_forces = [soft_disk_force([1, 2],[1. 1.; 1. 1.])]
+    pair_forces = (soft_disk_force([1, 2],[1. 1.; 1. 1.]),)
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1))
     global_dofevolvers = []
     field_dofevolvers = []
     #First make stair
-    Nlin=20
+    Nlin=50
     Nrows = 2*Nlin
     initial_state = Union{PolarParticle3d,ConfinedPolarParticle3d}[]
     xs = []
@@ -99,7 +99,7 @@ function relaxation_step(save_folder_path; Tsave=1000, Tplot=10)
     system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, field_dofevolvers, false,2.5*r*(1+poly));
 
     #Run integration
-    sim = Euler_integrator(system,5e-2, 1e3,Tsave=1000, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="rx", fps=Inf, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=Tplot); 
+    sim = Euler_integrator(system,5e-2, 1e3,Tsave=nothing, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="rx", fps=Inf, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=nothing); 
     return sim
 
 end
@@ -134,7 +134,7 @@ function self_aligning_step(rx_step,J,v0, Dr, seed,save_folder_path; Tsave=1000,
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,false,rx_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,1e-2, 1e4,Tsave=Tsave,seed=seed, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="sa", fps=Inf, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=Tplot); 
+    sim = Euler_integrator(system,1e-2, 1e4,Tsave=nothing,seed=seed, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="sa", fps=Inf, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=Tplot); 
     return sim
 end
 
@@ -168,7 +168,7 @@ function relax_again_step(sa_step, save_folder_path; Tsave=1000, Tplot=100)
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,false,sa_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,5e-2, 1e3,Tsave=Tsave,seed=nothing, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="ra", fps=Inf, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=Tplot)# , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,5e-2, 1e3,Tsave=nothing,seed=nothing, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="ra", fps=Inf, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=Tplot)# , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 end
 

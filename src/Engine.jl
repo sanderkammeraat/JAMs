@@ -5,6 +5,7 @@ using JLD2
 using HDF5
 using CodecZlib
 using ProgressMeter
+using Unrolled
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
 include("Particles.jl")
@@ -516,9 +517,9 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
             #Local
             Threads.@threads for i in eachindex(current_particle_state)
                 p_i = current_particle_state[i]
-                for dofevolver in system.local_dofevolvers
-                    p_i=evolve_locally!(p_i, t, dt, dofevolver)
-                end
+
+                p_i=local_dofevolver_iterate!(p_i, t, dt, system.local_dofevolvers)
+
                 current_particle_state[i] = p_i
             end
             #Or global
@@ -590,7 +591,29 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     end
 end
 
+@unroll function local_dofevolver_iterate!(p_i, t, dt, local_dofevolvers)
 
+    @unroll for dofevolver in local_dofevolvers
+        p_i=evolve_locally!(p_i, t, dt, dofevolver)
+    end
+    return p_i
+end
+
+@unroll function external_force_iterate!(p_i, t, dt,rngs_particles, system, external_forces)
+
+    @unroll for force in external_forces
+        p_i=contribute_external_force!(p_i, t, dt,rngs_particles, system, force)
+    end
+    return p_i
+end
+
+@unroll function pair_force_iterate!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, pair_forces)
+
+    @unroll for force in pair_forces
+        p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force)
+    end
+    return p_i
+end
 
 
 function particle_step!(i,p_i, current_particle_state,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
@@ -598,9 +621,7 @@ function particle_step!(i,p_i, current_particle_state,Npair,t, dt, system,cells,
         p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system,cells,stencils,rngs_particles)
     end
 
-    for force in system.external_forces
-        p_i=contribute_external_force!(p_i, t, dt,rngs_particles, system, force)
-    end
+    p_i=external_force_iterate!(p_i, t, dt,rngs_particles, system, system.external_forces)
 
     return p_i
 end
@@ -664,9 +685,13 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cel
                 dxn = norm(dx)
                 
                 if dxn<=system.rcut_pair_global
-                    for force in system.pair_forces
-                        p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force)
-                    end
+
+                    p_i=pair_force_iterate!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, system.pair_forces)
+
+
+                    # for force in system.pair_forces
+                    #     p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force)
+                    # end
                 end
 
             end
@@ -674,6 +699,11 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cel
     end
     return p_i
 end
+
+
+
+
+
 
 function construct_cell_list_centers(L,rcut_pair_global)
 

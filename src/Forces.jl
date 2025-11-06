@@ -128,6 +128,7 @@ struct ABP_3d_angular_noise<:Force
 end
 
 
+
 #Pair forces
 struct coulomb_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
@@ -135,6 +136,26 @@ struct coulomb_force<:Force
     
 end
 
+struct polymer_harmonic_stretch_force{T1}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+end
+
+
+struct polymer_harmonic_bend_force{T1}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+end
+
+struct polymer_exterior_soft_disk_force{T1}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+end
+
+struct polymer_align_director_tangent_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    J::Float64
+end
 
 
 struct soft_atre_type_force{T1, T2}
@@ -201,6 +222,15 @@ struct pairABP_force{T1}<:Force
 end
 
 struct pairAN_force{T1,T2, T3}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    torque::Bool
+    rfact::Float64
+    k_par::T1
+    k_per::T2
+    parray::T3
+end
+
+struct polymer_pairAN_force{T1,T2, T3}<:Force
     ontypes::Union{Int64,Vector{Int64}}
     torque::Bool
     rfact::Float64
@@ -416,7 +446,112 @@ function contribute_external_force!(p_i, t, dt,rngs_particles, system, force::ex
 end
 
 
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::polymer_harmonic_stretch_force)
 
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        #If in same polymer
+        if p_i.pol_id[1]==p_j.pol_id[1]
+
+            #If neigbouring points in the polymer
+            if p_j.id_in_pol[1]==p_i.id_in_pol[1]+1 || p_j.id_in_pol[1]==p_i.id_in_pol[1]-1
+
+                d2R = p_i.R[1]+p_j.R[1]
+                
+                p_i.f.+= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
+            end
+        end
+    end
+    return p_i
+end
+
+@views function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::polymer_harmonic_bend_force)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        #If in same polymer
+        if p_i.pol_id[1]==p_j.pol_id[1]
+
+            #If i is one of the middle 
+            if p_i.id_in_pol[1]>2 && p_i.id_in_pol[1]<p_i.pol_N[1]-1
+
+
+                if p_j.id_in_pol[1]==p_i.id_in_pol[1]+2 || p_j.id_in_pol[1]==p_i.id_in_pol[1]-2
+
+                    p_i.f.+= -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                elseif p_j.id_in_pol[1]==p_i.id_in_pol[1]+1 || p_j.id_in_pol[1]==p_i.id_in_pol[1]-1
+
+                    p_i.f.+= 4 * force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                end
+
+            #If i is the left most particle
+            elseif p_i.id_in_pol[1]==1
+
+                if p_j.id_in_pol[1]==3
+
+                    p_i.f.+=  -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                elseif p_j.id_in_pol[1]==2
+
+                    p_i.f.+= 2 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                end
+        
+            #If i is the right most particle
+            elseif p_i.id_in_pol[1]== p_i.pol_N[1]
+
+                if p_j.id_in_pol[1]==p_i.pol_N[1]-2
+
+                    p_i.f.+=  -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                elseif p_j.id_in_pol[1]==p_i.pol_N[1]-1
+
+                    p_i.f.+= 2 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                end
+
+            
+            #If i is the second left most particle
+            elseif p_i.id_in_pol[1]==2 
+
+                if p_j.id_in_pol[1]==4
+
+                    p_i.f.+= - force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                elseif p_j.id_in_pol[1]==3
+
+                    p_i.f.+= 4 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                elseif p_j.id_in_pol[1]==1
+
+                    p_i.f.+= 2 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                end
+
+            #If i is the second right most particle
+            elseif p_i.id_in_pol[1]==p_i.pol_N[1]-1
+
+                if p_j.id_in_pol[1]==p_i.pol_N[1]-3
+
+                    p_i.f.+=  -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                elseif p_j.id_in_pol[1]==p_i.pol_N[1]-2
+
+                    p_i.f.+= 4 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                elseif p_j.id_in_pol[1]==p_i.pol_N[1]
+
+                    p_i.f.+= 2 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                end
+            end
+        
+        end
+    end
+    return p_i
+end
 
 
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::soft_disk_force)
@@ -433,6 +568,27 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
     return p_i
 
 end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::polymer_exterior_soft_disk_force)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        #If not part of the same polymer
+        if p_i.pol_id[1]!= p_j.pol_id[1]
+        d2R = p_i.R[1]+p_j.R[1]
+        f = @MVector zeros(length(dx))
+            if dxn < d2R
+
+                @views f.= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
+                p_i.f.+= f
+            end
+        end
+    end
+    return p_i
+
+end
+
+
 
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles ,system, force::soft_shape_disk_force)
 
@@ -734,7 +890,47 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
     return p_i
 
 end
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::polymer_pairAN_force)
+    
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
 
+        if p_j.pol_id[1]!=p_i.pol_id[1]
+
+            d2a = p_i.R[1]+p_j.R[1]
+
+            r = force.rfact*d2a::Float64
+
+            if dxn < r
+
+                z_hat = @SVector [0,0,1]
+
+                f = @MVector zeros(length(dx))
+                β = 1 - dxn/r
+                #rij_cap = dx/dxn
+
+
+                sigma_i_dot_dx = force.parray[p_i.type[1]] *  dot(p_i.p,dx) .* p_i.p
+
+                sigma_j_dot_dx = force.parray[p_j.type[1]] * dot(p_j.p, dx) .* p_j.p
+
+                sigma_i_dot_dx_perp = force.parray[p_i.type[1]] *  dot(p_i.p,cross(dx,z_hat)) .* p_i.p
+
+                sigma_j_dot_dx_perp = force.parray[p_j.type[1]] *  dot(p_j.p,cross(dx,z_hat)).* p_j.p
+
+
+                f.= β .*  ( force.k_par .* (sigma_i_dot_dx .+ sigma_j_dot_dx )  .+ force.k_per .* (sigma_i_dot_dx_perp .+ sigma_j_dot_dx_perp .* p_j.p ))
+
+                p_i.f.+= f
+                #add torque
+                if force.torque
+                    p_i.q.+= cross(dx/dxn .*p_i.R[1], f)
+                end
+            end
+        end
+    end
+    return p_i
+
+end
 
 
 
@@ -768,7 +964,28 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system
 
 end
 
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system, force::polymer_align_director_tangent_force)
+    
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        #d2a = p_i.R[1]+p_j.R[1]
 
+        if p_i.pol_id[1]==p_j.pol_id[1]
+
+            if p_j.id_in_pol[1]==p_i.id_in_pol[1]+1
+
+                #add torque
+                p_i.q.+=force.J*cross(p_i.p, dx/dxn)
+
+            elseif  p_j.id_in_pol[1]==p_i.id_in_pol[1]-1
+
+                #add torque (note the tangent vector points the other way)
+                p_i.q.+=force.J*cross(p_i.p, -dx/dxn)
+            end
+        end
+    end
+    return p_i
+
+end
 
 
 

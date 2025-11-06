@@ -74,6 +74,46 @@ struct PolarParticle3d<:Particle
 
 
 end
+
+
+struct PolarPolymerParticle3d<:Particle
+
+    id::MVector{1,Int64}
+    type::MVector{1,Int64}
+
+    pol_id::MVector{1,Int64}
+
+    id_in_pol::MVector{1, Int64}
+
+    #Number of particles in the polymer
+    pol_N::MVector{1, Int64}
+
+    m::MVector{1,Float64}
+    zeta::MVector{1,Float64}
+    R::MVector{1,Float64}
+    
+    v0::MVector{1,Float64}
+    Dr::MVector{1,Float64}
+
+    x::MVector{3,Float64}
+    xuw::MVector{3,Float64}
+    v::MVector{3,Float64}
+    a::MVector{3,Float64}
+
+    f::MVector{3,Float64} #f->a->v->r
+
+    p::MVector{3,Float64}
+    q::MVector{3,Float64}
+    ci::MVector{3,Int64}
+
+
+end
+
+
+
+
+
+
 #Parametrize on the shape extent (point defining the contour) 
 struct PolarShape<:RigidBody
 
