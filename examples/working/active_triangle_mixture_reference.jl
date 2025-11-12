@@ -46,7 +46,7 @@ function simulation(soft_disk_no_overlap_result)
     pair_forces = [exp_shape_disk_force([1,2],[1 1 ; 1 1])]
 
     #dofevolvers = [inertial_evolver!]
-    local_dofevolvers = (overdamped_xvf_evolver([1,2]),overdamped_pq_evolver([1,2]),overdamped_2d_shape_evolver([1,2]))
+    local_dofevolvers = (overdamped_xvf_evolver([1,2]),overdamped_pq_xyc_evolver([1,2]),overdamped_2d_shape_evolver([1,2]))
     global_dofevolvers = []
     field_dofevolvers = []
 

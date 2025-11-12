@@ -125,3 +125,48 @@ end
 
 # scatter(x, y)
 # scatter!(xi, yi)
+
+#Thanks to Gabriel Martin
+function stacked_polymers_at_angle(N_in_pol, L, R,pf; tilt_angle = nothing)
+
+    # initialization
+
+    S = pi * R^2
+
+    Npols = convert(Int64, floor(pf*L*L/S/N_in_pol))
+
+    M = Npols * N_in_pol
+    x = zeros(M)
+    y = zeros(M)
+    radii = R * ones(M)
+
+    pol_ids = zeros(M)
+
+    ids_in_pol= zeros(M)
+
+    if isnothing(tilt_angle)
+        tilt_angle = atan(L/(2R*M))   # The angle along which to place the particles to maximize the spread of particles on the torque
+    end
+    
+    id = 1
+
+    for i in 1:Npols
+
+        for j in 1:N_in_pol
+            pol_ids[id] = i
+
+            ids_in_pol[id] = j
+
+            x[id] = 2*sum(radii[1:id])*cos(tilt_angle) % L -L/2
+            y[id] = 2*sum(radii[1:id])*sin(tilt_angle) % L -L/2
+
+
+            id+=1
+
+        end
+
+    end
+
+    return x, y, radii, pol_ids, ids_in_pol, Npols
+
+end

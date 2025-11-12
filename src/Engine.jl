@@ -196,7 +196,11 @@ function save_raw_obj_data!(file_group, obj)
         name = string(field_name)
         val = getfield(obj, field_name)
 
-        obj_group[name] = val
+        if typeof(val)==Bool
+            obj_group[name] =string( val)
+        else
+            obj_group[name] = val
+        end
 
     end
 
