@@ -342,15 +342,19 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
         if isnothing(save_tag)
             JAMs_file_name = "JAMs_container.jld2"
+
+            JAMs_final_state_file_name = "JAMs_final_state.jld2"
             
             raw_data_file_name = "raw_data.h5"
         else
             JAMs_file_name = save_tag * "_"* "JAMs_container.jld2"
+
+            JAMs_final_state_file_name = save_tag * "_"* "JAMs_final_state.jld2"
             
             raw_data_file_name = save_tag * "_"*"raw_data.h5"
         end
 
-        if isfile(joinpath(save_folder_path, JAMs_file_name)) || isfile(joinpath(save_folder_path, raw_data_file_name))
+        if isfile(joinpath(save_folder_path, JAMs_file_name)) || isfile(joinpath(save_folder_path, raw_data_file_name)) ||  isfile(joinpath(save_folder_path, JAMs_final_state_file_name))
             error("JAMs: Specified save folder already contains JAMs file(s): " * JAMs_file_name * " and/or " * raw_data_file_name*". JAMs aborted to prevent overwriting.")
         end
 
@@ -502,14 +506,12 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
             #Save the states before the final dof step
 
             if n==n_final_save
-                # if !isnothing(Tsave)
-                #     jldopen(joinpath(save_folder_path, JAMs_file_name),"r+") do JAMs_file
-                    
-                #     JAMs_file["final_particle_state"] =  deepcopy(current_particle_state)
-        
-                #     JAMs_file["final_field_state"] = deepcopy(current_field_state)
-                #     end
-                # end
+                if !isnothing(Tsave)
+                    jldopen(joinpath(save_folder_path, JAMs_final_state_file_name),"a+",iotype=IOStream ) do JAMs_file
+
+                        JAMs_file["SIM"]=SIM(deepcopy(final_particle_state), deepcopy(final_field_state), deepcopy(dt), deepcopy(t_stop), deepcopy(system));
+                    end
+                end
                 final_particle_state = deepcopy(current_particle_state)
                 final_field_state = deepcopy(current_field_state)
 
