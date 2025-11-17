@@ -21,7 +21,7 @@ figure_save_folder = mkpath(joinpath(base_folder,"exploratory_figures_14_11"))
 #base_folder = joinpath(homedir(),"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr")
 #raw_data_base_folder = joinpath(base_folder, "simdata")
 
-raw_data_base_folder = joinpath(base_folder, "simdata","J_0.0","Dr_0.1", "seed_6")
+raw_data_base_folder = joinpath(base_folder, "simdata","J_1.0","Dr_0.01", "seed_53")
 
 #Make tree to navigate simulation data folder structure
 #tree = construct_folder_tree_param_param_seed(raw_data_base_folder)
@@ -314,12 +314,14 @@ GLMakie.activate!()
 begin
 f = Figure()
 ωs = sqrt.(eigenmodes["eigvals"])
-ax = Axis(f[1,1], xlabel=L"ω_n", ylabel=L"vproj^2", yscale=log10)#, xscale=log10)
+ax = Axis(f[1,1], xlabel=L"ω_n", ylabel=L"vproj^2", yscale=log10, xscale=log10)
                         
 tau =1/Dr
-theory = v0^2  ./ (2 .+ 2 .* ωs.^2 .* tau)
+theory_ABP = v0^2  ./ (2 .+ 2 .* ωs.^2 .* tau)
 
-prefactor = 1/tau 
+
+
+prefactor = 1/4/pi
 
 eigval_ind=1
 a_min = sqrt(1 +  (eigenmodes["eigvals"][eigval_ind]/(2 * J) + 1/(2 * tau *J ))^2 ) - (eigenmodes["eigvals"][eigval_ind]/(2 * J) + 1/(2 * tau *J))
@@ -328,7 +330,7 @@ a_min = sqrt(1 +  (eigenmodes["eigvals"][eigval_ind]/(2 * J) + 1/(2 * tau *J ))^
 a = a_min
 
 
-A =  (1/tau + J * a) .* eigenmodes["eigvals"]
+A =  sqrt.((1/tau + J * a) .* eigenmodes["eigvals"])
 
 B = eigenmodes["eigvals"] .+ ( -J/a  + 1/tau  + J*a)
 
@@ -343,16 +345,16 @@ A =   A[select]
 B = B[select]
 theory_amin = @. pi * (B - sqrt(B^2 - 4 * A^2))/B/sqrt(-4*A^2 + 2 * B * (B - sqrt(B^2-4*A^2))) * v0^2 *2/tau*prefactor
 
-numerics =  mean(v_projs[:,1000:end].^2, dims=2)[:,1]
-scatterlines!(ax,ωs[1:end], numerics[1:end],  label="numerics", linewidth=0.5 )
+numerics =  mean(v_projs[:,1:end].^2, dims=2)[:,1]
+scatterlines!(ax,ωs[1:end], numerics[1:end],  label="numerics", linewidth=0.5, alpha=0.1 )
 
 lines!(ax, ωs[select], theory_amin, alpha=1, color="black", label="lowest mode -> a")
-
+lines!(ax, ωs, theory_ABP, linewidth=5, color="red", label="theory ABP")
 #a based on empirically most excited mode selection
 eigval_ind=findmax(numerics)[2]
 a_min = sqrt(1 +  (eigenmodes["eigvals"][eigval_ind]/(2 * J) + 1/(2 * tau *J ))^2 ) - (eigenmodes["eigvals"][eigval_ind]/(2 * J) + 1/(2 * tau *J))
 a = a_min
-A =  (1/tau + J * a) .* eigenmodes["eigvals"]
+A = sqrt.( (1/tau + J * a) .* eigenmodes["eigvals"])
 
 B = eigenmodes["eigvals"] .+ ( -J/a  + 1/tau  + J*a)
 
@@ -373,7 +375,7 @@ lines!(ax, ωs[select], theory_amin, alpha=1, color="red", label="empirically ex
 ## empirical a
 a =  vmean/v0
 
-A =  (1/tau + J * a) .* eigenmodes["eigvals"]
+A =  sqrt.((1/tau + J * a) .* eigenmodes["eigvals"])
 
 B = eigenmodes["eigvals"] .+ ( -J/a  + 1/tau  + J*a)
 
@@ -409,7 +411,7 @@ end
 
 
 
-CairoMakie.activate!()
+    CairoMakie.activate!()
 begin
 f = Figure()
 ax = Axis(f[1,1], xlabel=L"t", ylabel=L"\sum_{\rho}\lambda_{\rho}  (a_{\rho})^2", yscale=log10)
@@ -581,7 +583,6 @@ display("a_min = $a_min")
 for (n,eigval) in pairs(eigenmodes["eigvals"][1:interval:maxn])
     scatter!(ax, FT_v_projs["ω"], FT_v_projs["Xf2"][n,:],color=1+(n-1)*interval, colorrange=(1,maxn),label="mode $(1+(n-1)*interval)",alpha=0.1)
 
-    a = vmean/v0
 
 
     tau = 1/Dr
@@ -589,12 +590,21 @@ for (n,eigval) in pairs(eigenmodes["eigvals"][1:interval:maxn])
     
     #display(a_min)
     
-    a = a_min
     #a = a_min
    # display(a)
     
     ω = FT_v_projs["ω"][1:end]
 
+    theory_ABP = @.  v0^2 * 2*tau * 2* pi *  ω^2 / ((1+(tau*ω)^2)* (eigval^2 +  ω^2))
+
+    a =  vmean/v0
+
+
+    A =  sqrt.((1/tau + J * a) .* eigval)
+
+    B = eigval .+ ( -J/a  + 1/tau  + J*a)
+
+    theory_J = @. 2*pi * v0^2 * 2/tau * ω^2/( (A^2 - ω^2)^2. + ω^2 * B^2)
 
     # theory =ω.^2 .* ( 1 .+  2 * J/a * eigval ./ (ω.^2 .+ eigval^2) .+ 0* J^2 * a^2 * (eigval^2 .+ ω.^2 .* (1 - 1/a^2)^2) ./ (ω.^4 + ω.^2 .* eigval^2)) .* 1 ./(eigval^2 .+ ω.^2) .*2*pi*1/Dr * v0^2 ./(1 .+ (ω ./ Dr).^2) *  (length(t)-min_t_ind)/(2*pi)
     
@@ -610,8 +620,8 @@ for (n,eigval) in pairs(eigenmodes["eigvals"][1:interval:maxn])
 
     # 1e-5 to offset the plot
 
-    elastic_offset =0.0
-    theory_433 =   ω.^2 .* v0^2 * 2/tau * 2 * pi^2 ./ ( ( (1/tau + J *( a + elastic_offset) )*eigval .- ω.^2).^2 .+ ω.^2 .* (eigval - J/a + 1/tau + J *(a+elastic_offset) )^2)*  ((length(t)-min_t_ind)/2/pi)
+    #elastic_offset =0.0
+    #theory_433 =   ω.^2 .* v0^2 * 2/tau * 2 * pi^2 ./ ( ( (1/tau + J *( a + elastic_offset) )*eigval .- ω.^2).^2 .+ ω.^2 .* (eigval - J/a + 1/tau + J *(a+elastic_offset) )^2)*  ((length(t)-min_t_ind)/2/pi)
 
     
     #theory_433_no_J =  ω.^2 .* v0^2 * 2/tau * 2 * pi ./ ( ( (1/tau + 0* J * a)*eigval .- ω.^2).^2 .+ ω.^2 .* (eigval - 0* J/a + 1/tau + 0*J * a)^2)*  (length(t)-min_t_ind)/(2*pi)
@@ -629,8 +639,8 @@ for (n,eigval) in pairs(eigenmodes["eigvals"][1:interval:maxn])
 
 
     #vlines!(ax, sqrt((1/tau + J * a)*eigval),color=1+(n-1)*interval, colorrange=(1,maxn),label="mode $(1+(n-1)*interval)", linestyle=:dash)
-    
-    lines!(ω, theory_433 ,color=1+(n-1)*interval, colorrange=(1,maxn),label="mode $(1+(n-1)*interval)", linestyle=:solid)
+    lines!(ω, theory_ABP*  (length(t)-min_t_ind)/(2*pi) ,color=1+(n-1)*interval, colorrange=(1,maxn),label="mode $(1+(n-1)*interval)", linestyle=:dash,alpha=0.2)
+    lines!(ω, theory_J*  (length(t)-min_t_ind)/(2*pi) ,color=1+(n-1)*interval, colorrange=(1,maxn),label="mode $(1+(n-1)*interval)", linestyle=:solid, alpha=0.2)
 end
 
 xlims!(ax, (0.001,.2))
