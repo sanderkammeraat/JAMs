@@ -204,45 +204,93 @@ end
 
 @everywhere base_path = "/data2/kammeraat/sa/statistics"
 
-@everywhere Drs = [0., 0.01, 0.1, 1.0] 
-@everywhere Js=[0.0, 0.01, 0.1, 1.]
-@everywhere v0s = [0.001, 0.01, 0.1, 0.2]
+@everywhere Drs = [ 0.01] 
+@everywhere Js=[0.0, 0.001, 0.01, 0.02, 0.04, 0.08, 0.10, 0.12, 0.16, 0.2, 0.4, 0.8, 1]
+@everywhere v0s = [0.01]
 
-#Let's keep the 
+#Let's keep the seeds constant across parameter choice
 @everywhere seeds = collect(1:10)
+
+#Creating the seeds
+# for m in eachindex(seeds)
+#     seed = seeds[m]
+
+#     #We use the same 10 random inital conditions for all parameter space points, this to make sure the modes are the same
+
+#     display("Relaxation step")
+
+#     rx_save_folder_path = joinpath(base_path,"hex_disordered","phi_1.3","Nlin_20","simdata","initial_relaxation","seed_$seed")
+#     rx_result= relaxation_step(rx_save_folder_path, Tsave=1000)
+
+#     # for k in eachindex(v0s)
+
+#     #     for i in eachindex(Drs)
+
+#     #             @sync @distributed for j in eachindex(Js)
+             
+
+#     #             display(Threads.nthreads())
+
+#     #             J = Js[j]
+#     #             Dr = Drs[i]
+#     #             v0 = v0s[k]
+#     #             seed = seeds[m]
+                
+                
+
+#     #             save_folder_path = joinpath(base_path,"hex_disordered","phi_1.3","Nlin_20","simdata","v0_$(v0)","Dr_$Dr","J_$J","seed_$seed");
+#     #             display(save_folder_path)
+
+#     #             # rx_step,J,v0, Dr, seed, save_folder_path
+#     #             sa_result=self_aligning_step(deepcopy(rx_result), J , v0, Dr,nothing, save_folder_path,Tsave=100);
+
+#     #             ra_result=relax_again_step(deepcopy(sa_result), save_folder_path, Tsave=1000);
+
+
+#     #         end
+#     #     end
+#     # end
+# end
 
 for m in eachindex(seeds)
     seed = seeds[m]
 
-    #We use the same 10 random inital conditions for all parameter space points, this to make sure the modes are the same
+    rx_save_folder_path = joinpath(base_path,"hex_disordered","phi_1.3","Nlin_20","simdata","initial_relaxation","seed_$seed","rx_JAMs_final_state.jld2")
 
-    display("Relaxation step")
 
-    rx_save_folder_path = joinpath(base_path,"hex_disordered","phi_1.3","Nlin_20","simdata","initial_relaxation","seed_$seed")
-    rx_result= relaxation_step(rx_save_folder_path, Tsave=1000)
+    jldopen(rx_save_folder_path, "r", iotype=IOStream ) do rx_file
 
-    for k in eachindex(v0s)
-        for j in eachindex(Js)
-            @sync @distributed for i in eachindex(Drs)
 
-                display(Threads.nthreads())
+        rx_result = rx_file["SIM"]
 
-                J = Js[j]
-                Dr = Drs[i]
-                v0 = v0s[k]
-                seed = seeds[m]
-                
+
+        for k in eachindex(v0s)
+
+            for i in eachindex(Drs)
+
+                    @sync @distributed for j in eachindex(Js)
                 
 
-                save_folder_path = joinpath(base_path,"hex_disordered","phi_1.3","Nlin_20","simdata","v0_$(v0)", "J_$J","Dr_$Dr","seed_$seed");
-                display(save_folder_path)
 
-                # rx_step,J,v0, Dr, seed, save_folder_path
-                sa_result=self_aligning_step(deepcopy(rx_result), J , v0, Dr,nothing, save_folder_path,Tsave=100);
+                    display(Threads.nthreads())
 
-                ra_result=relax_again_step(deepcopy(sa_result), save_folder_path, Tsave=1000);
+                    J = Js[j]
+                    Dr = Drs[i]
+                    v0 = v0s[k]
+                    seed = seeds[m]
+                    
+                    
+
+                    save_folder_path = joinpath(base_path,"hex_disordered","phi_1.3","Nlin_20","simdata","v0_$(v0)","Dr_$Dr","J_$J","seed_$seed");
+                    display(save_folder_path)
+
+                    # rx_step,J,v0, Dr, seed, save_folder_path
+                    sa_result=self_aligning_step(deepcopy(rx_result), J , v0, Dr,nothing, save_folder_path,Tsave=100);
+
+                    ra_result=relax_again_step(deepcopy(sa_result), save_folder_path, Tsave=1000);
 
 
+                end
             end
         end
     end
