@@ -93,7 +93,7 @@ function simulation(soft_disk_no_overlap_result)
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.01, 500, Tplot=20,fps=Inf,plot_functions=(plot_shape_disks_type!,plot_disks_orientation!,plot_directors!, plot_field_magnitude!), plotdim=2, Tsave=20, save_functions=(save_2d_shape_polar_p!,save_single_2d_field!), save_folder_path = joinpath(homedir(),"triangle_movie")); 
+    sim = Euler_integrator(system,0.01, 500, Tplot=20,fps=Inf,plot_functions=(plot_shape_disks_type!,plot_disks_orientation!,plot_directors!, plot_field_magnitude!), plotdim=2, Tsave=nothing, save_functions=(save_2d_shape_polar_p!,save_single_2d_field!), save_folder_path = joinpath(homedir(),"triangle_movie")); 
     return sim;
 
 end 

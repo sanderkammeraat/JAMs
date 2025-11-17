@@ -620,6 +620,7 @@ end
 end
 
 
+
 function particle_step!(i,p_i, current_particle_state,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
     if Npair>0
         p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system,cells,stencils,rngs_particles)
@@ -690,8 +691,7 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cel
                 
                 if dxn<=system.rcut_pair_global
 
-                    p_i=pair_force_iterate!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, system.pair_forces)
-
+                    pair_force_iterate!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, system.pair_forces)
 
                     # for force in system.pair_forces
                     #     p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force)

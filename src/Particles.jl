@@ -105,14 +105,8 @@ struct PolarPolymerParticle3d<:Particle
     p::MVector{3,Float64}
     q::MVector{3,Float64}
     ci::MVector{3,Int64}
-
-
+    
 end
-
-
-
-
-
 
 #Parametrize on the shape extent (point defining the contour) 
 struct PolarShape<:RigidBody

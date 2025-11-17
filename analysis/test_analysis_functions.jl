@@ -9,29 +9,29 @@ CairoMakie.activate!()
 
 #base_folder = joinpath(homedir(),"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr")
 
-#base_folder = joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_20", "t5e4")
+base_folder = joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_20", "vary_J_Dr")
 
-base_folder = joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_50")
+#base_folder = joinpath("/Volumes","T7_Shield","sa","survey","hex_disordered", "phi_1", "Nlin_50")
 
 
 #base_folder =  joinpath(homedir(),"mounting", "alicedata1_kammeraatsc1",  "JuliaOnALICE","hex_dis","Nlin_100")
 
-figure_save_folder = mkpath(joinpath(base_folder,"exploratory_figures_04_11"))
+figure_save_folder = mkpath(joinpath(base_folder,"exploratory_figures_14_11"))
 
 #base_folder = joinpath(homedir(),"sa","survey","hex_disordered","phi_1","Nlin_4","vary_J_Dr")
-raw_data_base_folder = joinpath(base_folder, "simdata")
+#raw_data_base_folder = joinpath(base_folder, "simdata")
 
-#raw_data_base_folder = joinpath(base_folder, "simdata","J_0.1","Dr_0.01", "seed_1")
+raw_data_base_folder = joinpath(base_folder, "simdata","J_0.0","Dr_0.1", "seed_6")
 
 #Make tree to navigate simulation data folder structure
 #tree = construct_folder_tree_param_param_seed(raw_data_base_folder)
 
 #raw_data_file_path = joinpath(raw_data_base_folder,"J_0.1","Dr_0.01","seed_1","sa_raw_data.h5")
 
-raw_data_file_path = joinpath(raw_data_base_folder,"sa_raw_data.h5")
+raw_data_file_path = joinpath(raw_data_base_folder,"sa_raw_data.jld2")
 
 
-raw_data_file = jldopen(raw_data_file_path, "r",iotype=IOStream)
+raw_data_file = jldopen(raw_data_file_path, "r")
 
 frames = raw_data_file["frames"]
 system = raw_data_file["system"]
@@ -41,13 +41,13 @@ print(frames)
 #frames_support = jldopen(joinpath(raw_data_base_folder,"J_0.1","Dr_0.01","seed_1","ra_raw_data.h5"),"r")["frames"]
 
 #For now use last frame of first relaxation step
-frames_support = jldopen(joinpath(raw_data_base_folder,"rx_raw_data.h5"),"r",iotype=IOStream)["frames"]
+frames_support = jldopen(joinpath(raw_data_base_folder,"rx_raw_data.jld2"),"r")["frames"]
 
 t =  raw_data_file["integration_info"]["save_tax"]
 v0 = frames["1"]["v0"][1]
 Dr = frames["1"]["Dr"][1]
-J = system["forces"]["external"]["self_align_with_v_unit_force"]["β"]
-k = system["forces"]["pair"]["soft_disk_force"]["karray"]
+J = system["forces"]["external_forces"]["self_align_with_v_unit_force"]["β"]
+k = system["forces"]["pair_forces"]["soft_disk_force"]["karray"]
 R = frames["1"]["R"]
 type = frames["1"]["type"]
 Nt = length(t)
@@ -117,7 +117,7 @@ end
 function get_tag()
 
 
-    k =system["forces"]["pair"]["soft_disk_force"]["karray"]
+    k =system["forces"]["pair_forces"]["soft_disk_force"]["karray"]
 
     #Interior particles
     Nint = sum(type .== 1)
@@ -245,7 +245,7 @@ end
 
 
 
-
+CairoMakie.activate!()
 begin
 f = Figure()
 ax = Axis(f[1,1], xlabel=L"t", ylabel=L"v/v_0")
@@ -260,7 +260,7 @@ interval = 1
 # end
 
 hlines!(ax, vmean/v0, color="black")
-xlims!(ax, 5000,t[end])
+#xlims!(ax, 5000,t[end])
 ylims!(0,1)
 #modenumbers = range(1,size(v_projs)[1])
 #heatmap!(ax, sqrt.(eigenmodes["eigvals"]),FT_v_projs["ω"], log10.(FT_v_projs["Xf2"]))
@@ -310,19 +310,23 @@ v_projs = project_on_eigvecs(eigenmodes["eigvecs"], vx,vy)
 p_projs = project_on_eigvecs(eigenmodes["eigvecs"], px,py)
 
 GLMakie.activate!()
+#CairoMakie.activate!()
 begin
 f = Figure()
 ωs = sqrt.(eigenmodes["eigvals"])
-ax = Axis(f[1,1], xlabel=L"ω_n", ylabel=L"vproj", yscale=log10)
+ax = Axis(f[1,1], xlabel=L"ω_n", ylabel=L"vproj^2", yscale=log10)#, xscale=log10)
                         
 tau =1/Dr
 theory = v0^2  ./ (2 .+ 2 .* ωs.^2 .* tau)
 
-a = vmean/v0
+prefactor = 1/tau 
 
-theory_corrected = theory + J * tau * v0^2 /a .* 1 ./(2 * (1 .+ tau * ωs.^2).^2)
+eigval_ind=1
+a_min = sqrt(1 +  (eigenmodes["eigvals"][eigval_ind]/(2 * J) + 1/(2 * tau *J ))^2 ) - (eigenmodes["eigvals"][eigval_ind]/(2 * J) + 1/(2 * tau *J))
 
-theory_chiral = v0^2/2 .*  (1 .- (ωs.^2 .* (Dr .+  ωs.^2)) ./ ((Dr .+  ωs.^2).^2  .+ J^2  * (1 - a^2) ))
+#a based on loweest mode selection
+a = a_min
+
 
 A =  (1/tau + J * a) .* eigenmodes["eigvals"]
 
@@ -333,26 +337,73 @@ display(4*A[1]- B[1]^2)
 display(B[1]^2)
 
 
-select = @. B^2 - 4* A .>0
+select = B .> 2* A
+
+A =   A[select]
+B = B[select]
+theory_amin = @. pi * (B - sqrt(B^2 - 4 * A^2))/B/sqrt(-4*A^2 + 2 * B * (B - sqrt(B^2-4*A^2))) * v0^2 *2/tau*prefactor
+
+numerics =  mean(v_projs[:,1000:end].^2, dims=2)[:,1]
+scatterlines!(ax,ωs[1:end], numerics[1:end],  label="numerics", linewidth=0.5 )
+
+lines!(ax, ωs[select], theory_amin, alpha=1, color="black", label="lowest mode -> a")
+
+#a based on empirically most excited mode selection
+eigval_ind=findmax(numerics)[2]
+a_min = sqrt(1 +  (eigenmodes["eigvals"][eigval_ind]/(2 * J) + 1/(2 * tau *J ))^2 ) - (eigenmodes["eigvals"][eigval_ind]/(2 * J) + 1/(2 * tau *J))
+a = a_min
+A =  (1/tau + J * a) .* eigenmodes["eigvals"]
+
+B = eigenmodes["eigvals"] .+ ( -J/a  + 1/tau  + J*a)
+
+display(B[1])
+display(4*A[1]- B[1]^2)
+display(B[1]^2)
+
+
+select = B .> 2* A
+
+A =   A[select]
+B = B[select]
+theory_amin = @. pi * (B - sqrt(B^2 - 4 * A^2))/B/sqrt(-4*A^2 + 2 * B * (B - sqrt(B^2-4*A^2))) * v0^2 *2/tau*prefactor
+
+
+lines!(ax, ωs[select], theory_amin, alpha=1, color="red", label="empirically exc mode - > a")
+
+## empirical a
+a =  vmean/v0
+
+A =  (1/tau + J * a) .* eigenmodes["eigvals"]
+
+B = eigenmodes["eigvals"] .+ ( -J/a  + 1/tau  + J*a)
+
+display(B[1])
+display(4*A[1]- B[1]^2)
+display(B[1]^2)
+
+
+select = B .> 2* A
 
 A =   A[select]
 B = B[select]
 
+theory_aemp = @. pi * (B - sqrt(B^2 - 4 * A^2))/B/sqrt(-4*A^2 + 2 * B * (B - sqrt(B^2-4*A^2))) * v0^2 *2/tau*prefactor
 
 
-
-theory_433 = @. v0^2/sqrt(2)/tau * ( sqrt(B^2 -2* A  + B * sqrt(B^2 - 4* A)) - sqrt(B^2 -2* A  - B * sqrt(B^2 - 4* A)) )/(B * sqrt(B^2 - 4 * A))
-
-numerics =  mean(v_projs[:,40000:end].^2, dims=2)[:,1]
-scatterlines!(ax,ωs[1:end], numerics[1:end],  label="$Dr", linewidth=0.5 )
 tag = get_tag()
 Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
 
-f[1,2]=Legend(f,ax)
-lines!(ax, ωs, theory, alpha=1, linestyle=:dash, color="black")
-lines!(ax, ωs, theory_chiral, alpha=1, color = "orange")
 
-lines!(ax, ωs[select], theory_433, alpha=1, color = "green")
+
+
+lines!(ax, ωs[select], theory_aemp, alpha=1, color="orange", label="empirical v/v0 - > a")
+
+f[1,2]=Legend(f,ax)
+#save(joinpath(figure_save_folder,"vprojs_projections.pdf"),f)
+#xlims!(0,1)
+#lines!(ax, ωs, theory_chiral, alpha=1, color = "orange")
+
+#lines!(ax, ωs[select], theory_433, alpha=1, color = "green")
 display(f)
 end
 

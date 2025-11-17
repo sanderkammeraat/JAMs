@@ -10,12 +10,13 @@ function simulation()
     #pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,1.3, 1, 0., 0.3), pair_nematic_alignment_force(1,2.5,0.15))
     pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,1.3, -1, 0, 0.3), pair_nematic_alignment_force(1,2.5,0.3))
 
+
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1))
     global_dofevolvers = []
     field_dofevolvers = []
 
-    N=4000
+    N=10000
     ϕ = 1.0
     poly=15e-6
     Rs = rand(Uniform(1-poly, 1+poly),N)
@@ -34,14 +35,14 @@ function simulation()
     field_updaters = []
 
     #β=-1 interesting!
-    external_forces = (ABP_perpendicular_angular_noise(1,[0,0,1]),)
+    external_forces = []#(ABP_perpendicular_angular_noise(1,[0,0,1]),)
 
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,2.5*(1+poly));
 
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.05, 1e4, Tplot=10,fps=Inf,plot_functions=(plot_disks_nematic_orientation!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,0.05, 1e4, Tplot=10,fps=Inf,plot_functions=(plot_disks_nematic_orientation!,), plotdim=2)#, plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim;
 
 end

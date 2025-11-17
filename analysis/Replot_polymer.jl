@@ -3,6 +3,7 @@ include(joinpath("..","src","Engine.jl"))
 include("AnalysisFunctions.jl")
 include("AnalysisPipeline.jl")
 using GLMakie
+
 GLMakie.activate!()
 
 @views function make_movie(raw_data_file,save_folder)
@@ -90,6 +91,5 @@ base_folder= joinpath("/Users/kammeraat/ANP/demos/N_in_pol_10/k_par_-1.0/k_per_0
 
 
 raw_data_file=h5open(joinpath(base_folder,"raw_data.h5"),"r")
-
 
 make_movie(raw_data_file,joinpath(base_folder,"movie"))

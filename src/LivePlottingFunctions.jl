@@ -387,6 +387,43 @@ function plot_directors!(ax, cpsO, cfsO)
 
 end
 
+function plot_nematic_directors!(ax, cpsO, cfsO)
+
+    x = @lift([p_i.x[1] for p_i in $cpsO])
+    y = @lift([p_i.x[2] for p_i in $cpsO])
+
+    
+    if length(cpsO[][1].x)>2
+
+        x = @lift([ Point3f( p_i.x[1],p_i.x[2],p_i.x[3]) for p_i in $cpsO])
+        p = @lift([ Point3f( p_i.p[1],p_i.p[2],p_i.p[3]) for p_i in $cpsO])
+
+        pmin = @lift(-1*[ Point3f( p_i.p[1],p_i.p[2],p_i.p[3]) for p_i in $cpsO])
+
+
+        c = @lift([ angle(p_i.p[1]+1im*p_i.p[2]) for p_i in $cpsO])
+        arrows!(ax, x, p , color=c,  colormap=:hsv,colorrange=(-pi,pi))
+        arrows!(ax, x, pmin , color=c,  colormap=:hsv,colorrange=(-pi,pi))
+
+
+    else
+        nx = @lift(cos.([ p_i.θ[1] for p_i in $cpsO]))
+        ny = @lift(sin.([ p_i.θ[1] for p_i in $cpsO]))
+
+
+        nxmin = @lift(-1*cos.([ p_i.θ[1] for p_i in $cpsO]))
+        nymin = @lift(-1*sin.([ p_i.θ[1] for p_i in $cpsO]))
+
+
+        c = @lift(angle2range.([ p_i.θ[1] for p_i in $cpsO]))
+        arrows!(ax, x, y, nx, ny, color=c,  colormap=:hsv,colorrange=(0, 2*pi))
+        arrows!(ax, x, y, nxmin, nymin, color=c,  colormap=:hsv,colorrange=(0, 2*pi))
+
+    end
+    return ax
+
+end
+
 function plot_velocity_vectors!(ax,cpsO, cfsO)
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
