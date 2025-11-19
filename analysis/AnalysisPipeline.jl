@@ -330,7 +330,7 @@ end
 
 function run_sequential_movie(raw_data_file_paths, movie_save_paths,custom_movie_function; only_seed="seed_1")
 
-    for i in eachindex(raw_data_file_paths)
+    @showprogress showspeed=true for i in eachindex(raw_data_file_paths)
 
         raw_data_file_path = raw_data_file_paths[i]
 

@@ -8,7 +8,7 @@ include("AnalysisPipeline.jl")
 #base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 
 
-base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
+base_folder = "/data2/kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 #rp, sp, ap = auto_analysis_dir(base_folder, "sa_raw_data.h5"; support_raw_data_file_name_pattern = "ra_raw_data.h5")
 
 #custom_analysis_function = run_sa_analysis!
@@ -106,7 +106,7 @@ rp, mp =  auto_movie_dir(base_folder, "sa_raw_data.h5")
     tag = Dict("ϕ"=>ϕ, "v0"=> v0, "Nint"=> Nint, "poly"=>poly, "k"=>k, "Dr"=>Dr, "J"=>J)
     Label(f[2,1],"System parameters: "*string(["$(key)=$(val)" for (key,val) in tag]), tellwidth=false, halign=:left, word_wrap = true)
     display(f)
-    record(f, movie_save_path, frame_numbers; visible=true, compression = 28) do i 
+    record(f, movie_save_path, frame_numbers, visible=false, compression = 28) do i 
 
         stri = string(i)
         t[] = frames[stri]["t"]
