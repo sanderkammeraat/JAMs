@@ -205,6 +205,8 @@ end
 
     vp_y = @lift( sin.($cp-$cv) )
 
+
+
     #arrows!(ax, x,y, vx,vy , color=cv,  colormap=:hsv,colorrange=(-pi,pi))
 
 
@@ -212,7 +214,7 @@ end
 
     display(f)
 
-    record(f, joinpath(save_folder,"Dr_$(Dr)_J_$(J)_v2.mp4"), frame_numbers; visible=true) do i 
+    record(f, joinpath(save_folder,"Dr_$(Dr)_J_$(J)_v2.mp4"), frame_numbers; visible=true, compression = 28 ) do i 
 
         stri = string(i)
         t[] = frames[stri]["t"]

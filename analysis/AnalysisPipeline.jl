@@ -1,7 +1,9 @@
 using Distributed
+
 include(joinpath("..","src","Engine.jl"))
 include("AnalysisFunctions.jl")
 include("CustomAnalysisFunctions.jl")
+include("CustomEnsembleFunctions.jl")
 
 #Helper function
 function load_file(file_location)
@@ -11,7 +13,7 @@ function load_file(file_location)
 end
 
 #Helper function
-function initialize_analysis_file(save_path; overwrite = false, append=false)
+function initialize_file(save_path; overwrite = false, append=false)
 
     save_folder_path = mkpath(dirname(save_path))
 
@@ -35,7 +37,7 @@ function initialize_analysis_file(save_path; overwrite = false, append=false)
             return file
 
         else
-            error("Analysis file already existing, aborting to prevent overwriting.")
+            error("Initialized file already existing, aborting to prevent overwriting.")
         end
     end
 end
@@ -55,7 +57,7 @@ function analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_
     loaded_support_raw_data_file = !isnothing(support_raw_data_file_path) ?  load_file(support_raw_data_file_path) : nothing
 
     try 
-        initialized_analysis_file = initialize_analysis_file(analysis_save_path; overwrite = overwrite, append=append)
+        initialized_analysis_file = initialize_file(analysis_save_path; overwrite = overwrite, append=append)
 
         try 
             
@@ -65,7 +67,9 @@ function analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_
             #Closing the files
             close(initialized_analysis_file)
 
-            close(loaded_support_raw_data_file)
+            if !isnothing(loaded_support_raw_data_file)
+                close(loaded_support_raw_data_file)
+            end
 
             close(loaded_raw_data_file)
 
@@ -74,7 +78,9 @@ function analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_
             println("Something in the custom analysis function went wrong. Safely aborting and closing the files.")
             close(initialized_analysis_file)
 
-            close(loaded_support_raw_data_file)
+            if !isnothing(loaded_support_raw_data_file)
+                close(loaded_support_raw_data_file)
+            end
 
             close(loaded_raw_data_file)
 
@@ -83,7 +89,77 @@ function analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_
     catch e
         println("Something went wrong. Safely aborting and closing the files.")
 
-        close(loaded_support_raw_data_file)
+        if !isnothing(loaded_support_raw_data_file)
+            close(loaded_support_raw_data_file)
+        end
+
+        close(loaded_raw_data_file)
+
+        rethrow(e)
+
+    end
+
+end
+
+function ensemble_single(seed_file_paths, custom_ensemble_function; overwrite = false, append = false)
+
+
+    #Preparing files
+
+    loaded_seed_files = [ load_file(seed_file_path) for seed_file_path in seed_file_paths]
+
+    seed_names = [ splitpath(seed_file_path)[end] for seed_file_path in seed_file_paths ]
+
+    try 
+        initialized_ensemble_file = initialize_file(ensemble_save_path; overwrite = overwrite, append=append)
+
+        try 
+            
+            #Actually running the analysis
+            initialized_ensemble_file = custom_ensemble_function(initialized_ensemble_file,loaded_seed_files, seed_names)
+
+            #Closing the files
+            close(initialized_ensemble_file)
+
+            close.(loaded_seed_files)
+
+        catch e 
+
+            println("Something in the custom analysis function went wrong. Safely aborting and closing the files.")
+            close(initialized_ensemble_file)
+
+            close.(loaded_seed_files)
+
+            rethrow(e)
+        end
+    catch e
+        println("Something went wrong. Safely aborting and closing the files.")
+
+
+        close.(loaded_seed_files)
+
+        rethrow(e)
+
+    end
+
+end
+
+
+function movie_single(raw_data_file_path, movie_save_path, custom_movie_function)
+
+
+    #Preparing files
+    loaded_raw_data_file = load_file(raw_data_file_path)
+
+    try 
+        mkpath(dirname(movie_save_path))
+        custom_movie_function(loaded_raw_data_file,movie_save_path)
+
+
+        close(loaded_raw_data_file)
+
+    catch e
+        println("Something went wrong. Safely aborting and closing the raw data file.")
 
         close(loaded_raw_data_file)
 
@@ -113,9 +189,25 @@ function extract_frame_data_for_type(datakey, type, frame_data)
 
 end
 
-#helper function, thanks to https://discourse.julialang.org/t/find-all-files-named-findthis-csv-in-nested-subfolders-of-rootfolder/118096/7
-findfile(directory, file) = [joinpath(root, file) for (root, dirs, files) in walkdir(directory) if file in files]
-#
+function findfile(directory, filepattern)
+
+    paths = String[]
+
+    for (root, dirs, files) in walkdir(directory)
+
+        for file in files
+
+            if occursin(filepattern, file) && occursin(".h5", file)
+
+                push!(paths, joinpath(root, file))
+            end
+        end
+    end
+
+    return paths
+end
+
+
 
 function auto_analysis_dir(base_folder, raw_data_file_name_pattern; support_raw_data_file_name_pattern = nothing, mimic_source_dir_name = "simdata",mimic_target_dir_name = "analysis")
 
@@ -131,6 +223,51 @@ function auto_analysis_dir(base_folder, raw_data_file_name_pattern; support_raw_
 
 
     return raw_data_file_paths, support_raw_data_file_paths, analysis_save_paths
+
+end
+
+function auto_ensemble_dir(base_folder, analysis_file_name_pattern; mimic_source_dir_name = "analysis", mimic_target_dir_name = "ensembles")
+
+    #Find all analysis files
+    analysis_file_paths = findfile(base_folder, analysis_file_name_pattern)
+
+    display(analysis_file_paths)
+
+    #Construct ensemble save folder structures
+    ensemble_save_folders = unique(replace.( dirname.(analysis_file_paths), mimic_source_dir_name => mimic_target_dir_name))
+
+    ensemble_save_paths = joinpath.(ensemble_save_folders,"ensemble.h5")
+
+    seed_file_paths_per_ensemble_folder = []
+    
+    for i in eachindex(ensemble_save_folders)
+
+        #Corresponding analysis folder
+        analysis_folder  = replace.( ensemble_save_folders[i], mimic_target_dir_name => mimic_source_dir_name) 
+
+        #Find all seeds in this folder
+        seed_paths_in_ensemble = findfile(analysis_folder, analysis_file_name_pattern)
+
+        #Add these file paths to the corresponding ensemble
+        push!(seed_file_paths_per_ensemble_folder,seed_paths_in_ensemble)
+    end
+
+
+    return ensemble_save_paths, seed_file_paths_per_ensemble_folder
+end
+
+function auto_movie_dir(base_folder, raw_data_file_name_pattern, mimic_source_dir_name = "simdata", mimic_target_dir_name = "movies")
+
+    raw_data_file_paths = findfile(base_folder, raw_data_file_name_pattern)
+
+    seed_dir_names = [ splitpath(dirname(file_path))[end] for file_path in raw_data_file_paths]
+
+    movie_save_folders = replace.( dirname.(dirname.(raw_data_file_paths)), mimic_source_dir_name => mimic_target_dir_name) 
+
+    movie_save_paths = [joinpath(movie_save_folders[i],seed_dir_names[i]*".mp4") for i=eachindex(seed_dir_names)]
+
+
+    return raw_data_file_paths, movie_save_paths
 
 end
 
@@ -179,3 +316,31 @@ function run_sequential_analysis(raw_data_file_paths, analysis_save_paths,custom
 
 end
 
+function run_multithreaded_movie(raw_data_file_paths, movie_save_paths,custom_movie_function)
+
+    Threads.@threads for i in eachindex(raw_data_file_paths)
+        raw_data_file_path = raw_data_file_paths[i]
+        println(raw_data_file_path)
+        movie_save_path = movie_save_paths[i]
+
+        movie_single(raw_data_file_path, movie_save_path, custom_movie_function)
+    end
+
+end
+
+function run_sequential_movie(raw_data_file_paths, movie_save_paths,custom_movie_function; only_seed="seed_1")
+
+    for i in eachindex(raw_data_file_paths)
+
+        raw_data_file_path = raw_data_file_paths[i]
+
+        if splitpath(raw_data_file_path)[end-1] == only_seed
+        
+            println(raw_data_file_path)
+            movie_save_path = movie_save_paths[i]
+
+            movie_single(raw_data_file_path, movie_save_path, custom_movie_function)
+        end
+    end
+
+end
