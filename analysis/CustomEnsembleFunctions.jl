@@ -11,12 +11,7 @@ end
 
 #helper function
 
-
-
-
-
 function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
-
 
     #Use the first seed to extract system information
 
@@ -60,9 +55,6 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
         #save_dict2h5!(ensemble_file["v_projs"]["seeds"][seed_name],v_proj,)
 
     end
-
-
-
 
     return ensemble_file
 end
