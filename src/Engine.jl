@@ -5,7 +5,6 @@ using JLD2
 using HDF5
 using CodecZlib
 using ProgressMeter
-using Unrolled
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
 include("Particles.jl")
@@ -597,27 +596,24 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     end
 end
 
-@unroll function local_dofevolver_iterate!(p_i, t, dt, local_dofevolvers)
+function local_dofevolver_iterate!(p_i, t, dt, local_dofevolvers)
 
-    @unroll for dofevolver in local_dofevolvers
-        p_i=evolve_locally!(p_i, t, dt, dofevolver)
-    end
+    map(dofevolver->evolve_locally!(p_i, t, dt, dofevolver), local_dofevolvers)
+
     return p_i
 end
 
-@unroll function external_force_iterate!(p_i, t, dt,rngs_particles, system, external_forces)
+function external_force_iterate!(p_i, t, dt,rngs_particles, system, external_forces)
 
-    @unroll for force in external_forces
-        p_i=contribute_external_force!(p_i, t, dt,rngs_particles, system, force)
-    end
+    map(force->contribute_external_force!(p_i, t, dt,rngs_particles, system, force), external_forces)
+
     return p_i
 end
 
-@unroll function pair_force_iterate!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, pair_forces)
+function pair_force_iterate!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, pair_forces)
 
-    @unroll for force in pair_forces
-        p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force)
-    end
+    map(force->contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force),pair_forces)
+    
     return p_i
 end
 

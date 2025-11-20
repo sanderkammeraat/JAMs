@@ -16,7 +16,7 @@ function simulation()
     global_dofevolvers = []
     field_dofevolvers = []
 
-    N=1000
+    N=5000
     ϕ = 1.0
     poly=15e-6
     Rs = rand(Uniform(1-poly, 1+poly),N)
