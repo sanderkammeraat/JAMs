@@ -112,7 +112,7 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
 
     
     
-    eigvalbins = create_bins(0, 10,0.05)
+    eigvalbins = create_bins(0, 10,0.02)
 
 
     ensemble_file["eigval_bin_centers"] = eigvalbins.centers
