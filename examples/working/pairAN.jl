@@ -16,7 +16,7 @@ function simulation()
     global_dofevolvers = []
     field_dofevolvers = []
 
-    N=1500
+    N=1000
     ϕ = 1.0
     poly=15e-6
     Rs = rand(Uniform(1-poly, 1+poly),N)
@@ -37,12 +37,12 @@ function simulation()
     #β=-1 interesting!
     external_forces = []#(ABP_perpendicular_angular_noise(1,[0,0,1]),)
 
-    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,2.5*(1+poly));
+    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,3.);
 
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.05, 1e4, Tplot=10,fps=Inf,plot_functions=(plot_disks_nematic_orientation!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,0.05, 1e4, Tplot=10,fps=Inf,plot_functions=(plot_transparant_disks!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim;
 
 end

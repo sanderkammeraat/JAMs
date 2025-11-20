@@ -241,6 +241,21 @@ function plot_disks!(ax, cpsO, cfsO)
 
     return ax
 end
+
+function plot_transparant_disks!(ax, cpsO, cfsO)
+
+
+    x = @lift([p_i.x[1] for p_i in $cpsO])
+    y = @lift([p_i.x[2] for p_i in $cpsO])
+    
+    s = @lift([2*p_i.R[1]  for p_i in $cpsO])
+    scatter!(ax,x,y, color=:white, markersize =s,marker = Circle, markerspace=:data,alpha=0.1, strokecolor=:black, strokewidth=.2)
+
+    return ax
+end
+
+
+
 function plot_disks_type!(ax, cpsO, cfsO)
 
 
@@ -401,7 +416,7 @@ function plot_nematic_directors!(ax, cpsO, cfsO)
         pmin = @lift(-1*[ Point3f( p_i.p[1],p_i.p[2],p_i.p[3]) for p_i in $cpsO])
 
 
-        c = @lift([ angle(p_i.p[1]+1im*p_i.p[2]) for p_i in $cpsO])
+        c = @lift([ angle( exp(angle(p_i.p[1]+1im*p_i.p[2])*2  * 1im)) for p_i in $cpsO])
         arrows!(ax, x, p , color=c,  colormap=:hsv,colorrange=(-pi,pi))
         arrows!(ax, x, pmin , color=c,  colormap=:hsv,colorrange=(-pi,pi))
 
@@ -415,7 +430,7 @@ function plot_nematic_directors!(ax, cpsO, cfsO)
         nymin = @lift(-1*sin.([ p_i.θ[1] for p_i in $cpsO]))
 
 
-        c = @lift(angle2range.([ p_i.θ[1] for p_i in $cpsO]))
+        c = @lift([ angle( exp(angle(p_i.p[1]+1im*p_i.p[2])*2  * 1im)) for p_i in $cpsO])
         arrows!(ax, x, y, nx, ny, color=c,  colormap=:hsv,colorrange=(0, 2*pi))
         arrows!(ax, x, y, nxmin, nymin, color=c,  colormap=:hsv,colorrange=(0, 2*pi))
 

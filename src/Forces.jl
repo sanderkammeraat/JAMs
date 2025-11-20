@@ -809,7 +809,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
             p_i.f.+= f
             #add torque
             if force.torque
-                p_i.q.+= cross(dx/dxn .*p_i.R[1], f)
+                p_i.q.+= cross(dx/2, f)
             end
         end
     end
@@ -869,7 +869,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
             #rij_cap = dx/dxn
 
 
-            sigma_i_dot_dx = force.parray[p_i.type[1]] *  dot(p_i.p,dx) .* p_i.p
+            sigma_i_dot_dx = force.parray[p_i.type[1]] *  dot(p_i.p, dx) .* p_i.p
 
             sigma_j_dot_dx = force.parray[p_j.type[1]] * dot(p_j.p, dx) .* p_j.p
 
@@ -878,12 +878,12 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
             sigma_j_dot_dx_perp = force.parray[p_j.type[1]] *  dot(p_j.p,cross(dx,z_hat)).* p_j.p
 
 
-            f.= β .*  ( force.k_par .* (sigma_i_dot_dx .+ sigma_j_dot_dx )  .+ force.k_per .* (sigma_i_dot_dx_perp .+ sigma_j_dot_dx_perp .* p_j.p ))
+            f.= β .*  ( force.k_par .* (sigma_i_dot_dx .+ sigma_j_dot_dx )  .+ force.k_per .* (sigma_i_dot_dx_perp .+ sigma_j_dot_dx_perp ))
 
             p_i.f.+= f
             #add torque
             if force.torque
-                p_i.q.+= cross(dx/dxn .*p_i.R[1], f)
+                p_i.q.+= cross(dx/2, f)
             end
         end
     end
@@ -897,6 +897,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
         if p_j.pol_id[1]!=p_i.pol_id[1]
 
             d2a = p_i.R[1]+p_j.R[1]
+            
 
             r = force.rfact*d2a::Float64
 
@@ -918,12 +919,12 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
                 sigma_j_dot_dx_perp = force.parray[p_j.type[1]] *  dot(p_j.p,cross(dx,z_hat)).* p_j.p
 
 
-                f.= β .*  ( force.k_par .* (sigma_i_dot_dx .+ sigma_j_dot_dx )  .+ force.k_per .* (sigma_i_dot_dx_perp .+ sigma_j_dot_dx_perp .* p_j.p ))
+                f.= β .*  ( force.k_par .* (sigma_i_dot_dx .+ sigma_j_dot_dx )  .+ force.k_per .* (sigma_i_dot_dx_perp .+ sigma_j_dot_dx_perp ))
 
                 p_i.f.+= f
                 #add torque
                 if force.torque
-                    p_i.q.+= cross(dx/dxn .*p_i.R[1], f)
+                    p_i.q.+= cross(dx/2, f)
                 end
             end
         end

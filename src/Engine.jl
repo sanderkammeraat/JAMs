@@ -469,7 +469,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
             end
 
 
-            #Threadsafe field forces
+            #Threadsafe field 
             if Nfield>0
                 for i in eachindex(current_particle_state)
                     p_i = current_particle_state[i]
