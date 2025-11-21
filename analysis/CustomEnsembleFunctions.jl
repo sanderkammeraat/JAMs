@@ -177,8 +177,8 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
     display("Collecting FTs")
     create_group(ensemble_file, "FT_v_projs")
 
-    X = Matrix{Float64}[]
-    w = Vector{Float64}[]
+    X = []
+    w = []
     for i in eachindex(loaded_seed_files)
 
         if i==1
