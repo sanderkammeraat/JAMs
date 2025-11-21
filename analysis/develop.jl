@@ -51,16 +51,12 @@ eigvals = reference_seed["eigenmodes"]["eigvals"]
 plot(eigvals, log10.(v_projs_time_avg))
 
 
-#close.(loaded_seed_files)
+close.(loaded_seed_files)
 
 
 
 
-
-
-
-
-bins = create_bins(0, 10,0.002)
+bins = create_bins(0, 10,0.02)
 bins.centers
 bins.edges
 
@@ -132,3 +128,19 @@ close.(loaded_seed_files)
 
 #%%
 
+X = []
+w = []
+for i in eachindex(loaded_seed_files)
+
+    if i==1
+
+        w =vcat(w, loaded_seed_files[i]["FT_v_projs"]["w"])
+
+        X = loaded_seed_files[i]["FT_v_projs"]["Xf2"]
+    else
+
+        X = vcat(X, loaded_seed_files[i]["FT_v_projs"]["Xf2"])
+    end
+end
+
+binned_X = bin_matrix_data(eigvalbins, eigvals, X)

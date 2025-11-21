@@ -185,6 +185,6 @@ function run_sa_analysis!(analysis_file, raw_data_file; support_raw_data_file = 
 
 
     FT_v_projs = temporal_Fourier_transform(dt, v_projs, min_t_ind = min_t_ind, output_not_avg=true)
-    save_dict2h5!(analysis_file,FT_v_projs, "FT_v_projs")
+    save_dict2h5!(analysis_file, FT_v_projs, "FT_v_projs")
     return analysis_file
 end

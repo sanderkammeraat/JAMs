@@ -174,8 +174,7 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
     ensemble_file["vrms_r"]["vrms_r"]= binned_vrms_r_data.bin_values
     ensemble_file["vrms_r"]["N_in_bin"]= binned_vrms_r_data.N_in_bin
 
-    display("Collecting FTs")
-    create_group(ensemble_file, "FT_v_projs")
+    
 
     X = []
     w = []
@@ -183,7 +182,7 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
 
         if i==1
 
-            w =vcat(w, loaded_seed_files[i]["FT_v_projs"]["w"])
+            w =loaded_seed_files[i]["FT_v_projs"]["w"]
 
             X = loaded_seed_files[i]["FT_v_projs"]["Xf2"]
         else
@@ -193,6 +192,9 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
     end
 
     binned_X = bin_matrix_data(eigvalbins, eigvals, X)
+
+    #display("Collecting FTs")
+    create_group(ensemble_file, "FT_v_projs")
 
     ensemble_file["FT_v_projs"]["w"] = w
     ensemble_file["FT_v_projs"]["eigval_bin_centers"] = binned_X.bin_centers
