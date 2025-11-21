@@ -11,7 +11,7 @@ ef, sf = auto_ensemble_dir(base_folder,"seed_")
 
 
 
-run_sequential_ensemble(ef, sf, sa_ensemble!, overwrite=true)
+run_multithreaded_ensemble(ef, sf, sa_ensemble!, overwrite=true)
 
 
 

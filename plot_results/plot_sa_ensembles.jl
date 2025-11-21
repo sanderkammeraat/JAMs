@@ -65,7 +65,6 @@ for e in ensemble_files
 
         lines!(ax,eigval_bin_centers,theory_ABP, colorrange = (0, maximum(Drs) ) ,  label="v0 = $(e["v0"]),J = $(e["J"])")
 
-
     end
 
 
@@ -74,6 +73,10 @@ f[1,2]=Legend(f,ax)
 display(f)
 
 end
+
+
+
+
 
 
 

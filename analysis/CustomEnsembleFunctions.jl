@@ -51,11 +51,30 @@ function bin_vector_data(bins::Bins, ref_vector_data, vector_data)
     populated_bin_bool = N_in_bin .> 0
 
     return BinnedData(bins.centers[populated_bin_bool], N_in_bin[populated_bin_bool],binned_vector_data[populated_bin_bool])
-
 end
 
+#Assuming that the first dimensions corresponds to the reference data
+function bin_matrix_data(bins::Bins, ref_vector_data, matrix_data)
 
+    N_in_bin = zeros(length(bins.centers))
 
+    binned_matrix_data = zeros((length(bins.centers),size(matrix_data)[2]))
+
+    for i in eachindex(bins.centers)
+
+        bool_in_bin = (ref_vector_data.> bins.edges[i]) .* (ref_vector_data.<= bins.edges[i+1])
+
+        N_in_bin[i] = sum(bool_in_bin)
+
+        if N_in_bin[i]>0
+            binned_matrix_data[i,:] = mean( matrix_data[bool_in_bin,:], dims=1) 
+        end
+    end
+
+    populated_bin_bool = N_in_bin .> 0
+
+    return BinnedData(bins.centers[populated_bin_bool], N_in_bin[populated_bin_bool],binned_matrix_data[populated_bin_bool,:])
+end
 
 
 
@@ -155,7 +174,30 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
     ensemble_file["vrms_r"]["vrms_r"]= binned_vrms_r_data.bin_values
     ensemble_file["vrms_r"]["N_in_bin"]= binned_vrms_r_data.N_in_bin
 
-    
+    display("Collecting FTs")
+    create_group(ensemble_file, "FT_v_projs")
+
+    X = Matrix{Float64}[]
+    w = Vector{Float64}[]
+    for i in eachindex(loaded_seed_files)
+
+        if i==1
+
+            w =vcat(w, loaded_seed_files[i]["FT_v_projs"]["w"])
+
+            X = loaded_seed_files[i]["FT_v_projs"]["Xf2"]
+        else
+
+            X = vcat(X, loaded_seed_files[i]["FT_v_projs"]["Xf2"])
+        end
+    end
+
+    binned_X = bin_matrix_data(eigvalbins, eigvals, X)
+
+    ensemble_file["FT_v_projs"]["w"] = w
+    ensemble_file["FT_v_projs"]["eigval_bin_centers"] = binned_X.bin_centers
+    ensemble_file["FT_v_projs"]["X2"] = binned_X.bin_values
+
     return ensemble_file
 end
 

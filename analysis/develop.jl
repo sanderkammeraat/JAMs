@@ -34,12 +34,12 @@ ef[2]
 
 sf[2][1]
 
-seed_file_paths = sf[2]
+seed_file_paths = sf[3]
 
 loaded_seed_files = [ load_file(seed_file_path) for seed_file_path in seed_file_paths]
 
 
-reference_seed = loaded_seed_files[1]
+reference_seed = loaded_seed_files[3]
 
 min_t_ind = reference_seed["min_t_ind"]
 
@@ -48,7 +48,7 @@ v_projs_time_avg =  mean(reference_seed["projs"]["v_projs"][:,min_t_ind:end].^2,
 eigvals = reference_seed["eigenmodes"]["eigvals"]
 
 
-plot(log10.(eigvals), log10.(v_projs_time_avg))
+plot(eigvals, log10.(v_projs_time_avg))
 
 
 #close.(loaded_seed_files)
@@ -60,23 +60,66 @@ plot(log10.(eigvals), log10.(v_projs_time_avg))
 
 
 
-bins = create_bins(0, 10,0.05)
+bins = create_bins(0, 10,0.002)
 bins.centers
 bins.edges
 
 
 
+f = Figure()
 
-
-v_projs = []
+ax = Axis(f[1,1], xlabel=L"w", ylabel=L"FT", yscale=log10, xscale=log10)
+min_t_ind = 500
+X = []
 eigvals = []
+w = []
 for i in eachindex(loaded_seed_files)
 
-    v_projs=vcat(v_projs, mean(reference_seed["projs"]["v_projs"][:,min_t_ind:end].^2, dims=2)[:,1])
+    if i==1
+        w =vcat(w, loaded_seed_files[i]["FT_v_projs"]["w"])
+
+        
+        X = loaded_seed_files[i]["FT_v_projs"]["Xf2"]
+
+
+        display(size(X))
+        display(size(loaded_seed_files[i]["eigenmodes"]["eigvals"]))
+        eigvals=vcat(eigvals, loaded_seed_files[i]["eigenmodes"]["eigvals"])
+    else
     eigvals=vcat(eigvals, loaded_seed_files[i]["eigenmodes"]["eigvals"])
+
+        scatter!(ax,loaded_seed_files[i]["FT_v_projs"]["Xf2"][40,:])
+        display(f)
+    
+
+    X = vcat(X, loaded_seed_files[i]["FT_v_projs"]["Xf2"])
+    end
 end
 
+eigvals
+X
 
+binned_X = bin_matrix_data(bins, eigvals, X)
+
+
+using GLMakie
+f = Figure()
+ax = Axis(f[1,1], xlabel=L"w", ylabel=L"FT", yscale=log10)
+for i = 1:10
+
+    lines!(ax, w, binned_X.bin_values[i,:], color = i, colorrange=(0,10))
+end
+display(f)
+
+image(log10.(transpose(binned_X.bin_values)), colormap=:viridis)
+
+
+
+A = [1 2 ; 3 4]
+
+A = vcat(A, [5 6 ; 7 8])
+
+A[A[:,1].>1,:]
 
 
 binned_data = bin_vector_data(bins, eigvals, v_projs)

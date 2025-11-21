@@ -159,6 +159,21 @@ function run_sequential_ensemble(ensemble_save_paths, seed_file_paths_per_ensemb
     end
 
 end
+function run_multithreaded_ensemble(ensemble_save_paths, seed_file_paths_per_ensemble_folder, custom_ensemble_function; overwrite = false, append = false)
+
+    @Threads.threads for i in eachindex(ensemble_save_paths)
+
+        ensemble_save_path = ensemble_save_paths[i]
+
+        seed_file_paths = seed_file_paths_per_ensemble_folder[i]
+        println(ensemble_save_path)
+
+
+        ensemble_single(seed_file_paths, ensemble_save_path, custom_ensemble_function,  overwrite = overwrite, append = append)
+
+    end
+
+end
 
 
 
