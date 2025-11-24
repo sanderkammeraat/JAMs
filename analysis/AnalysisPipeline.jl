@@ -346,7 +346,7 @@ function run_sequential_analysis(raw_data_file_paths, analysis_save_paths,custom
         support_raw_data_file_path = !isnothing(support_raw_data_file_paths) ? support_raw_data_file_paths[i] : nothing
 
         analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=support_raw_data_file_path,  overwrite = overwrite, append = append)
-        GC.gc()
+        GC.gc() #Explitict garbage collection
 
     end
     
