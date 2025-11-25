@@ -9,9 +9,9 @@ function simulation()
     #type, torque, rfact, kpar, kper
     #1.3 -1 0 0.3
     #pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,1.3, 1, 0., 0.3), pair_nematic_alignment_force(1,2.5,0.15))
-    kpar = -1.
-    kper=0*-1.
-    pair_forces = (soft_disk_force(1,1.),polymer_harmonic_bend_force(1,0.3), polymer_harmonic_stretch_force(1,1.),polymer_align_director_tangent_force(1,10), polymer_pairAN_force(1,true,1.5, kpar, kper, 0.3))
+    kpar = 0.
+    kper=-1.
+    pair_forces = (soft_disk_force(1,1.),polymer_harmonic_bend_force(1,0.5), polymer_harmonic_stretch_force(1,1.),polymer_align_director_tangent_force(1,10), polymer_pairAN_force(1,true, true,1.5, kpar, kper, 0.2))
     external_forces =(thermal_translational_noise(1, 0.0*[0.001, 0.0001,0]),)#, ABP_3d_propulsion_force(1))
 
     

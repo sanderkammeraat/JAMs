@@ -7,7 +7,9 @@ include("AnalysisPipeline.jl")
 
 #base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 
-base_folder = "/data1/kammeraatsc1/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
+#base_folder = "/data1/kammeraatsc1/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
+
+base_folder = "/data2/kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 
 ef, sf = auto_ensemble_dir(base_folder,"seed_")
 

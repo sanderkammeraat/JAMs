@@ -129,9 +129,13 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
 
 
 
-    
-    
-    eigvalbins = create_bins(0, 10,0.02)
+    create_group(ensemble_file, "eigenmodes")
+    create_group(ensemble_file["eigenmodes"],"eigvals" )
+    for i in eachindex(loaded_seed_files)
+        ensemble_file["eigenmodes"]["eigvals"][seed_names[i]]=loaded_seed_files[i]["eigenmodes"]["eigvals"]
+    end
+
+    eigvalbins = create_bins(0, 1,0.002)
 
 
     ensemble_file["eigval_bin_centers"] = eigvalbins.centers

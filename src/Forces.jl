@@ -224,6 +224,7 @@ end
 struct pairAN_force{T1,T2, T3}<:Force
     ontypes::Union{Int64,Vector{Int64}}
     torque::Bool
+    traceless::Bool
     rfact::Float64
     k_par::T1
     k_per::T2
@@ -233,6 +234,7 @@ end
 struct polymer_pairAN_force{T1,T2, T3}<:Force
     ontypes::Union{Int64,Vector{Int64}}
     torque::Bool
+    traceless::Bool
     rfact::Float64
     k_par::T1
     k_per::T2
@@ -869,13 +871,31 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
             #rij_cap = dx/dxn
 
 
-            sigma_i_dot_dx = force.parray[p_i.type[1]] *  dot(p_i.p, dx) .* p_i.p
+            if force.traceless
+                sigma_i_dot_dx = force.parray[p_i.type[1]] * ( dot(p_i.p,dx) .* p_i.p - 0.5 * dx)
 
-            sigma_j_dot_dx = force.parray[p_j.type[1]] * dot(p_j.p, dx) .* p_j.p
+                sigma_j_dot_dx = force.parray[p_j.type[1]] * ( dot(p_j.p, dx) .* p_j.p - 0.5 * dx)
 
-            sigma_i_dot_dx_perp = force.parray[p_i.type[1]] *  dot(p_i.p,cross(dx,z_hat)) .* p_i.p
 
-            sigma_j_dot_dx_perp = force.parray[p_j.type[1]] *  dot(p_j.p,cross(dx,z_hat)).* p_j.p
+
+                sigma_i_dot_dx_perp = force.parray[p_i.type[1]] *  (dot(p_i.p,cross(dx,z_hat)) .* p_i.p - 0.5 * cross(dx,z_hat)) 
+
+                sigma_j_dot_dx_perp = force.parray[p_j.type[1]] *  (dot(p_j.p,cross(dx,z_hat)).* p_j.p- 0.5 * cross(dx,z_hat)) 
+
+
+            else
+                #par
+                sigma_i_dot_dx = force.parray[p_i.type[1]] * dot(p_i.p,dx) .* p_i.p 
+
+                sigma_j_dot_dx = force.parray[p_j.type[1]] * dot(p_j.p, dx) .* p_j.p
+
+                # perp
+                sigma_i_dot_dx_perp = force.parray[p_i.type[1]] *  dot(p_i.p,cross(dx,z_hat)) .* p_i.p
+
+                sigma_j_dot_dx_perp = force.parray[p_j.type[1]] *  dot(p_j.p,cross(dx,z_hat)).* p_j.p
+
+            end
+
 
 
             f.= β .*  ( force.k_par .* (sigma_i_dot_dx .+ sigma_j_dot_dx )  .+ force.k_per .* (sigma_i_dot_dx_perp .+ sigma_j_dot_dx_perp ))
@@ -908,15 +928,31 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
                 f = @MVector zeros(length(dx))
                 β = 1 - dxn/r
                 #rij_cap = dx/dxn
+                    
+                if force.traceless
+                    sigma_i_dot_dx = force.parray[p_i.type[1]] * ( dot(p_i.p,dx) .* p_i.p - 0.5 * dx)
+
+                    sigma_j_dot_dx = force.parray[p_j.type[1]] * ( dot(p_j.p, dx) .* p_j.p - 0.5 * dx)
 
 
-                sigma_i_dot_dx = force.parray[p_i.type[1]] *  dot(p_i.p,dx) .* p_i.p
 
-                sigma_j_dot_dx = force.parray[p_j.type[1]] * dot(p_j.p, dx) .* p_j.p
+                    sigma_i_dot_dx_perp = force.parray[p_i.type[1]] *  (dot(p_i.p,cross(dx,z_hat)) .* p_i.p - 0.5 * cross(dx,z_hat)) 
 
-                sigma_i_dot_dx_perp = force.parray[p_i.type[1]] *  dot(p_i.p,cross(dx,z_hat)) .* p_i.p
+                    sigma_j_dot_dx_perp = force.parray[p_j.type[1]] *  (dot(p_j.p,cross(dx,z_hat)).* p_j.p- 0.5 * cross(dx,z_hat)) 
 
-                sigma_j_dot_dx_perp = force.parray[p_j.type[1]] *  dot(p_j.p,cross(dx,z_hat)).* p_j.p
+
+                else
+                    #par
+                    sigma_i_dot_dx = force.parray[p_i.type[1]] * dot(p_i.p,dx) .* p_i.p 
+
+                    sigma_j_dot_dx = force.parray[p_j.type[1]] * dot(p_j.p, dx) .* p_j.p
+
+                    # perp
+                    sigma_i_dot_dx_perp = force.parray[p_i.type[1]] *  dot(p_i.p,cross(dx,z_hat)) .* p_i.p
+
+                    sigma_j_dot_dx_perp = force.parray[p_j.type[1]] *  dot(p_j.p,cross(dx,z_hat)).* p_j.p
+
+                end
 
 
                 f.= β .*  ( force.k_par .* (sigma_i_dot_dx .+ sigma_j_dot_dx )  .+ force.k_per .* (sigma_i_dot_dx_perp .+ sigma_j_dot_dx_perp ))
