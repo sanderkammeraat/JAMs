@@ -6,7 +6,7 @@ include("../analysis/AnalysisPipeline.jl")
 
 base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 
-figure_save_folder = joinpath(base_folder, "figures_24_11")
+figure_save_folder = joinpath(base_folder, "figures_25_11")
 mkpath(figure_save_folder)
 
 
@@ -21,7 +21,7 @@ Drs = [e["Dr"] for e in ensemble_files]
 
 Js = [e["J"] for e in ensemble_files]
 
-v0 = [e["v0"] for e in ensemble_files] #by color
+v0s = [e["v0"] for e in ensemble_files] #by color
 
 GLMakie.activate!()
 begin
@@ -56,7 +56,7 @@ for e in ensemble_files
     Dr = e["Dr"]
     v0 = e["v0"]
 
-    
+        
 
         display("plottings")
         tau =1/Dr
@@ -92,7 +92,6 @@ for e in ensemble_files
         lines!(ax,eigval_bin_centers,theory_ABP, color=e["J"], colorrange = (0, 1) ,  label="J = $(e["J"])")
         #lines!(ax,the_eigvals[select],theory_amin, color=e["J"], colorrange = (0, 1) ,  label="J = $(e["J"])")
 
- 
 end
 xlims!(ax, 0,1)
 f[1,2]=Legend(f,ax)
@@ -126,12 +125,12 @@ for e in ensemble_files
 
     X = e["FT_v_projs"]["X2"]
 
-    heatmap!(ax,w, sqrt.(eigval_bin_centers), log10.(transpose(X)), rasterize=true, colorrange=(-5,5))
-    cb = Colorbar(f[1, 2], limits = (-5, 5), colormap = :viridis, flipaxis = false, label = "log10(ω^2 |a_n(ω)|^2)")
+    heatmap!(ax,w, sqrt.(eigval_bin_centers), log10.(transpose(X)), rasterize=true, colorrange=(-2,5), colormap=:gist_rainbow)
+    cb = Colorbar(f[1, 2], limits = (-2, 5), colormap = :gist_rainbow, flipaxis = false, label = "log10(ω^2 |a_n(ω)|^2)")
 
 
-    xlims!(0,1)
-    ylims!(0,2.5)
+    xlims!(0,0.5)
+    ylims!(0,1)
     # theory_ABP = v0^2  ./ (2 .+ 2 .* eigval_bin_centers .* tau)  /v0^2
 
     # scatterlines!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2, color=e["v0"], colorrange = (0, 0.01 ) ,  label="v0 = $(e["v0"]),J = $(e["J"])")
@@ -144,6 +143,13 @@ for e in ensemble_files
     display(f)
 end
 end
+
+e1 = ensemble_files[1]
+
+eigvals = e1["eigenmodes"]["seed_1.h5"]
+tau = 1/e1["Dr"]
+a =  sqrt(1/e1["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals)) ) #vrms/e["v0"]
+
 begin #heatmap wn vs w THEORY
 using CairoMakie
 CairoMakie.activate!()
@@ -154,15 +160,21 @@ for e in ensemble_files
     J= e["J"]
     Dr = e["Dr"]
     v0 = e["v0"]
-
+    tau =1/Dr
     vrms = e["vrms"]
-    #a = vrms/e["v0"]
+    
+
+
     
     ax = Axis(f[1,1], ylabel=L"ω_n", xlabel=L"ω", title="J=$J, Dr = $Dr, v0 = $(v0)")
 
-    tau =1/Dr
+    
     eigval_ind=1
     eigval_bin_centers = e["FT_v_projs"]["eigval_bin_centers"]
+
+    eigvals = e["eigenmodes"]["seed_1.h5"]
+    a = a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) #
+
 
     w = e["FT_v_projs"]["w"]
     X = zeros(size(e["FT_v_projs"]["X2"]))    
@@ -170,7 +182,7 @@ for e in ensemble_files
     t = e["t"]
     min_t_ind = e["min_t_ind"]
 
-    a = a_min = sqrt(1 +  (eigval_bin_centers[eigval_ind]/(2 * J) + 1/(2 * tau *J ))^2 ) - (eigval_bin_centers[eigval_ind]/(2 * J) + 1/(2 * tau *J))
+    #a = a_min = sqrt(1 +  (eigval_bin_centers[eigval_ind]/(2 * J) + 1/(2 * tau *J ))^2 ) - (eigval_bin_centers[eigval_ind]/(2 * J) + 1/(2 * tau *J))
 
     for i in 1:size(X)[1]
 
@@ -179,11 +191,11 @@ for e in ensemble_files
         end
     end
 
-    heatmap!(ax,w, sqrt.(eigval_bin_centers), log10.(transpose(X)), rasterize=true, colorrange=(-5,5))
-    cb = Colorbar(f[1, 2], limits = (-5, 5), colormap = :viridis, flipaxis = false, label = "log10(ω^2 |a_n(ω)|^2)")
+    heatmap!(ax,w, sqrt.(eigval_bin_centers), log10.(transpose(X)), rasterize=true, colorrange=(-2,5),colormap=:gist_rainbow)
+    cb = Colorbar(f[1, 2], limits = (-2, 5), colormap = :gist_rainbow, flipaxis = false, label = "log10(ω^2 |a_n(ω)|^2)")
 
-    xlims!(0,1)
-    ylims!(0,2.5)
+    xlims!(0,0.5)
+    ylims!(0,1.)
     # theory_ABP = v0^2  ./ (2 .+ 2 .* eigval_bin_centers .* tau)  /v0^2
 
     # scatterlines!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2, color=e["v0"], colorrange = (0, 0.01 ) ,  label="v0 = $(e["v0"]),J = $(e["J"])")
@@ -191,7 +203,7 @@ for e in ensemble_files
     # lines!(ax,eigval_bin_centers,theory_ABP, colorrange = (0, maximum(Drs) ) ,  label="v0 = $(e["v0"]),J = $(e["J"])")
     #f[1,2]=Legend(f,ax)
     save("temp.pdf",f)
-    append_pdf!( joinpath(figure_save_folder,"wn_w_theory.pdf"), "temp.pdf", cleanup=true)
+    append_pdf!( joinpath(figure_save_folder,"wn_w_theory_a_ABP.pdf"), "temp.pdf", cleanup=true)
 
     display(f)
 end
@@ -203,6 +215,31 @@ end
 
 
 
+
+begin
+
+    e = ensemble_files[2]
+
+    f = Figure()
+
+    J= e["J"]
+    Dr = e["Dr"]
+    v0 = e["v0"]
+
+    ax = Axis(f[1,1], ylabel=L"ω_n", xlabel=L"ω", title="J=$J, Dr = $Dr, v0 = $(v0)")
+
+    tau =1/Dr
+
+    eigval_bin_centers = e["FT_v_projs"]["eigval_bin_centers"]
+
+    w = e["FT_v_projs"]["w"]
+
+    X = e["FT_v_projs"]["X2"]
+
+    heatmap!(ax,w, sqrt.(eigval_bin_centers), log10.(transpose(X)), rasterize=true, colorrange=(-2,5), colormap=:gist_rainbow)
+    cb = Colorbar(f[1, 2], limits = (-2, 5), colormap = :gist_rainbow, flipaxis = false, label = "log10(ω^2 |a_n(ω)|^2)")
+    
+end
 
 
 
@@ -225,6 +262,9 @@ ax = Axis(f[1,1], ylabel=L"a", xlabel=L"J", title="Dr = $Dr, v0 = $(v0)")
 as = []
 a_mins = []
 a_mids = []
+eigvals = ensemble_files[1]["eigenmodes"]["seed_10.h5"]
+tau = 1/ensemble_files[1]["Dr"]
+a_ABP= sqrt(1/e1["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) #
 Js = []
 for e in ensemble_files
 
@@ -247,6 +287,7 @@ end
 scatterlines!(ax,Js, as)
 
 scatterlines!(ax, Js, a_mins, color="orange", label="a_min")
+hlines!(ax, a_ABP, color="orange")
 #scatterlines!(ax, Js, a_mids, color="green", label="a_mid")
 ylims!(ax, 0,1)
 f[1,2]=Legend(f,ax)
@@ -260,6 +301,7 @@ using CairoMakie
 CairoMakie.activate!()
 f = Figure()
 Dr = ensemble_files[1]["Dr"]
+v0=0.01
 ax = Axis(f[1,1], ylabel=L"a", xlabel=L"J", title="Dr = $Dr, v0 = $(v0)", xscale=log10)
 for e in ensemble_files
 
@@ -268,12 +310,13 @@ for e in ensemble_files
     eigval_ind=1
     J = e["J"]
 
+    if J==0.001 || J==0.0
     Jse = ones(length(eigval_bin_centers)) * J
     tau = 1/Dr
     a_minse = @. sqrt(1 +  (eigval_bin_centers/(2 * J) + 1/(2 * tau *J ))^2 ) - (eigval_bin_centers/(2 * J) + 1/(2 * tau *J))
 
     scatter!(ax, Jse, a_minse, color=eigval_bin_centers)
-
+    end
 end
 
 scatterlines!(ax,Js, as, label="a_num")
