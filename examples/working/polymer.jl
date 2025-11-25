@@ -46,7 +46,7 @@ function simulation()
     sim = Euler_integrator(system,0.025, 1e4, Tplot=20,fps=Inf,plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=nothing, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = joinpath(homedir(),"ANP","demos","N_in_pol_$(N_in_pol)","k_par_$(kpar)","k_per_$(kper)")); 
     return sim;
 
-end
+end 
 
 sim = simulation()  
 

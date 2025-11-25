@@ -1,18 +1,4 @@
-using ArgParse
-using Distributed
-simargs = ArgParseSettings()
-
-@add_arg_table simargs begin
-    "--ncores", "-n"
-        arg_type=Int64
-
-end
-
-parsed_params = parse_args(simargs)
-n=parsed_params["ncores"]
-
-addprocs(n)
-@everywhere include(joinpath("..","src","Engine.jl"))
+include(joinpath("..","src","Engine.jl"))
 
 
 include(joinpath("..","io","InitialPositionGenerators.jl"))
@@ -122,7 +108,7 @@ end
 
 
 
-@everywhere function self_aligning_step(rx_step,J,v0, Dr, seed,save_folder_path; Tsave=nothing, Tplot=nothing)
+function self_aligning_step(rx_step,J,v0, Dr, seed,save_folder_path; Tsave=nothing, Tplot=nothing)
 
     external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
@@ -156,7 +142,7 @@ end
 end
 
 
-@everywhere function relax_again_step(sa_step, save_folder_path; Tsave=nothing, Tplot=nothing)
+function relax_again_step(sa_step, save_folder_path; Tsave=nothing, Tplot=nothing)
 
     external_forces =[] # [thermal_translational_noise(1, 0 .*[1.,1.,0])]
 
@@ -202,14 +188,14 @@ end
 
 # ra_result=relax_again_step(sa_result, save_folder_path);
 
-@everywhere base_path = "/data2/kammeraat/sa/statistics"
+base_path = "/data2/kammeraat/sa/statistics"
 
-@everywhere Drs = [ 0.1] 
-@everywhere Js=[0.0, 0.001, 0.01, 0.02, 0.04, 0.08, 0.10, 0.12, 0.16, 0.2, 0.4, 0.8, 1]
-@everywhere v0s = [0.01]
+Drs = [ 0.1] 
+Js=[0.0, 0.001, 0.01, 0.02, 0.04, 0.08, 0.10, 0.12, 0.16, 0.2, 0.4, 0.8, 1]
+v0s = [0.01]
 
 #Let's keep the seeds constant across parameter choice
-@everywhere seeds = collect(1:10)
+seeds = collect(1:10)
 
 #Creating the seeds
 # for m in eachindex(seeds)
@@ -268,7 +254,7 @@ for m in eachindex(seeds)
 
             for i in eachindex(Drs)
 
-                    @sync @distributed for j in eachindex(Js)
+                    for j in eachindex(Js)
                 
 
 
