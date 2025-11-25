@@ -49,8 +49,6 @@ end
 
 sim = simulation()  
 
-@profview sim = simulation() 
 
-@profview_allocs sim = simulation()  
 
  

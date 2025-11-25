@@ -571,6 +571,11 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
                         cfsO[]= current_field_state
                         tO[] = t
                         sleep(1/fps)
+
+                            if !isopen(f.scene)
+                                error("Closing the program, because live plotting window is closed.")
+                            end
+
                     end
                 end
             end
