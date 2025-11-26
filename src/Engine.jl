@@ -416,6 +416,8 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
     system, cells,cell_bin_centers,stencils, lbins = construct_cell_lists!(system)
 
+
+    Next = length(system.external_forces)
     Npair = length(system.pair_forces)
 
     Nfield = length(system.field_forces)
@@ -461,7 +463,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
             Threads.@threads for i in eachindex(current_particle_state)
                 p_i = current_particle_state[i]
                 p_i=init_unwrap!(p_i, t)
-                p_i = particle_step!(i,p_i, current_particle_state,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
+                p_i = particle_step!(i,p_i, current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
                 current_particle_state[i]=p_i
             end
 
@@ -617,13 +619,13 @@ end
 
 
 
-function particle_step!(i,p_i, current_particle_state,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
+function particle_step!(i,p_i, current_particle_state,Next,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
     if Npair>0
         p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system,cells,stencils,rngs_particles)
     end
-
-    p_i=external_force_iterate!(p_i, t, dt,rngs_particles, system, system.external_forces)
-
+    if Next>0
+        p_i=external_force_iterate!(p_i, t, dt,rngs_particles, system, system.external_forces)
+    end
     return p_i
 end
 
