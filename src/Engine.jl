@@ -567,15 +567,14 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
             if !isnothing(Tplot)
                 if fps!=0
                     if (n-1)%Tplot==0
+                        if !isopen(f.scene)
+                            GLMakie.closeall()
+                            error("Closing the program, because live plotting window is closed.")
+                        end
                         cpsO[] = current_particle_state
                         cfsO[]= current_field_state
                         tO[] = t
                         sleep(1/fps)
-
-                            if !isopen(f.scene)
-                                error("Closing the program, because live plotting window is closed.")
-                            end
-
                     end
                 end
             end
