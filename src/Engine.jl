@@ -308,7 +308,7 @@ end
 
 
 
-function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_functions=nothing, save_folder_path=nothing, save_tag=nothing, Tplot=nothing, fps=nothing, plot_functions=nothing,plotdim=nothing)
+function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_functions=nothing, save_folder_path=nothing, save_tag=nothing, Tplot=nothing, fps=30, plot_functions=nothing,plotdim=nothing)
 
 
     integration_tax = collect(0:dt:t_stop)
@@ -436,13 +436,11 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     #Assuming number of fields stay constant
     rngs_particles = [Xoshiro(length(current_field_state)+master_seed+i) for i in eachindex(current_particle_state)]
 
-    if !isnothing(Tplot)
-        if fps!=0
-            cpsO = Observable(current_particle_state)
-            cfsO = Observable(current_field_state)
-            tO = Observable(0.)
-            f, ax = setup_system_plotting(system.sizes,plot_functions, plotdim,cpsO,cfsO,tO)
-        end
+    if !isnothing(Tplot) 
+        cpsO = Observable(current_particle_state)
+        cfsO = Observable(current_field_state)
+        tO = Observable(0.)
+        f, ax = setup_system_plotting(system.sizes,plot_functions, plotdim,cpsO,cfsO,tO,fps)
     end
 
     #Open the files to update over simulation run time
@@ -565,25 +563,22 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
             
             if !isnothing(Tplot)
-                if fps!=0
-                    if (n-1)%Tplot==0
-                        if !isopen(f.scene)
-                            GLMakie.closeall()
-                            error("Closing the program, because live plotting window is closed.")
-                        end
-                        cpsO[] = current_particle_state
-                        cfsO[]= current_field_state
-                        tO[] = t
-                        sleep(1/fps)
+                if (n-1)%Tplot==0
+                    if !isopen(f.scene)
+                        GLMakie.closeall()
+                        error("Closing the program, because live plotting window is closed.")
                     end
+                    cpsO[] = current_particle_state
+                    cfsO[]= current_field_state
+                    tO[] = t
                 end
+
             end
 
         end
 
         if !isnothing(Tsave)
             close(raw_data_file)
-            #close(JAMs_file)
         end
 
 
@@ -592,7 +587,6 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     catch e
         if !isnothing(Tsave)
             close(raw_data_file)
-            #close(JAMs_file)
         end
         println("Safely aborting")
         rethrow(e)

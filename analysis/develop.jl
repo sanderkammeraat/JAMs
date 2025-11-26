@@ -144,3 +144,87 @@ for i in eachindex(loaded_seed_files)
 end
 
 binned_X = bin_matrix_data(eigvalbins, eigvals, X)
+
+
+#%%%%
+
+
+
+
+include("AnalysisPipeline.jl")
+
+base_folder = "/Volumes/T7_Shield/sa/statistics/hex_disordered/phi_1.3/vary_Nlin"
+
+path = "/Volumes/T7_Shield/sa/statistics/hex_disordered/phi_1.3/vary_Nlin/Nlin_20/simdata/Dr_0.01/J_0.1/seed_1/sa_raw_data.h5"
+
+sfile = load_file(path)
+
+frames = sfile["frames"]
+system = sfile["system"]
+
+print(frames)
+
+
+t =  sfile["integration_info"]["save_tax"]
+v0 = frames["1"]["v0"][1]
+Dr = frames["1"]["Dr"][1]
+J = system["forces"]["external"]["self_align_with_v_unit_force"]["β"]
+k = system["forces"]["pair"]["soft_disk_force"]["karray"]
+R = frames["1"]["R"]
+type = frames["1"]["type"]
+Nt = length(t)
+#Ignore boundary particles
+Np = length(extract_frame_data_for_type("id",1,frames["1"]))
+
+
+x = zeros(Np, Nt)
+y = zeros(Np, Nt)
+
+vx = zeros(Np, Nt)
+vy = zeros(Np, Nt)
+
+px = zeros(Np, Nt)
+py = zeros(Np, Nt)
+
+qx = zeros(Np, Nt)
+qy = zeros(Np, Nt)
+
+@views for i in 1:Nt
+    x[:,i] .= extract_frame_data_for_type("x", 1, frames[string(i)])
+    y[:,i] .= extract_frame_data_for_type("y", 1, frames[string(i)])
+
+
+
+    vx[:,i] .= extract_frame_data_for_type("vx", 1, frames[string(i)])
+    vy[:,i] .= extract_frame_data_for_type("vy", 1, frames[string(i)])
+
+    px[:,i] .= extract_frame_data_for_type("px", 1, frames[string(i)])
+    py[:,i] .= extract_frame_data_for_type("py", 1, frames[string(i)])
+
+    qx[:,i] .= extract_frame_data_for_type("qx", 1, frames[string(i)])
+    qy[:,i] .= extract_frame_data_for_type("qy", 1, frames[string(i)])
+
+end
+
+auto = auto_correlation(t,px, py, minrow=500)
+
+
+using GLMakie
+
+f = Figure()
+ax = Axis(f[1,1])
+
+#scatter!(ax, auto["deltat"][1:length(auto["Cavg"])], auto["Cavg"])
+
+scatterlines!(ax, t[500:end],px[1,500:end])
+
+FT  = temporal_Fourier_transform(t[2]-t[1],px, min_t_ind = 500, output_not_avg=true)
+
+
+scatterlines!(ax, t[500:end],sin.(FT["w_max"][1] * t[500:end])) 
+display(f)
+
+
+
+display("About to close the files")
+close(sfile)

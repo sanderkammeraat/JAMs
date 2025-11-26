@@ -174,6 +174,22 @@ function spatiotemporal_p_correlation(binsize, maxbin_center, x0,y0, px, py; min
     return Dict("rbc"=>rbin_centers,"rbe"=>rbin_edges,"C"=> C)
 end
 
+# function auto_correlation(t, vx, vy)
+
+#     Nt = length(t)
+#     Δt = zeros(Nt)
+#     C = zeros(Nt, Nt)
+#     N_in_bin = zeros(Nt, Nt)
+
+#     @showprogress desc="Autocorrelation" dt=1 showspeed=true for i in 1:Nt-1
+
+#         for j in i:Nt
+#             C[i,j-i+1] = mean(px[:,j].* px[:,i] .+ py[:,j].* py[:,i])
+
+
+
+
+
 
 function auto_correlation(t, px, py; normalized=false, minrow=1, maxrow=nothing)
 
@@ -186,8 +202,8 @@ function auto_correlation(t, px, py; normalized=false, minrow=1, maxrow=nothing)
 
     @showprogress desc="Autocorrelation" dt=1 showspeed=true for i in 1:Nt-1
 
-        @views for j in i:Nt
-            C[i,j-i+1] = mean(px[:,j].* px[:,i] .+ py[:,j].* py[:,i])
+         @Threads.threads for j in i:Nt
+            @views C[i,j-i+1] = mean(px[:,j].* px[:,i] .+ py[:,j].* py[:,i])
             Δt[j-i+1] =  t[j] - t[i]
         end
         
@@ -203,7 +219,7 @@ function auto_correlation(t, px, py; normalized=false, minrow=1, maxrow=nothing)
         end
     end
 
-    return Dict("Cavg"=>Cavg, "t"=>t, "Δt"=> Δt)
+    return Dict("Cavg"=>Cavg, "t"=>t, "deltat"=> Δt)
 end
 
 

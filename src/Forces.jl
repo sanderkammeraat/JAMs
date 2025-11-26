@@ -677,7 +677,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
         a = force.aarray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]
         De = force.Dearray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]
 
-        @views f.= 2*De*a*( exp(-a*(dxn-re)) - exp(-2*a*(dxn-re)) ) * dx/dxn
+        f.= 2 * De*a*( exp(-2a*(dxn-re)) - exp(-a*(dxn-re)) ) * dx/dxn
         p_i.f.+= f
 
     end

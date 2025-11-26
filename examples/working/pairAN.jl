@@ -8,7 +8,7 @@ function simulation()
     #type, torque, rfact, kpar, kper
     #1.3 -1 0 0.3
     #pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,1.3, 1, 0., 0.3), pair_nematic_alignment_force(1,2.5,0.15))
-    pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,true,1.3, 0., -1, 0.3), pair_nematic_alignment_force(1,2.5,0.3))
+    pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,false,1.3, -1, 0, 0.3), pair_nematic_alignment_force(1,2.5,0.3))
 
 
     #dofevolvers = [inertial_evolver!]
@@ -16,7 +16,7 @@ function simulation()
     global_dofevolvers = []
     field_dofevolvers = []
 
-    N=5000
+    N=1000
     ϕ = 1.0
     poly=15e-6
     Rs = rand(Uniform(1-poly, 1+poly),N)
@@ -42,7 +42,7 @@ function simulation()
     #Run integrationov
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.05, 1e4, Tplot=10,fps=Inf,plot_functions=(plot_transparant_disks!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,0.05, 1e4,Tplot=10,plot_functions=(plot_transparant_disks!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, fps=60); 
     return sim;
 
 end
@@ -51,4 +51,4 @@ sim = simulation()
 
 
 
- 
+    

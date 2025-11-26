@@ -478,8 +478,8 @@ end
 
 
 
-function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO,res=nothing)
-    GLMakie.activate!(; focus_on_show=true, title= "GLMakie: JAMs simulation")
+function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO,fps;res=nothing)
+    GLMakie.activate!(; focus_on_show=true, title= "GLMakie: JAMs simulation", framerate=fps)
     if !isnothing(res)
         f = Figure(size=res)
     else
