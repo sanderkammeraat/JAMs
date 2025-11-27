@@ -6,7 +6,10 @@ include("../analysis/AnalysisPipeline.jl")
 
 base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 
-figure_save_folder = joinpath(base_folder, "figures_25_11")
+
+
+
+figure_save_folder = joinpath(base_folder, "figures_27_11")
 mkpath(figure_save_folder)
 
 
