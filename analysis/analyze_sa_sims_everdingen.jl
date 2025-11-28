@@ -1,20 +1,22 @@
-include("AnalysisPipeline.jl")
+
 
 #base_folder = "/Volumes/T7_Shield/sa/statistics/hex_disordered/phi_1.3/vary_Nlin"
 
 
-
-
+include("AnalysisPipeline.jl")
 #base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 
 function analysis()
-    base_folder = "/data2/kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
+    #base_folder = "/data2/kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
+    base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
     rp, sp, ap = auto_analysis_dir(base_folder, "sa_raw_data.h5"; support_raw_data_file_name_pattern = "ra_raw_data.h5")
 
 
     #todo = (.!occursin.("J_0.0/", rp)) .* (.! occursin.("J_0.001", rp)) .*  (.! occursin.("J_0.01", rp)) 
 
-    todo = (.!occursin.("J_0.0", rp)).* (.! occursin.("J_0.12", rp)) .* (.! occursin.("J_0.16", rp)) .* (.! occursin.("J_0.1", rp)).* (.! occursin.("J_0.2", rp))
+    #todo = (.!occursin.("J_0.0", rp)).* (.! occursin.("J_0.12", rp)) .* (.! occursin.("J_0.16", rp)) .* (.! occursin.("J_0.1", rp)).* (.! occursin.("J_0.2", rp))
+
+    todo = (.!occursin.("Dr_0.01", rp)) .* (.!occursin.("J_0.0/", rp)) .* (.! occursin.("J_0.001", rp)) .*  (.! occursin.("J_0.01", rp)) 
 
     rpf = rp[todo]
     spf = sp[todo]
@@ -32,6 +34,7 @@ function analysis()
 
     run_sequential_analysis(rpf, apf,custom_analysis_function, support_raw_data_file_paths=spf)
 end
+
 analysis()
 
 #Do this later, preferably on everdingen
