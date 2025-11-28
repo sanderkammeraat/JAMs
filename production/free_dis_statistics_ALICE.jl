@@ -133,7 +133,7 @@ end
 #@everywhere base_path = "/Users/kammeraat/test_free/"#"/data1/kammeraatsc1/sa/statistics/free/"
 
 
- base_path ="/data1/kammeraatsc1/sa/statistics/free/"
+base_path ="/data1/kammeraatsc1/sa/statistics/free/"
 
 
 @everywhere Drs = [ 0.01, 0.1] 
