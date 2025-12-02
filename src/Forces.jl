@@ -136,9 +136,10 @@ struct coulomb_force<:Force
     
 end
 
-struct polymer_harmonic_stretch_force{T1}<:Force
+struct polymer_harmonic_stretch_force{T1,T2}<:Force
     ontypes::Union{Int64,Vector{Int64}}
     karray::T1
+    farray::T2
 end
 
 
@@ -459,8 +460,10 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
             if p_j.id_in_pol[1]==p_i.id_in_pol[1]+1 || p_j.id_in_pol[1]==p_i.id_in_pol[1]-1
 
                 d2R = p_i.R[1]+p_j.R[1]
+
+                f_factor = force.farray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]
                 
-                p_i.f.+= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
+                p_i.f.+= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-f_factor*d2R) * dx/dxn
             end
         end
     end
