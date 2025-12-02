@@ -100,6 +100,8 @@ function analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_
         rethrow(e)
 
     end
+
+    GC.gc()
     
 
 end
