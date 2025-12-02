@@ -27,6 +27,8 @@ include("AnalysisPipeline.jl")
 base_folder = "/Volumes/T7_Shield/sa/statistics/hex_disordered/phi_1.3/vary_Nlin"
 
 
+base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
+
 ef, sf = auto_ensemble_dir(base_folder,"seed_")
 
 
@@ -34,7 +36,7 @@ ef[2]
 
 sf[2][1]
 
-seed_file_paths = sf[3]
+seed_file_paths = sf[17]
 
 loaded_seed_files = [ load_file(seed_file_path) for seed_file_path in seed_file_paths]
 
@@ -156,7 +158,10 @@ include("AnalysisPipeline.jl")
 base_folder = "/Volumes/T7_Shield/sa/statistics/hex_disordered/phi_1.3/vary_Nlin"
 
 path = "/Volumes/T7_Shield/sa/statistics/hex_disordered/phi_1.3/vary_Nlin/Nlin_20/simdata/Dr_0.01/J_0.1/seed_1/sa_raw_data.h5"
+base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 
+
+path = joinpath(base_folder,"simdata/v0_0.01/Dr_0.01/J_0.1/seed_1/sa_raw_data.h5")
 sfile = load_file(path)
 
 frames = sfile["frames"]
@@ -189,22 +194,32 @@ py = zeros(Np, Nt)
 qx = zeros(Np, Nt)
 qy = zeros(Np, Nt)
 
-@views for i in 1:Nt
-    x[:,i] .= extract_frame_data_for_type("x", 1, frames[string(i)])
-    y[:,i] .= extract_frame_data_for_type("y", 1, frames[string(i)])
+for i in 1:2000
+    #x[:,i] .= extract_frame_data_for_type("x", 1, frames[string(i)])
+    #y[:,i] .= extract_frame_data_for_type("y", 1, frames[string(i)])
 
 
 
-    vx[:,i] .= extract_frame_data_for_type("vx", 1, frames[string(i)])
-    vy[:,i] .= extract_frame_data_for_type("vy", 1, frames[string(i)])
+    #vx[:,i] .= extract_frame_data_for_type("vx", 1, frames[string(i)])
+    #vy[:,i] .= extract_frame_data_for_type("vy", 1, frames[string(i)])
 
-    px[:,i] .= extract_frame_data_for_type("px", 1, frames[string(i)])
-    py[:,i] .= extract_frame_data_for_type("py", 1, frames[string(i)])
+    @views px[:,i] .= extract_frame_data_for_type("px", 1, frames[string(i)])
+    #py[:,i] .= extract_frame_data_for_type("py", 1, frames[string(i)])
 
-    qx[:,i] .= extract_frame_data_for_type("qx", 1, frames[string(i)])
-    qy[:,i] .= extract_frame_data_for_type("qy", 1, frames[string(i)])
+    #qx[:,i] .= extract_frame_data_for_type("qx", 1, frames[string(i)])
+    #qy[:,i] .= extract_frame_data_for_type("qy", 1, frames[string(i)])
 
 end
+
+
+
+
+
+
+
+
+
+#%%
 
 auto = auto_correlation(t,px, py, minrow=500)
 
