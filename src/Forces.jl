@@ -579,9 +579,11 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
 
         #If not part of the same polymer
-        if p_i.pol_id[1]!= p_j.pol_id[1]
-        d2R = p_i.R[1]+p_j.R[1]
-        f = @MVector zeros(length(dx))
+        #if p_i.pol_id[1]!= p_j.pol_id[1]
+        if  p_i.pol_id[1] != p_j.pol_id[1] || abs(p_i.id_in_pol[1]-p_j.id_in_pol[1])>1
+
+            d2R = p_i.R[1]+p_j.R[1]
+            f = @MVector zeros(length(dx))
             if dxn < d2R
 
                 @views f.= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
