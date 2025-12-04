@@ -9,7 +9,7 @@ base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disor
 
 
 
-figure_save_folder = joinpath(base_folder, "figures_01_12_v2")
+figure_save_folder = joinpath(base_folder, "figures_04_12")
 mkpath(figure_save_folder)
 
 
@@ -25,6 +25,13 @@ Drs = [e["Dr"] for e in ensemble_files]
 Js = [e["J"] for e in ensemble_files]
 
 v0s = [e["v0"] for e in ensemble_files] #by color
+
+
+
+
+
+
+
 
 GLMakie.activate!()
 begin
@@ -49,6 +56,30 @@ f[1,2]=Legend(f,ax)
 display(f)
 
 end
+
+
+begin
+
+f = Figure()
+
+ax = Axis(f[1,1], xlabel=L"$\Delta t$", ylabel=L"$\langle \vec{p}(t)\cdot \vec{p}(0) \rangle$")
+
+for e in ensemble_files
+
+    Dre = e["Dr"]
+
+    if Dre==0.1
+    Je = e["J"]
+
+    scatterlines!(ax, e["auto_p"]["deltat"], e["auto_p"]["Cavg"], colorrange = (0, 1 ) , color=e["J"], label="J = $(e["J"])")
+    end
+
+end
+f[1,2]=Legend(f,ax)
+display(f)
+
+end
+
 
 begin
 
@@ -128,7 +159,7 @@ for e in ensemble_files
     J= e["J"]
     Dr = e["Dr"]
 
-    if Dr ==0.1 && J==0.0
+    if Dr ==0.1 #&& J==0.08
     v0 = e["v0"]
 
     ax = Axis(f[1,1], ylabel=L"ω_n", xlabel=L"ω", title="J=$J, Dr = $Dr, v0 = $(v0)")
@@ -141,8 +172,8 @@ for e in ensemble_files
 
     X = e["FT_v_projs"]["X2"]
 
-    heatmap!(ax,w, sqrt.(eigval_bin_centers), log10.(transpose(X)), rasterize=true, colorrange=(-2,5), colormap=:gist_rainbow)
-    cb = Colorbar(f[1, 2], limits = (-2, 5), colormap = :gist_rainbow, flipaxis = false, label = "log10(ω^2 |a_n(ω)|^2)")
+    heatmap!(ax,w, sqrt.(eigval_bin_centers), log10.(transpose(X)), rasterize=true, colorrange=(-2,4), colormap=:gist_rainbow)
+    cb = Colorbar(f[1, 2], limits = (-2, 4), colormap = :gist_rainbow, flipaxis = false, label = "log10(ω^2 |a_n(ω)|^2)")
 
 
     xlims!(0,0.5)
@@ -153,8 +184,8 @@ for e in ensemble_files
 
     # lines!(ax,eigval_bin_centers,theory_ABP, colorrange = (0, maximum(Drs) ) ,  label="v0 = $(e["v0"]),J = $(e["J"])")
     #f[1,2]=Legend(f,ax)
-    #save("temp.pdf",f)
-    #append_pdf!( joinpath(figure_save_folder,"Dre_0_1_wn_w.pdf"), "temp.pdf", cleanup=true)
+    save("temp.pdf",f)
+    append_pdf!( joinpath(figure_save_folder,"Dre_0_1_wn_w.pdf"), "temp.pdf", cleanup=true)
 
 
     display(f)
@@ -181,7 +212,7 @@ for e in ensemble_files
     tau =1/Dr
     vrms = e["vrms"]
     
-    if Dr ==0.1 && J==0.0
+    if Dr ==0.1# && J==0.0
 
     
     ax = Axis(f[1,1], ylabel=L"ω_n", xlabel=L"ω", title="J=$J, Dr = $Dr, v0 = $(v0)")
@@ -201,8 +232,8 @@ for e in ensemble_files
     min_t_ind = e["min_t_ind"]
 
     #a = a_min = sqrt(1 +  (eigval_bin_centers[eigval_ind]/(2 * J) + 1/(2 * tau *J ))^2 ) - (eigval_bin_centers[eigval_ind]/(2 * J) + 1/(2 * tau *J))
-    #a = a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) #
-    a = vrms/v0
+    a = a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) #
+    #a = vrms/v0
 
     for i in 1:size(X)[1]
 
@@ -212,8 +243,8 @@ for e in ensemble_files
         end
     end
 
-    heatmap!(ax,w, sqrt.(eigval_bin_centers), log10.(transpose(X)), rasterize=true, colorrange=(-2,5),colormap=:gist_rainbow)
-    cb = Colorbar(f[1, 2], limits = (-2, 5), colormap = :gist_rainbow, flipaxis = false, label = "log10(ω^2 |a_n(ω)|^2)")
+    heatmap!(ax,w, sqrt.(eigval_bin_centers), log10.(transpose(X)), rasterize=true, colorrange=(-2,4),colormap=:gist_rainbow)
+    cb = Colorbar(f[1, 2], limits = (-2, 4), colormap = :gist_rainbow, flipaxis = false, label = "log10(ω^2 |a_n(ω)|^2)")
 
     xlims!(0,0.5)
     ylims!(0,1.)
@@ -223,8 +254,8 @@ for e in ensemble_files
 
     # lines!(ax,eigval_bin_centers,theory_ABP, colorrange = (0, maximum(Drs) ) ,  label="v0 = $(e["v0"]),J = $(e["J"])")
     #f[1,2]=Legend(f,ax)
-    #save("temp.pdf",f)
-    #append_pdf!( joinpath(figure_save_folder,"Dre_0.1_wn_w_theory_a_emp.pdf"), "temp.pdf", cleanup=true)
+    save("temp.pdf",f)
+    append_pdf!( joinpath(figure_save_folder,"Dre_0.1_wn_w_theory_a_ABP.pdf"), "temp.pdf", cleanup=true)
 
     display(f)
     end
@@ -333,10 +364,15 @@ for Drplot in [0.1,0.01]
 
     scatterlines!(ax, Js, a_mins, color="orange", label="a_min", marker='p')
     hlines!(ax, a_ABP, color="red", label="a_ABP")
+
+    annotation!(ax, (0.04,0), text="0.04")
+    annotation!(ax, (0.08,0), text="0.08")
     #scatterlines!(ax, Js, a_mids, color="green", label="a_mid")
     ylims!(ax, 0,1)
     f[1,2]=Legend(f,ax)
     display(f)
+
+    save(joinpath(figure_save_folder,"a_vs_J_Dr_$(Drplot).pdf"), f)
 end
 end
 
@@ -434,8 +470,37 @@ end
 
 
 
+using CairoMakie
+CairoMakie.activate!()
+begin
 
+f = Figure()
 
+ax = Axis(f[1,1], title="Dr = 0.1", xlabel=L"$ω$", ylabel=L"$\langle |\tilde{p}_x(\omega)|^2\rangle$", xscale=log10, yscale=log10)
+
+for e in ensemble_files
+
+    Dre = e["Dr"]
+    Je = e["J"]
+
+    Jmax=0.1
+    if Dre==0.1 && Je<=Jmax
+    
+
+    scatterlines!(ax, e["FT_px_w"]["w"],e["FT_px_w"]["X2"][1,:], colorrange = (0, Jmax ) , color=(e["J"]), label="J = $(e["J"])")
+    end
+
+end
+f[1,2]=Legend(f,ax)
+
+xlims!(10^(-3.5), 10^(0.3))
+
+ylims!(10^(4), 10^(4.4))
+
+display(f)
+save(joinpath(figure_save_folder,"FT_px_zoom.pdf"), f)
+
+end
 
 
 
