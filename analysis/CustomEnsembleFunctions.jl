@@ -204,6 +204,25 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
     ensemble_file["FT_v_projs"]["eigval_bin_centers"] = binned_X.bin_centers
     ensemble_file["FT_v_projs"]["X2"] = binned_X.bin_values
 
+    #auto_p
+    Cavg = []
+    deltat = []
+    for i in eachindex(loaded_seed_files)
+
+        if i==1
+
+            deltat =loaded_seed_files[i]["auto_p"]["deltat"]
+
+            Cavg = loaded_seed_files[i]["auto_p"]["Cavg"]
+        else
+
+            Cavg = vcat(Cavg, loaded_seed_files[i]["auto_p"]["Cavg"])
+        end
+    end
+    create_group(ensemble_file, "auto_p")
+    ensemble_file["auto_p"]["Cavg"] = mean(Cavg, dims=1)[1,:] 
+    ensemble_file["auto_p"]["deltat"] = deltat
+
 
     return ensemble_file
 end
