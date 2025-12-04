@@ -66,23 +66,29 @@ function analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_
 
             #Closing the files
             close(initialized_analysis_file)
+            GC.gc()
 
             if !isnothing(loaded_support_raw_data_file)
                 close(loaded_support_raw_data_file)
+                GC.gc()
             end
 
             close(loaded_raw_data_file)
+            GC.gc()
 
         catch e 
 
             println("Something in the custom analysis function went wrong. Safely aborting and closing the files.")
             close(initialized_analysis_file)
+            GC.gc()
 
             if !isnothing(loaded_support_raw_data_file)
                 close(loaded_support_raw_data_file)
+                GC.gc()
             end
 
             close(loaded_raw_data_file)
+            GC.gc()
 
             rethrow(e)
         end
@@ -93,9 +99,11 @@ function analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_
 
         if !isnothing(loaded_support_raw_data_file)
             close(loaded_support_raw_data_file)
+            GC.gc()
         end
 
         close(loaded_raw_data_file)
+        GC.gc()
 
         rethrow(e)
 

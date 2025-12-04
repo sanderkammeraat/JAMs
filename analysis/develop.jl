@@ -160,7 +160,7 @@ base_folder = "/Volumes/T7_Shield/sa/statistics/hex_disordered/phi_1.3/vary_Nlin
 path = "/Volumes/T7_Shield/sa/statistics/hex_disordered/phi_1.3/vary_Nlin/Nlin_20/simdata/Dr_0.01/J_0.1/seed_1/sa_raw_data.h5"
 base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 
-
+base_folder = "/data2/kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 path = joinpath(base_folder,"simdata/v0_0.01/Dr_0.01/J_0.1/seed_1/sa_raw_data.h5")
 sfile = load_file(path)
 
@@ -194,7 +194,7 @@ py = zeros(Np, Nt)
 qx = zeros(Np, Nt)
 qy = zeros(Np, Nt)
 
-for i in 1:2000
+for i in 1:Nt
     #x[:,i] .= extract_frame_data_for_type("x", 1, frames[string(i)])
     #y[:,i] .= extract_frame_data_for_type("y", 1, frames[string(i)])
 
@@ -204,7 +204,7 @@ for i in 1:2000
     #vy[:,i] .= extract_frame_data_for_type("vy", 1, frames[string(i)])
 
     @views px[:,i] .= extract_frame_data_for_type("px", 1, frames[string(i)])
-    #py[:,i] .= extract_frame_data_for_type("py", 1, frames[string(i)])
+    @views py[:,i] .= extract_frame_data_for_type("py", 1, frames[string(i)])
 
     #qx[:,i] .= extract_frame_data_for_type("qx", 1, frames[string(i)])
     #qy[:,i] .= extract_frame_data_for_type("qy", 1, frames[string(i)])
@@ -224,16 +224,36 @@ end
 auto = auto_correlation(t,px, py, minrow=500)
 
 
+
+include("AnalysisPipeline.jl")
+auto2 = auto_correlation_v2(t,px, py, minrow=500)
+
+#is not time translational invariant?
+
+
+
 using GLMakie
 
+
+
+
+using GLMakie
+begin
 f = Figure()
 ax = Axis(f[1,1])
 
-#scatter!(ax, auto["deltat"][1:length(auto["Cavg"])], auto["Cavg"])
+scatter!(ax, auto["deltat"][1:length(auto["Cavg"])], auto["Cavg"])
+#scatter!(ax, auto2["deltat"], auto2["Cavg"])
 
+
+
+display(f)
+end
 scatterlines!(ax, t[500:end],px[1,500:end])
 
 FT  = temporal_Fourier_transform(t[2]-t[1],px, min_t_ind = 500, output_not_avg=true)
+
+
 
 
 scatterlines!(ax, t[500:end],sin.(FT["w_max"][1] * t[500:end])) 

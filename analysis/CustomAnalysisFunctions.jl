@@ -188,3 +188,69 @@ function run_sa_analysis!(analysis_file, raw_data_file; support_raw_data_file = 
     save_dict2h5!(analysis_file, FT_v_projs, "FT_v_projs")
     return analysis_file
 end
+
+function run_sa_analysis_add_auto_p!(analysis_file, raw_data_file; support_raw_data_file = nothing)
+
+    if !haskey(analysis_file,"auto_p")
+        frames = raw_data_file["frames"]
+
+        system = raw_data_file["system"]
+
+        frames_support = support_raw_data_file["frames"]
+
+        t =  raw_data_file["integration_info"]["save_tax"]
+
+        v0 = frames["1"]["v0"][1]
+
+
+        Dr = frames["1"]["Dr"][1]
+
+
+        J = system["forces"]["external"]["self_align_with_v_unit_force"]["β"]
+
+
+
+        k = system["forces"]["pair"]["soft_disk_force"]["karray"]
+
+        R = frames["1"]["R"]
+
+
+
+        type = frames["1"]["type"]
+
+
+
+        Nt = length(t)
+
+        #Ignore boundary particles
+        Nint = length(extract_frame_data_for_type("id",1,frames["1"]))
+
+
+        min_t_ind = 500
+
+
+        dt = t[2] - t[1]
+
+        px = zeros(Nint, Nt)
+        py = zeros(Nint, Nt)
+
+
+        @views for i in 1:Nt
+
+            px[:,i] .= extract_frame_data_for_type("px", 1, frames[string(i)])
+            py[:,i] .= extract_frame_data_for_type("py", 1, frames[string(i)])
+
+        end
+
+
+        x0 = frames_support[string(length(frames_support))]["x"]
+        y0 = frames_support[string(length(frames_support))]["y"]
+
+
+        auto_p = auto_correlation(t,px, py, minrow=min_t_ind)
+
+        save_dict2h5!(analysis_file, auto_p, "auto_p")
+    end
+    return analysis_file
+    GC.gc()
+end
