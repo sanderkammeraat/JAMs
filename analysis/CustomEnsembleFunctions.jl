@@ -204,8 +204,33 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
     ensemble_file["FT_v_projs"]["eigval_bin_centers"] = binned_X.bin_centers
     ensemble_file["FT_v_projs"]["X2"] = binned_X.bin_values
 
+
     return ensemble_file
 end
 
+function sa_ensemble_add_FT_px!(ensemble_file, loaded_seed_files, seed_names)
 
+
+    X = []
+    w = []
+    for i in eachindex(loaded_seed_files)
+
+        if i==1
+
+            w =loaded_seed_files[i]["FT_px"]["w"]
+
+            X = reshape(loaded_seed_files[i]["FT_px"]["pavg_X2"], 1, length(w))
+        else
+
+            X = vcat(X, reshape(loaded_seed_files[i]["FT_px"]["pavg_X2"], 1, length(w)))
+        end
+    end
+    create_group(ensemble_file,"FT_px_w")
+    ensemble_file["FT_px_w"]["X2"] = mean(X, dims=1)[1,:]
+    ensemble_file["FT_px_w"]["w"] = w
+
+
+    return ensemble_file
+
+end
 
