@@ -9,11 +9,11 @@ function load_file(file_location)
 
 end
 
-
+#=
 p_01 = load_file(raw"C:\Users\gabri\Documents\Travail-Etude\Master's Theoretical Physics Leiden\Research Project\Data\test_saving\simdata\p_0.1\raw_data.h5")
 p_05 = load_file(raw"C:\Users\gabri\Documents\Travail-Etude\Master's Theoretical Physics Leiden\Research Project\Data\test_saving\simdata\p_0.5\raw_data.h5")
 p_10 = load_file(raw"C:\Users\gabri\Documents\Travail-Etude\Master's Theoretical Physics Leiden\Research Project\Data\test_saving\simdata\p_1.0\raw_data.h5")
-
+=#
 
 
 function average_velocity(file, sliding_window)
@@ -108,6 +108,44 @@ function plot_MSD!(files)
         lines!(time, MSD(file))
     end
     f
+end
+
+
+function isjammed(file, window_percentage, tolerance_percentage, numb_accepted_deviation)
+    MSD = MSD(file)
+    velocity = average_velocity(file, 1)
+    start = length(MSD)-floor(window_percentage/100*length(MSD))
+    finish = length(MSD)
+
+    mean_MSD = sum(MSD[start:finish])/(finish-start)
+    mean_velocity = sum(velocity[start:finish])/(finish-start)
+
+    count_MSD = 0
+    count_veocity = 0
+
+    for i in length(MSD)-floor(window_percentage/100*length(MSD)):length(MSD)
+        if abs(MSD[i]-mean_MSD) > tolerance/100*mean_MSD
+            count_MSD += 1
+        end
+
+        if abs(velocity[i]-mean_velocity) > tolerance/100*mean_velocity
+            count_veocity += 1
+        end
+    end
+
+    if count_MSD > numb_accepted_deviation
+        MSD_jammed = true
+    else 
+        MSD_jammed = false
+    end
+
+    if count_velocity > numb_accepted_deviation
+        velocity_jammed = true
+    else 
+        velocity_jammed = false
+    end
+
+    return MSD_jammed, velocity_jammed
 end
 
 plot_MSD!([p_01, p_05, p_10])

@@ -2,7 +2,7 @@ include(joinpath("..","..","src","Engine.jl"))
 
 include(joinpath("..","..","io","InitialPositionGenerators.jl"))
 
-function simulation(p)
+function simulation(p,N)
 
 
     #pair_forces = (soft_disk_force(1,1),pairAN_force(1,1.2,0.3,0.3,true), pair_nematic_alignment_force(1,2.5,0.1))
@@ -24,7 +24,7 @@ function simulation(p)
 
     pf = 1.
     R = 1
-    N_in_pol = 10
+    N_in_pol = N
 
     L = 7*N_in_pol
     x, y, radii, pol_ids, ids_in_pol, Npols = stacked_polymers_at_angle(N_in_pol, L, R, pf, f_eq_stretch_force)
@@ -44,16 +44,20 @@ function simulation(p)
     #β=-1 interesting!
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,6.);
 
-    save_folder = "/data1/martin/test_saving/simdata/p_$p/"
-    sim = Euler_integrator(system,0.025, 100, fps=30, Tplot=nothing,plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=20, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = save_folder); 
+    save_folder = "/run/media/martin/HENKESGRFAT/martin/sim_data/p_$p,N_$N/"
+    sim = Euler_integrator(system,0.025, 500, fps=30, Tplot=nothing,plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=20, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = save_folder); 
     return sim;
 
 end 
 
-for p in [0.1, 0.5, 1.]
-    display(p)
-    sim = simulation(p) 
-end 
+
+for p in [0.2,0.3,0.4,0.5,0.6,0.7,0.8]
+    for N in [4,6,8,10,12,14,18]
+        display(p)
+        display(N)
+        sim = simulation(p, N) 
+    end
+end
 
 
 # @profview sim = simulation() 
