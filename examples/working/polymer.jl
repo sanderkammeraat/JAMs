@@ -45,7 +45,7 @@ function simulation(p)
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,6.);
 
     save_folder = "/data1/martin/test_saving/simdata/p_$p/"
-    sim = Euler_integrator(system,0.025, 10, fps=30, Tplot=20,plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=20, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = save_folder); 
+    sim = Euler_integrator(system,0.025, 100, fps=30, Tplot=nothing,plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=20, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = save_folder); 
     return sim;
 
 end 
