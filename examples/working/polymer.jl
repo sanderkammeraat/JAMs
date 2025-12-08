@@ -13,7 +13,7 @@ function simulation(p,N)
     kper= 0.
     f_eq_stretch_force = .7
     pair_forces = (polymer_exterior_soft_disk_force(1,1.),polymer_harmonic_bend_force(1, .3), polymer_harmonic_stretch_force(1,1.,f_eq_stretch_force),polymer_align_director_tangent_force(1,10), polymer_pairAN_force(1,true, true,1.5, kpar, kper, p))
-    external_forces =(thermal_translational_noise(1, 0.0*[0.001, 0.0001,0]),)#, ABP_3d_propulsion_force(1))
+    external_forces =(thermal_translational_noise(1, [0.001, 0.001,0]),)#, ABP_3d_propulsion_force(1))
 
     
 
@@ -26,8 +26,8 @@ function simulation(p,N)
     R = 1
     N_in_pol = N
 
-    L = 7*N_in_pol
-    x, y, radii, pol_ids, ids_in_pol, Npols = stacked_polymers_at_angle(N_in_pol, L, R, pf, f_eq_stretch_force)
+    Npols = 100
+    x, y, radii, pol_ids, ids_in_pol, L = stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force)
 
     #PolarPolymerParticle3d id type pol_id id_in_pol pol_N
     initial_state = PolarPolymerParticle3d[PolarPolymerParticle3d([id],[1],[pol_ids[id]],[ids_in_pol[id]],[N_in_pol], [1], [1], [radii[id]], [0.3], [0.01], [x[id] , y[id],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for id=1:Npols*N_in_pol];
@@ -44,13 +44,14 @@ function simulation(p,N)
     #β=-1 interesting!
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,6.);
 
-    save_folder = "/run/media/martin/HENKESGRFAT/martin/sim_data/p_$p,N_$N/"
-    sim = Euler_integrator(system,0.025, 500, fps=30, Tplot=nothing,plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=20, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = save_folder); 
+    save_folder = "/run/media/martin/HENKESGRFAT/martin/sim_data/p_$p/"
+    sim = Euler_integrator(system,0.025, 5000, fps=30, Tplot=nothing, plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=40, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = save_folder); 
     return sim;
 
 end 
 
 
+#=
 for p in [0.2,0.3,0.4,0.5,0.6,0.7,0.8]
     for N in [4,6,8,10,12,14,18]
         display(p)
@@ -58,7 +59,9 @@ for p in [0.2,0.3,0.4,0.5,0.6,0.7,0.8]
         sim = simulation(p, N) 
     end
 end
+=#
 
+sim = simulation(.1, 10) 
 
 # @profview sim = simulation() 
 

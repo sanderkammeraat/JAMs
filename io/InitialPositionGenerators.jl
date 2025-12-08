@@ -127,14 +127,15 @@ end
 # scatter!(xi, yi)
 
 #Thanks to Gabriel Martin
-function stacked_polymers_at_angle(N_in_pol, L, R, pf, f_eq_stretch_force; tilt_angle = nothing)
+function stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force; tilt_angle = nothing)
 
     # initialization
 
     S = pi * R^2
 
     S_overlap = 2*(R*R*acos(f_eq_stretch_force*R) - (f_eq_stretch_force*R)^2*tan(acos(f_eq_stretch_force*R)))
-    Npols = convert(Int64, floor(pf*L*L/(S*N_in_pol-S_overlap*(N_in_pol-1))))
+
+    L = sqrt(pf*Npols*(S*N_in_pol-S_overlap*(N_in_pol-1)))
 
     M = Npols * N_in_pol
     x = zeros(M)
@@ -170,6 +171,6 @@ function stacked_polymers_at_angle(N_in_pol, L, R, pf, f_eq_stretch_force; tilt_
 
     end
 
-    return x, y, radii, pol_ids, ids_in_pol, Npols
+    return x, y, radii, pol_ids, ids_in_pol, L
 
 end

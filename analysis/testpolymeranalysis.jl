@@ -15,6 +15,8 @@ p_05 = load_file(raw"C:\Users\gabri\Documents\Travail-Etude\Master's Theoretical
 p_10 = load_file(raw"C:\Users\gabri\Documents\Travail-Etude\Master's Theoretical Physics Leiden\Research Project\Data\test_saving\simdata\p_1.0\raw_data.h5")
 =#
 
+test_file = load_file("/run/media/martin/HENKESGRFAT/martin/sim_data/p_0.1/raw_data.h5")
+
 
 function average_velocity(file, sliding_window)
 
@@ -64,7 +66,7 @@ function plot_avg_velocity!(files, sliding_window)
 end
 
 
-function MSD(file)
+function MSD(file, sliding_window)
 
     numb_frames = length(file["frames"])
     numb_particles = length(file["frames"]["1"]["x"])
@@ -82,17 +84,17 @@ function MSD(file)
 
     MSD = zeros(numb_frames)
 
-    for i in 1:numb_frames
-        
-        MSD[i] += sum((x[i]-x[1]).^2 .+ (y[i]-y[1]).^2)/numb_particles
-    
+    for i in 1:numb_frames-sliding_window+1
+        for j in i:i+sliding_window-1
+            MSD[i] += sum((x[j]-x[i]).^2 .+ (y[j]-y[i]).^2)/numb_particles
+        end
     end
 
-    return MSD
+    return MSD/sliding_window
 
 end
 
-function plot_MSD!(files)
+function plot_MSD!(files, sliding_window)
 
     f = Figure()
     ax = Axis(f[1, 1])
@@ -105,7 +107,7 @@ function plot_MSD!(files)
     time = 1:numb_frames
 
     for file in files
-        lines!(time, MSD(file))
+        lines!(time, MSD(file, sliding_window))
     end
     f
 end
@@ -148,5 +150,5 @@ function isjammed(file, window_percentage, tolerance_percentage, numb_accepted_d
     return MSD_jammed, velocity_jammed
 end
 
-plot_MSD!([p_01, p_05, p_10])
+plot_MSD!([test_file], 20)
 #plot_avg_velocity!([p_01, p_05, p_10], 20)
