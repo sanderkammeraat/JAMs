@@ -1,3 +1,10 @@
+#using Distributed
+
+# n=8
+
+# addprocs(n)
+
+#@everything
 include(joinpath("..","..","src","Engine.jl"))
 
 include(joinpath("..","..","io","InitialPositionGenerators.jl"))
@@ -36,7 +43,7 @@ function simulation(p,N)
     display(L)
 
     sizes = [L,L,2];
-    print(sizes)
+    display(sizes)
     initial_field_state=[]
     field_forces = []
     field_updaters = []
@@ -44,24 +51,27 @@ function simulation(p,N)
     #β=-1 interesting!
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,6.);
 
-    save_folder = "/run/media/martin/HENKESGRFAT/martin/sim_data/p_$p/"
+    save_folder = "/data1/martin/sim_data/p_$p/"
     sim = Euler_integrator(system,0.025, 5000, fps=30, Tplot=nothing, plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=40, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = save_folder); 
     return sim;
 
 end 
 
 
-#=
-for p in [0.2,0.3,0.4,0.5,0.6,0.7,0.8]
-    for N in [4,6,8,10,12,14,18]
-        display(p)
-        display(N)
-        sim = simulation(p, N) 
-    end
-end
-=#
+#@sync @distributed
 
-sim = simulation(.1, 10) 
+for p in [0.01, .03, .05, .07, .1, .2, .3, 0.4]
+    display(p)
+    display(Threads.nthreads())
+    sim = simulation(p, 10)
+    display("Done")
+    
+end
+
+
+
+
+#sim = simulation(.1, 10) 
 
 # @profview sim = simulation() 
 
