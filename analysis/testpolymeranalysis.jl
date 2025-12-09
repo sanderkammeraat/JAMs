@@ -1,5 +1,4 @@
 using JLD2
-using GLMakie
 using CairoMakie
 
 
@@ -9,13 +8,11 @@ function load_file(file_location)
 
 end
 
-#=
-p_01 = load_file(raw"C:\Users\gabri\Documents\Travail-Etude\Master's Theoretical Physics Leiden\Research Project\Data\test_saving\simdata\p_0.1\raw_data.h5")
-p_05 = load_file(raw"C:\Users\gabri\Documents\Travail-Etude\Master's Theoretical Physics Leiden\Research Project\Data\test_saving\simdata\p_0.5\raw_data.h5")
-p_10 = load_file(raw"C:\Users\gabri\Documents\Travail-Etude\Master's Theoretical Physics Leiden\Research Project\Data\test_saving\simdata\p_1.0\raw_data.h5")
-=#
+#for windows
+test_file = load_file(raw"E:\martin\sim_data\p_0.1\raw_data.h5")
 
-test_file = load_file("/run/media/martin/HENKESGRFAT/martin/sim_data/p_0.1/raw_data.h5")
+#for linux
+#test_file = load_file("/run/media/martin/HENKESGRFAT/martin/sim_data/p_0.1/raw_data.h5")
 
 
 function average_velocity(file, sliding_window)
@@ -37,10 +34,12 @@ function average_velocity(file, sliding_window)
 
     v = zeros(numb_frames-sliding_window+1)
 
-    for i in 1:numb_frames-sliding_window+1
-        for j in i:i+sliding_window-1
-            v[i] += sum(sqrt.(v_x[j].^2 + v_y[j].^2))/numb_particles
-        end
+    for j in 1:sliding_window
+        v[1] += sum(sqrt.(v_x[j].^2 + v_y[j].^2))/numb_particles
+    end
+
+    for i in 2:numb_frames-sliding_window+1
+        v[i] += v[i-1] + sum(sqrt.(v_x[i+sliding_window-1].^2 + v_y[i+sliding_window-1].^2))/numb_particles - sum(sqrt.(v_x[i-1].^2 + v_y[i-1].^2))/numb_particles
     end
 
     return v/sliding_window
@@ -97,8 +96,8 @@ end
 function plot_MSD!(files, sliding_window)
 
     f = Figure()
-    ax = Axis(f[1, 1])
-
+    ax = Axis(f[1, 1], xscale=log10, yscale=log10)
+    ylims!(ax, 1e-6, 1e-2)
     delta_t = files[1]["integration_info"]["dt"]
     t_stop = files[1]["integration_info"]["t_stop"]
     Tsave = files[1]["integration_info"]["Tsave"]
@@ -113,42 +112,5 @@ function plot_MSD!(files, sliding_window)
 end
 
 
-function isjammed(file, window_percentage, tolerance_percentage, numb_accepted_deviation)
-    MSD = MSD(file)
-    velocity = average_velocity(file, 1)
-    start = length(MSD)-floor(window_percentage/100*length(MSD))
-    finish = length(MSD)
-
-    mean_MSD = sum(MSD[start:finish])/(finish-start)
-    mean_velocity = sum(velocity[start:finish])/(finish-start)
-
-    count_MSD = 0
-    count_veocity = 0
-
-    for i in length(MSD)-floor(window_percentage/100*length(MSD)):length(MSD)
-        if abs(MSD[i]-mean_MSD) > tolerance/100*mean_MSD
-            count_MSD += 1
-        end
-
-        if abs(velocity[i]-mean_velocity) > tolerance/100*mean_velocity
-            count_veocity += 1
-        end
-    end
-
-    if count_MSD > numb_accepted_deviation
-        MSD_jammed = true
-    else 
-        MSD_jammed = false
-    end
-
-    if count_velocity > numb_accepted_deviation
-        velocity_jammed = true
-    else 
-        velocity_jammed = false
-    end
-
-    return MSD_jammed, velocity_jammed
-end
-
-plot_MSD!([test_file], 20)
-#plot_avg_velocity!([p_01, p_05, p_10], 20)
+plot_MSD!([test_file], 100)
+plot_avg_velocity!([test_file], 100)
