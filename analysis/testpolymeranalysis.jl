@@ -65,7 +65,7 @@ function plot_avg_velocity!(files, sliding_window)
 end
 
 
-function MSD(file, sliding_window)
+function MSD(file)
 
     numb_frames = length(file["frames"])
     numb_particles = length(file["frames"]["1"]["x"])
@@ -83,21 +83,18 @@ function MSD(file, sliding_window)
 
     MSD = zeros(numb_frames)
 
-    for i in 1:numb_frames-sliding_window+1
-        for j in i:i+sliding_window-1
-            MSD[i] += sum((x[j]-x[i]).^2 .+ (y[j]-y[i]).^2)/numb_particles
-        end
+    for Δt in 1:numb_frames
+        MSD[Δt] = sum((x[Δt+1:numb_frames,:] - x[1:numb_frames-Δt,:]).^2 + (y[Δt+1:numb_frames,:] - y[1:numb_frames-Δt,:]).^2)/numb_particles/(numb_frames-Δt)
     end
 
-    return MSD/sliding_window
+    return MSD
 
 end
 
-function plot_MSD!(files, sliding_window)
+function plot_MSD!(files)
 
     f = Figure()
     ax = Axis(f[1, 1], xscale=log10, yscale=log10)
-    ylims!(ax, 1e-6, 1e-2)
     delta_t = files[1]["integration_info"]["dt"]
     t_stop = files[1]["integration_info"]["t_stop"]
     Tsave = files[1]["integration_info"]["Tsave"]
@@ -106,11 +103,11 @@ function plot_MSD!(files, sliding_window)
     time = 1:numb_frames
 
     for file in files
-        lines!(time, MSD(file, sliding_window))
+        lines!(time, MSD(file))
     end
     f
 end
 
 
-plot_MSD!([test_file], 100)
+plot_MSD!([test_file])
 plot_avg_velocity!([test_file], 100)
