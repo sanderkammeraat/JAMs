@@ -11,10 +11,14 @@ function load_file(file_location)
 end
 
 #for windows
+<<<<<<< HEAD
 test_file = load_file(raw"E:\martin\sim_data\p_0.01\raw_data.h5")
+=======
+#test_file = load_file(raw"E:\martin\sim_data\p_0.1\raw_data.h5")
+>>>>>>> 8703c0e46f5957dbebc8bf72632522abe5702e07
 
 #for linux
-#test_file = load_file("/run/media/martin/HENKESGRFAT/martin/sim_data/p_0.1/raw_data.h5")
+test_file = load_file("/run/media/martin/HENKESGRFAT/martin/sim_data/p_0.1/raw_data.h5")
 
 
 function get_info(file)

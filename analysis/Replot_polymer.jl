@@ -87,7 +87,7 @@ GLMakie.activate!()
     close(raw_data_file)
 end
 
-base_folder= joinpath("/Users/kammeraat/ANP/demos/N_in_pol_10/k_par_-1.0/k_per_0.0")
+base_folder= joinpath("/data1/martin/sim_data/p_0.1/")
 
 
 raw_data_file=h5open(joinpath(base_folder,"raw_data.h5"),"r")
