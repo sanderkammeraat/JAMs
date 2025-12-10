@@ -1,6 +1,8 @@
 using JLD2
 using CairoMakie
 
+CairoMakie.activate!(type = "png")
+
 
 function load_file(file_location)
 
@@ -82,7 +84,7 @@ function MSD(x, y, numb_frames, numb_particles)
 
 end
 
-function plot_MSD!(positions, numb_frames, numb_particles)
+function plot_MSD!(positions, numb_frames, numb_particles, save)
 
     f = Figure()
     ax = Axis(f[1, 1], xscale=log10, yscale=log10)
@@ -93,6 +95,10 @@ function plot_MSD!(positions, numb_frames, numb_particles)
         lines!(time, MSD(position[1], position[2], numb_frames, numb_particles))
     end
     f
+
+    if save[1]
+        save("figure.png", f)
+    end
 end
 
 
@@ -109,3 +115,4 @@ x, y, v_x, v_y, numb_frames, numb_particles, dt, Tsave = get_info(test_file)
 
 plot_MSD!([[x, y]], numb_frames, numb_particles)
 plot_avg_velocity!([[v_x, v_y]], numb_frames, numb_particles, 100)
+
