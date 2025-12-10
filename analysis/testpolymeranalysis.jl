@@ -11,7 +11,7 @@ function load_file(file_location)
 end
 
 #for windows
-test_file = load_file(raw"E:\martin\sim_data\p_0.1\raw_data.h5")
+test_file = load_file(raw"E:\martin\sim_data\p_0.01\raw_data.h5")
 
 #for linux
 #test_file = load_file("/run/media/martin/HENKESGRFAT/martin/sim_data/p_0.1/raw_data.h5")
@@ -20,7 +20,7 @@ test_file = load_file(raw"E:\martin\sim_data\p_0.1\raw_data.h5")
 function get_info(file)
     
     numb_frames = length(file["frames"])
-    numb_particles = length(file["frames"]["1"]["x"])
+    numb_particles = length(file["frames"]["1"]["xuw"])
 
 
     v_x = zeros(numb_frames, numb_particles)
@@ -38,7 +38,7 @@ function get_info(file)
 
     end
 
-    return x, y, v_x, v_y, numb_frames, numb_particles, files[1]["integration_info"]["dt"], files[1]["integration_info"]["Tsave"]
+    return x, y, v_x, v_y, numb_frames, numb_particles, file["integration_info"]["dt"], file["integration_info"]["Tsave"]
 end
 
 
@@ -95,10 +95,6 @@ function plot_MSD!(positions, numb_frames, numb_particles, save)
         lines!(time, MSD(position[1], position[2], numb_frames, numb_particles))
     end
     f
-
-    if save[1]
-        save("figure.png", f)
-    end
 end
 
 
@@ -113,6 +109,15 @@ end
 
 x, y, v_x, v_y, numb_frames, numb_particles, dt, Tsave = get_info(test_file)
 
-plot_MSD!([[x, y]], numb_frames, numb_particles)
+plot_MSD!([[x, y]], numb_frames, numb_particles, false)
 plot_avg_velocity!([[v_x, v_y]], numb_frames, numb_particles, 100)
 
+MSD_p_0_1 = MSD(x, y, numb_frames, numb_particles)
+
+f = Figure()
+ax = Axis(f[1, 1], xscale=log10, yscale=log10)
+
+time = 1:numb_frames
+
+lines!(ax, time, MSD_p_0_1)
+f
