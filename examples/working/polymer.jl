@@ -51,8 +51,8 @@ function simulation(p,N)
     #β=-1 interesting!
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,6.);
 
-    save_folder = "/data1/martin/sim_data/p_$p/"
-    sim = Euler_integrator(system,0.025, 50, fps=30, Tplot=10, plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=40, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = save_folder); 
+    save_folder = "/run/media/martin/HENKESGRFAT/martin/sim_data/p_$p/"
+    sim = Euler_integrator(system,0.025, 10000, fps=30, Tplot=nothing, plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=40, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = save_folder); 
     return sim;
 
 end 
@@ -60,19 +60,16 @@ end
 
 #@sync @distributed
 
-#=
-for p in [.3, 0.4]
+
+for p in [0.08, 0.09, 0.1, 0.11, 0.15]
     display(p)
-    display(Threads.nthreads())
-    sim = simulation(p, 10)
-    display("Done")
-    
+    sim = simulation(p, 10)    
 end
-=#
 
 
 
-sim = simulation(.1, 10) 
+
+#sim = simulation(.1, 10) 
 
 # @profview sim = simulation() 
 
