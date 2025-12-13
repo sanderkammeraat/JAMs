@@ -2,7 +2,7 @@
 using GLMakie
 
 
-function plot_points!(ax, cpsO, cfsO)
+function plot_points!(f,ax, cpsO, cfsO)
 
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
@@ -21,7 +21,7 @@ function plot_points!(ax, cpsO, cfsO)
     return ax
 end
 
-function plot_director_points!(ax, cpsO, cfsO)
+function plot_director_points!(f,ax, cpsO, cfsO)
 
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
@@ -46,7 +46,7 @@ function plot_director_points!(ax, cpsO, cfsO)
     return ax
 end
 
-function plot_field_magnitude!(ax, cpsO, cfsO)
+function plot_field_magnitude!(f,ax, cpsO, cfsO)
     
     field_centers1 = @lift($(cfsO)[1].bin_centers[1])
     field_centers2 = @lift($(cfsO)[1].bin_centers[2])
@@ -55,7 +55,21 @@ function plot_field_magnitude!(ax, cpsO, cfsO)
     return ax
 end
 
-function plot_field_magnitude_wgrid!(ax, cpsO, cfsO)
+
+
+function plot_potential!(f,ax, cpsO, cfsO)
+    
+    field_centers1 = @lift($(cfsO)[1].bin_centers[1])
+    field_centers2 = @lift($(cfsO)[1].bin_centers[2])
+    field_C = @lift($(cfsO)[1].C)
+    Cmax = maximum(cfsO[][1].C)
+    Cmin = minimum(cfsO[][1].C)
+    surface!(ax,field_centers1,field_centers2,field_C,colormap=Reverse(:gist_rainbow), alpha=0.5, colorrange=(Cmin, Cmax), color=field_C,shading=NoShading)
+    Colorbar(f[1,2], limits = (Cmin, Cmax), label="Pot. energy U",colormap=Reverse(:gist_rainbow))
+    return ax
+end
+
+function plot_field_magnitude_wgrid!(f,ax, cpsO, cfsO)
     
     field_centers1 = @lift($(cfsO)[1].bin_centers[1])
     field_centers2 = @lift($(cfsO)[1].bin_centers[2])
@@ -67,7 +81,7 @@ function plot_field_magnitude_wgrid!(ax, cpsO, cfsO)
     return ax
 end
 
-function plot_type_points!(ax, cpsO, cfsO)
+function plot_type_points!(f,ax, cpsO, cfsO)
 
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
@@ -86,7 +100,7 @@ function plot_type_points!(ax, cpsO, cfsO)
     return ax
 end
 
-function plot_type_points!(ax, cpsO, cfsO)
+function plot_type_points!(f,ax, cpsO, cfsO)
 
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
@@ -105,7 +119,7 @@ function plot_type_points!(ax, cpsO, cfsO)
     return ax
 end
 
-function plot_shape_disks!(ax, cpsO, cfsO)
+function plot_shape_disks!(f,ax, cpsO, cfsO)
     c = @lift([ p_i.id[1] for p_i in $cpsO])
     for j = 1:size(cpsO[][1].xe)[1]
 
@@ -120,7 +134,7 @@ function plot_shape_disks!(ax, cpsO, cfsO)
     return ax
 end
 
-function plot_shape_disks_orientation!(ax, cpsO, cfsO)
+function plot_shape_disks_orientation!(f,ax, cpsO, cfsO)
     c = @lift([ angle(p_i.p[1]+1im*p_i.p[2]) for p_i in $cpsO])
     for j = 1:size(cpsO[][1].xe)[1]
 
@@ -135,7 +149,7 @@ function plot_shape_disks_orientation!(ax, cpsO, cfsO)
     return ax
 end
 
-function plot_shape_disks_type!(ax, cpsO, cfsO)
+function plot_shape_disks_type!(f,ax, cpsO, cfsO)
     c = @lift([ p_i.type[1] for p_i in $cpsO])
     for j = 1:size(cpsO[][1].xe)[1]
 
@@ -150,7 +164,7 @@ function plot_shape_disks_type!(ax, cpsO, cfsO)
     return ax
 end
 
-function plot_shape_points!(ax, cpsO, cfsO)
+function plot_shape_points!(f,ax, cpsO, cfsO)
     c = @lift([ p_i.id[1] for p_i in $cpsO])
     for j = 1:size(cpsO[][1].xe)[1]
 
@@ -168,7 +182,7 @@ end
 
 
 
-function plot_Swarmalators!(ax, cpsO, cfsO)
+function plot_Swarmalators!(f,ax, cpsO, cfsO)
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
     y = @lift([p_i.x[2] for p_i in $cpsO])
@@ -181,7 +195,7 @@ end
 
 
 
-function plot_sized_points!(ax, cpsO, cfsO)
+function plot_sized_points!(f,ax, cpsO, cfsO)
 
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
@@ -210,7 +224,7 @@ function plot_sized_points!(ax, cpsO, cfsO)
 end
 
 
-function plot_polymers!(ax, cpsO, cfsO)
+function plot_polymers!(f,ax, cpsO, cfsO)
 
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
@@ -227,7 +241,7 @@ end
 
 
 
-function plot_disks!(ax, cpsO, cfsO)
+function plot_disks!(f,ax, cpsO, cfsO)
 
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
@@ -242,7 +256,7 @@ function plot_disks!(ax, cpsO, cfsO)
     return ax
 end
 
-function plot_transparant_disks!(ax, cpsO, cfsO)
+function plot_transparant_disks!(f,ax, cpsO, cfsO)
 
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
@@ -256,7 +270,7 @@ end
 
 
 
-function plot_disks_type!(ax, cpsO, cfsO)
+function plot_disks_type!(f,ax, cpsO, cfsO)
 
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
@@ -272,7 +286,7 @@ function plot_disks_type!(ax, cpsO, cfsO)
 end
 
 
-function plot_disks_uw!(ax, cpsO, cfsO)
+function plot_disks_uw!(f,ax, cpsO, cfsO)
 
 
     x = @lift([p_i.xuw[1] for p_i in $cpsO])
@@ -287,7 +301,7 @@ function plot_disks_uw!(ax, cpsO, cfsO)
     return ax
 end
 
-function plot_disks_vx!(ax, cpsO, cfsO)
+function plot_disks_vx!(f,ax, cpsO, cfsO)
 
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
@@ -302,7 +316,7 @@ function plot_disks_vx!(ax, cpsO, cfsO)
     return ax
 end
 
-function plot_disks_orientation!(ax, cpsO, cfsO)
+function plot_disks_orientation!(f,ax, cpsO, cfsO)
 
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
@@ -317,7 +331,7 @@ function plot_disks_orientation!(ax, cpsO, cfsO)
     return ax
 end
 
-function plot_disks_nematic_orientation!(ax, cpsO, cfsO)
+function plot_disks_nematic_orientation!(f,ax, cpsO, cfsO)
 
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
@@ -332,7 +346,7 @@ function plot_disks_nematic_orientation!(ax, cpsO, cfsO)
     return ax
 end
 
-function plot_disks_vp_phase_difference!(ax, cpsO, cfsO)
+function plot_disks_vp_phase_difference!(f,ax, cpsO, cfsO)
 
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
@@ -348,7 +362,7 @@ function plot_disks_vp_phase_difference!(ax, cpsO, cfsO)
 end
 
 
-function plot_type_sized_points!(ax, cpsO, cfsO)
+function plot_type_sized_points!(f,ax, cpsO, cfsO)
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
     y = @lift([p_i.x[2] for p_i in $cpsO])
@@ -375,7 +389,7 @@ function plot_type_sized_points!(ax, cpsO, cfsO)
 
 end
 
-function plot_directors!(ax, cpsO, cfsO)
+function plot_directors!(f,ax, cpsO, cfsO)
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
     y = @lift([p_i.x[2] for p_i in $cpsO])
@@ -402,7 +416,7 @@ function plot_directors!(ax, cpsO, cfsO)
 
 end
 
-function plot_nematic_directors!(ax, cpsO, cfsO)
+function plot_nematic_directors!(f,ax, cpsO, cfsO)
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
     y = @lift([p_i.x[2] for p_i in $cpsO])
@@ -439,7 +453,7 @@ function plot_nematic_directors!(ax, cpsO, cfsO)
 
 end
 
-function plot_velocity_vectors!(ax,cpsO, cfsO)
+function plot_velocity_vectors!(f,ax,cpsO, cfsO)
 
     x = @lift([p_i.x[1] for p_i in $cpsO])
     y = @lift([p_i.x[2] for p_i in $cpsO])
@@ -509,7 +523,7 @@ function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO
     end
     
     for plot_function in plot_functions
-       ax=plot_function(ax,cpsO,cfsO)
+       ax=plot_function(f,ax,cpsO,cfsO)
     end
     display(f)
     return f, ax
