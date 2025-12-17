@@ -26,7 +26,8 @@ function simulation(v0, Dr, J, Tplot, Tsave)
     Ly = L
     #v0 = 0.2
     #Dr = 0.0
-    initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [Rs[i]], [v0], [Dr], [-1 , 0,0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
+    sigma = 1
+    initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [Rs[i]], [v0], [Dr], [-1+sigma*rand(Normal(0, 1)) , sigma*rand(Normal(0, 1)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
     lbin=0.1
     z_bin_centers = [0.]
     x_bin_centers = []
@@ -70,25 +71,13 @@ function simulation(v0, Dr, J, Tplot, Tsave)
 
     save_folder = "/Users/kammeraat/dwsa/single/simdata/v0_$v0/Dr_$Dr/J_$J/"
 
-    sim = Euler_integrator(system,0.01,200, Tsave=Tsave, fps=60,Tplot=Tplot,plot_functions=(plot_potential!,plot_points!, plot_velocity_vectors!), plotdim=2, save_folder_path = save_folder, save_functions = (save_2d_polar_p!,save_single_2d_field!)); 
+    sim = Euler_integrator(system,0.01,1e4, Tsave=Tsave, fps=60,Tplot=Tplot,plot_functions=(plot_potential!,plot_points!, plot_velocity_vectors!), plotdim=2, save_folder_path = save_folder, save_functions = (save_2d_polar_p!,save_single_2d_field!)); 
     return sim;
 
 end
 
 #v0, Dr, J
-
-for v0 in [0.1, 0.5, 0.8, 1.0]
-
-    for Dr in [0.0, 0.001, 0.01, 0.05, 0.1]
-
-        for J in [0.0, 0.1, 0.5, 1.0, 2.0]
-            simulation(v0, Dr, J,nothing,10)
-        end
-    end
-end
-
-
-simulation(0.8, 0.01 ,1, 1, nothing)
+simulation(0.6, 0.01 ,1, 1, nothing)
 
 Js = [0, 0.1, 0.5, 1.0, 2.0]
 

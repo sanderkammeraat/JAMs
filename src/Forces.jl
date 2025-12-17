@@ -156,10 +156,10 @@ struct polymer_harmonic_stretch_force{T1}<:Force
     karray::T1
 end
 
-# struct ring_polymer_harmonic_stretch_force{T1}<:Force
-#     ontypes::Union{Int64,Vector{Int64}}
-#     karray::T1
-# end
+struct ring_polymer_harmonic_stretch_force{T1}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+end
 
 
 struct polymer_harmonic_bend_force{T1}<:Force
@@ -167,10 +167,10 @@ struct polymer_harmonic_bend_force{T1}<:Force
     karray::T1
 end
 
-# struct ring_polymer_harmonic_bend_force{T1}<:Force
-#     ontypes::Union{Int64,Vector{Int64}}
-#     karray::T1
-# end
+struct ring_polymer_harmonic_bend_force{T1}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+end
 
 struct polymer_exterior_soft_disk_force{T1}<:Force
     ontypes::Union{Int64,Vector{Int64}}

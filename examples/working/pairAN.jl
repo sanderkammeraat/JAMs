@@ -42,13 +42,12 @@ function simulation()
     #Run integrationov
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plot}ting
-    sim = Euler_integrator(system,0.05, 1e4,Tplot=nothing,plot_functions=(plot_transparant_disks!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,0.05, 1e4,Tplot=1,plot_functions=(plot_transparant_disks!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim;
 
 end
 
-#sim = simulation()  
+sim = simulation()  
 
 
 
-    
