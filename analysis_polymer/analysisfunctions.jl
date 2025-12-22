@@ -1,4 +1,17 @@
+function save_data(data, file_name::Array, path)
+    
+    for i in eachindex(data)
+        name = folder_name[i]
+        save(joinpath(path,"analysis.jld2"), Dict("$name" => data[i]))
+    end
 
+end
+
+function save_data(data, file_name::String, path)
+
+    save(joinpath(path,"analysis.jld2"), Dict("$file_name" => data))
+
+end
 
 
 function average_velocity(v_x, v_y, numb_frames, numb_particles, sliding_window)
@@ -28,18 +41,6 @@ function MSD(x, y, numb_frames, numb_particles)
 
     return MSD
 
-end
-
-function plot_MSD!(data, end_time)
-
-    f = Figure()
-    ax = Axis(f[1, 1], xscale=log10, yscale=log10)
-    time = 1:length(data)
-    ylims!(ax, 1e-3,maximum(data)*1.5)
-
-
-    lines!(ax, time*end_time/length(data), data)
-    display(f)
 end
 
 
@@ -77,32 +78,4 @@ function radius_of_gyration(x, y, pol_id, id_in_pol, numb_frames, numb_particles
     return R_2
 end
 
-function plot_radius_of_gyration!(multiple, datas, p, end_time)
 
-    if !multiple
-
-        f = Figure()
-
-        ax = Axis(f[1, 1], xscale=log10, yscale=log10)
-        time = 1:length(datas)
-        lines!(time*end_time/length(data), datas)
-        display(f)
-
-    
-    else
-        f = Figure()
-        ax = Axis(f[1, 1])
-
-        i=1
-        for data in datas
-            activity = p[i]
-            time = 1:length(data)
-            lines!(time*end_time/length(data), data, label="p=$activity")
-            i+=1
-        end
-    end
-
-    Legend(f[1,2], ax, "activity")
-    display(f)
-
-end

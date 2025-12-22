@@ -3,22 +3,12 @@ using JLD2
 
 function load_file(file_location)
 
-    file = jldopen(file_location, "r",iotype=IOStream)
+    file = jldopen(file_location, "r", iotype=IOStream)
 
 end
 
-sim_folder_name = "sim_data"
-parameters = "p_0.08"
 
-#for windows
-#path_raw_data = joinpath("E:", "martin", sim_folder_name, parameters, "raw_data.h5")
-
-#for linux
-path_raw_data = joinpath("/run/media/martin/HENKESGRFAT/martin", sim_folder_name, parameters, "raw_data.h5")
-
-
-
-struct data(file)
+struct simulation_data
     x
     y
     vx
@@ -51,7 +41,7 @@ function get_data(file_location)
     
 
     numb_frames = length(file["frames"])
-    N = length(file["frames"]["1"]["xuw"])
+    N = length(file["frames/1/xuw"])
     pol_id = file["frames/1/pol_id"]
     id_in_pol = file["frames/1/id_in_pol"]
 
@@ -67,12 +57,12 @@ function get_data(file_location)
 
     for i in 1:numb_frames
 
-        x[i,:] = file["frames"]["$i"]["xuw"]
-        y[i,:] = file["frames"]["$i"]["yuw"]
-        v_x[i,:] = file["frames"]["$i"]["vx"]
-        v_y[i,:] = file["frames"]["$i"]["vy"]
-        p_x[i,:] = file["frames"]["$i"]["px"]
-        p_y[i,:] = file["frames"]["$i"]["py"]
+        x[i,:] = file["frames/$i/xuw"]
+        y[i,:] = file["frames/$i/yuw"]
+        v_x[i,:] = file["frames/$i/vx"]
+        v_y[i,:] = file["frames/$i/vy"]
+        p_x[i,:] = file["frames/$i/px"]
+        p_y[i,:] = file["frames/$i/py"]
 
     end
 
@@ -93,8 +83,5 @@ function get_data(file_location)
 
     close(file)
 
-    return data(x, y, v_x, v_y, p_x, p_y, id, pol_id, id_in_pol, R, numb_frames, dt, Tsave, ksd, kbend, kstretch, fstretch, p, kperp, kpar, Npol, N)
+    return simulation_data(x, y, v_x, v_y, p_x, p_y, id, pol_id, id_in_pol, R, numb_frames, dt, Tsave, ksd, kbend, kstretch, fstretch, p, kperp, kpar, Npol, N)
 end
-
-
-data = get_data(path_raw_data)
