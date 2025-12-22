@@ -308,7 +308,7 @@ end
 
 
 
-function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_functions=nothing, save_folder_path=nothing, save_tag=nothing, Tplot=nothing, fps=30, plot_functions=nothing,plotdim=nothing,record_folder_path=nothing,crf=23,res=nothing)
+function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_functions=nothing, save_folder_path=nothing, save_tag=nothing, Tplot=nothing, fps=30, plot_functions=nothing,plotdim=nothing,record_folder_path=nothing,crf=23,res=nothing,format="mp4")
 
 
     integration_tax = collect(0:dt:t_stop)
@@ -443,7 +443,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         cfsO = Observable(current_field_state)
         tO = Observable(0.)
         f, ax = setup_system_plotting(system.sizes,plot_functions, plotdim,cpsO,cfsO,tO,fps,res=res)
-        video_stream = !isnothing(record_folder_path) ? VideoStream(f, format = "mp4", framerate = fps, visible=true,compression=crf) : nothing
+        video_stream = !isnothing(record_folder_path) ? VideoStream(f, format = format, framerate = fps, visible=true,compression=crf) : nothing
 
     end
 
@@ -596,7 +596,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
             close(raw_data_file)
         end
         if !isnothing(video_stream)
-            save( joinpath(mkpath(record_folder_path),"movie.mp4"), video_stream)
+            save( joinpath(mkpath(record_folder_path),"movie."*format), video_stream)
         end
     end
 end

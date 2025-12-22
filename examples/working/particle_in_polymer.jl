@@ -43,7 +43,7 @@ function simulation()
     #Use plot_points! for fast plotting
     save_folder = "/Users/kammeraat/particles_in_ring/J_$J/Np_$N/Rp_$Rp/"
 
-    sim = Euler_integrator(system,0.01, 1000,save_functions=(save_2d_polymer_polar_p!,),save_folder_path=save_folder,Tsave=nothing, Tplot=100, fps=60, plot_functions=(plot_disks_type!, plot_velocity_vectors!), plotdim= 2, record_folder_path =save_folder,res = (1000,1000))# save_folder); 
+    sim = Euler_integrator(system,0.01, 1000,save_functions=(save_2d_polymer_polar_p!,),save_folder_path=save_folder,Tsave=nothing, Tplot=100, fps=60, plot_functions=(plot_disks_type!, plot_velocity_vectors!), plotdim= 2)# save_folder); 
     return sim
 
 end
