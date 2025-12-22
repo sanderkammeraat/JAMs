@@ -359,7 +359,9 @@ function run_sequential_analysis(raw_data_file_paths, analysis_save_paths,custom
         analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=support_raw_data_file_path,  overwrite = overwrite, append = append)
         GC.gc() #Explitict garbage collection
         catch e
-            rethrow(e)
+            1234
+            #Do not rethrow, this will stop the loop
+            #rethrow(e)
         end
             
 
