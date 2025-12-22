@@ -377,7 +377,7 @@ function plot_type_sized_points!(f,ax, cpsO, cfsO)
 
         R = @lift([p_i.R for p_i in $cpsO])
 
-        meshscatter!(ax,x,y,z, color=c, markersize =R, transparency=true)
+        meshscatter!(ax,x,y,z, color=c, markersize =R, transparency=true,markerspace=:data)
 
 
     else

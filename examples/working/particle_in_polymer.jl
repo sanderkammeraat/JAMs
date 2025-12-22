@@ -13,10 +13,12 @@ function simulation()
     field_dofevolvers = []
     N_in_pol=30
     
+    Rp = 1
+
     l=2
     R=N_in_pol*l/2/pi
     L=3*R
-    v0=0.3
+    v0=0.5
     Dr=0.01
     J=0.1
     external_forces=(ABP_3d_propulsion_force(2), ABP_perpendicular_angular_noise(2,[0, 0 ,1]), self_align_with_v_unit_force(2,J))
@@ -26,10 +28,10 @@ function simulation()
     for i=1:N
 
         id = N_in_pol+i
-        initial_state=push!(initial_state,PolarPolymerParticle3d([id],[2],[2],[1],[1], [1], [1], [1], [v0], [Dr], [rand(Uniform(-R/2, R/2)),rand(Uniform(-R/2, R/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
+        initial_state=push!(initial_state,PolarPolymerParticle3d([id],[2],[2],[1],[1], [1], [1], [Rp], [v0], [Dr], [rand(Uniform(-R/2, R/2)),rand(Uniform(-R/2, R/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
     end
 
-    sizes = [1.5*L,1.5*L,2.];
+    sizes = [2*L,2*L,2.];
     initial_field_state=[]
     field_forces = []
     field_updaters = []
@@ -39,7 +41,9 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.01, 1e5, Tplot=1, fps=60, plot_functions=(plot_sized_points!, plot_directors!, plot_velocity_vectors!), plotdim= 2); 
+    save_folder = "/Users/kammeraat/particles_in_ring/J_$J/Np_$N/Rp_$Rp/"
+
+    sim = Euler_integrator(system,0.01, 1000,save_functions=(save_2d_polymer_polar_p!,),save_folder_path=save_folder,Tsave=nothing, Tplot=100, fps=60, plot_functions=(plot_disks_type!, plot_velocity_vectors!), plotdim= 2, record_folder_path =save_folder,res = (1000,1000))# save_folder); 
     return sim
 
 end

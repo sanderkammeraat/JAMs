@@ -9,7 +9,7 @@ base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disor
 
 
 
-figure_save_folder = joinpath(base_folder, "figures_19_12")
+figure_save_folder = joinpath(base_folder, "figures_22_12")
 mkpath(figure_save_folder)
 
 
@@ -99,7 +99,7 @@ begin
 
 f = Figure()
 
-ax = Axis(f[1,1], xlabel=L"λ", ylabel=L"v projs /v_0^2")
+ax = Axis(f[1,1], xlabel=L"λ", ylabel=L"v projs /v_0^2", yscale=log10)
 
 for e in ensemble_files
 
@@ -122,19 +122,23 @@ for e in ensemble_files
         eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]
 
 
-        a= @.sqrt(1 +  ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))^2 ) - ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))
+        a_min= @.sqrt(1 +  ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))^2 ) - ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))
+        display(a_min)
         a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) 
         #a based on loweest mode selection
         #a = e["vrms"]/v0
         #display(a)
         #a = e["vrms"]/v0
-        a = a_ABP
+        #a = a_ABP
+        a = a_min
+        #a=1
 
         the_eigvals = eigvals[1:end]
 
         A =@. Complex( sqrt.( (1/tau + J * a) .* the_eigvals))
 
         B =@. Complex(the_eigvals .+  .-J /a  .+ 1/tau  .+ J*a)
+    
         #B=@.B + 0-B[1]
 
         I= @.real( 1im * sqrt(2) *pi/(sqrt(2 *A^2+B*(-B+sqrt(-4 *A^2+B^2)))+sqrt(2 *A^2-B*(B+sqrt(-4* A^2+B^2)))))
@@ -151,10 +155,13 @@ for e in ensemble_files
 
         #lines!(ax,the_eigvals[select],theory_amin, color=e["J"], colorrange = (0, 1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
 
-        #scatterlines!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])")
+        scatterlines!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])")
 
         #lines!(ax,eigval_bin_centers,theory_ABP, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) ABP theory ", alpha=0.2)
-        scatterlines!(ax,the_eigvals,real.(B), color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])", linestyle=:dash)
+       
+        #scatterlines!(ax,the_eigvals,real.(B), color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])", linestyle=:dash)
+
+        
         #lines!(ax,the_eigvals,theory_I, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])", linestyle=:dash)
         #lines!(ax,the_eigvals,theory_amin, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
     end

@@ -21,8 +21,8 @@ function make_movie(raw_data_file,movie_save_path)
     vx = Observable(frames["1"]["vx"])
     vy = Observable(frames["1"]["vy"]) 
 
-    x = Observable(frames["1"]["vx"])
-    y = Observable(frames["1"]["vy"]) 
+    x = Observable(frames["1"]["x"])
+    y = Observable(frames["1"]["y"]) 
 
     px = Observable(frames["1"]["px"])
     py = Observable(frames["1"]["py"]) 
