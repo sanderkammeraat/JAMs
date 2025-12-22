@@ -1,5 +1,21 @@
 
 using FFTW
+function minimal_image_difference!(dx, xi, xj, system_sizes, system_Periodic)
+
+    
+    for n in eachindex(xi)
+        dx[n]=xj[n]-xi[n]
+        if system_Periodic
+            if dx[n]>system_sizes[n]/2
+                dx[n]-=system_sizes[n]
+            end
+            if dx[n]<=-system_sizes[n]/2
+                dx[n]+=system_sizes[n]
+            end
+        end 
+    end
+    return dx
+end
 
 
 function temporal_Fourier_transform(dt, x;  min_t_ind=1, output_not_avg=false)
@@ -243,10 +259,17 @@ function auto_correlation_v2(t, px, py; minrow=1)
 end
 ## Dynamical matrix analysis
 # Helper functions
-function construct_n_ij_projector!(n_ij_projector, i,j,x,y)
+function construct_n_ij_projector!(n_ij_projector, i,j,x,y, periodic_system_sizes)
 
 
     r_ij_0_vec = @MVector [x[j]-x[i], y[j] - y[i]]
+
+    r_i_0_vec = @MVector [x[i],y[i]]
+    r_j_0_vec = @MVector [x[j],y[j]]
+
+    if !isnothing(periodic_system_sizes)
+        r_ij_0_vec = minimal_image_difference!(r_ij_0_vec, r_i_0_vec, r_j_0_vec, periodic_system_sizes, true)
+    end
 
     r_ij_0_norm = norm(r_ij_0_vec)
 
@@ -295,12 +318,12 @@ function u_ij_2(i,j,r_ij_0_norm, k, R,type)
     end
 end
 
-@views function construct_M_ij!(M_ij,n_ij_projector, i,j,x,y, k, R,type)
+@views function construct_M_ij!(M_ij,n_ij_projector, i,j,x,y, k, R,type, periodic_system_sizes)
 
     M_ij .*=  0
 
     if i!=j
-        n_ij_projector, r_ij_0_norm = construct_n_ij_projector!(n_ij_projector,i,j,x,y)
+        n_ij_projector, r_ij_0_norm = construct_n_ij_projector!(n_ij_projector,i,j,x,y,periodic_system_sizes)
 
         M_ij.+= u_ij_1(i,j,r_ij_0_norm, k, R, type) / r_ij_0_norm .* (I - n_ij_projector)
 
@@ -314,7 +337,7 @@ end
 
 
 # Actual D construction
-@views function construct_D(x0,y0, k, R, type)
+@views function construct_D(x0,y0, k, R, type; periodic_system_sizes=nothing)
 
     M=zeros(2*length(x0), 2*length(x0))
 
@@ -330,7 +353,7 @@ end
 
         for j in i:length(x0)
 
-            M[2i-1:2i,2j-1:2j] .= construct_M_ij!(M_ij_0, n_ij_projector,i, j, x0, y0, k , R,type)
+            M[2i-1:2i,2j-1:2j] .= construct_M_ij!(M_ij_0, n_ij_projector,i, j, x0, y0, k , R,type, periodic_system_sizes)
         end
 
     end

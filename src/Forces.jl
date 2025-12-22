@@ -527,7 +527,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
         if p_i.pol_id[1]==p_j.pol_id[1]
 
             #If neigbouring points in the polymer
-            if abs(p_j.id_in_pol[1]-p_i.id_in_pol[1]) % p_i.N_in_pol[i]
+            if abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==1 || p_i.pol_N[1]-abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==1
 
                 d2R = p_i.R[1]+p_j.R[1]
                 
@@ -625,7 +625,28 @@ end
     end
     return p_i
 end
+@views function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::ring_polymer_harmonic_bend_force)
 
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        #If in same polymer
+        if p_i.pol_id[1]==p_j.pol_id[1]
+
+
+            if abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==2 || p_i.pol_N[1]-abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==2
+
+                p_i.f.+= -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+            elseif abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==1 || p_i.pol_N[1]-abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==1
+
+                p_i.f.+= 4 * force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+            end
+        
+        end
+    end
+    return p_i
+end
 
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::soft_disk_force)
 

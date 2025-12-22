@@ -350,6 +350,7 @@ function run_sequential_analysis(raw_data_file_paths, analysis_save_paths,custom
 
     for i in eachindex(raw_data_file_paths)
 
+        try 
         raw_data_file_path = raw_data_file_paths[i]
         println(raw_data_file_path)
         analysis_save_path = analysis_save_paths[i]
@@ -357,6 +358,10 @@ function run_sequential_analysis(raw_data_file_paths, analysis_save_paths,custom
 
         analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=support_raw_data_file_path,  overwrite = overwrite, append = append)
         GC.gc() #Explitict garbage collection
+        catch e
+            rethrow(e)
+        end
+            
 
     end
     

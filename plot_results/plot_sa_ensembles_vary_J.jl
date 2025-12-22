@@ -9,7 +9,7 @@ base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disor
 
 
 
-figure_save_folder = joinpath(base_folder, "figures_09_12")
+figure_save_folder = joinpath(base_folder, "figures_19_12")
 mkpath(figure_save_folder)
 
 
@@ -99,57 +99,64 @@ begin
 
 f = Figure()
 
-ax = Axis(f[1,1], xlabel=L"λ", ylabel=L"v projs /v_0^2", yscale=log10)
+ax = Axis(f[1,1], xlabel=L"λ", ylabel=L"v projs /v_0^2")
 
 for e in ensemble_files
 
 
-    J= e["J"]
+    
     Dr = e["Dr"]
     v0 = e["v0"]
 
     if Dr==0.1# && J==0.0
+        J= e["J"]
+            
+        tau =1/Dr
+
+        eigval_bin_centers = e["v_projs_time_avg"]["eigval_bin_centers"]
+
+        eigval_ind = 1 
+
+        theory_ABP = v0^2  ./ (2 .+ 2 .* eigval_bin_centers .* tau)  /v0^2
+
+        eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]
+
+
+        a= @.sqrt(1 +  ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))^2 ) - ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))
+        a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) 
+        #a based on loweest mode selection
+        #a = e["vrms"]/v0
+        #display(a)
+        #a = e["vrms"]/v0
+        a = a_ABP
+
+        the_eigvals = eigvals[1:end]
+
+        A =@. Complex( sqrt.( (1/tau + J * a) .* the_eigvals))
+
+        B =@. Complex(the_eigvals .+  .-J /a  .+ 1/tau  .+ J*a)
+        #B=@.B + 0-B[1]
+
+        I= @.real( 1im * sqrt(2) *pi/(sqrt(2 *A^2+B*(-B+sqrt(-4 *A^2+B^2)))+sqrt(2 *A^2-B*(B+sqrt(-4* A^2+B^2)))))
+        #T1 = -(B^2 - 2*A^2)/2
+        #T2 = 1/2*sqrt(Complex(B^2 * (B^2 - 4 * A^2))) 
+
         
-        
-    tau =1/Dr
+        theory_amin = @. pi * ( B - sqrt(B^2 - 4 * A^2))/B/sqrt(-4*A^2 + 2 * B * (B - sqrt(B^2-4*A^2)) ) * 2/tau /4/pi 
+        theory_I= I* 2/tau /4/pi 
+        #scatter!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2, color=e["J"], colorrange = (0, 1) ,  label="J = $(e["J"])", alpha=0.1)
 
-    eigval_bin_centers = e["v_projs_time_avg"]["eigval_bin_centers"]
-
-    eigval_ind = 1 
-
-    theory_ABP = v0^2  ./ (2 .+ 2 .* eigval_bin_centers .* tau)  /v0^2
-
-    eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]
+        #lines!(ax,eigval_bin_centers,theory_ABP, color=e["J"], colorrange = (0, 1) ,  label="J = $(e["J"]) ABP theory ", alpha=0.2)
 
 
-    a= sqrt(1 +  ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))^2 ) - ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))
-    #a based on loweest mode selection
-    #a = e["vrms"]/v0
-    #display(a)
-    #a = e["vrms"]/v0
+        #lines!(ax,the_eigvals[select],theory_amin, color=e["J"], colorrange = (0, 1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
 
-    the_eigvals = eigvals[2:end]
+        #scatterlines!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])")
 
-    A =  sqrt.( (1/tau + J * a) .* the_eigvals)
-
-    B = the_eigvals .+  .-J /a  .+ 1/tau  .+ J*a
-
-
-    theory_amin = @. pi * ( B - sqrt(B^2 - 4 * A^2))/B/sqrt(-4*A^2 + 2 * B * (B - sqrt(B^2-4*A^2)) ) * 2/tau /4/pi 
-
-    #scatter!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2, color=e["J"], colorrange = (0, 1) ,  label="J = $(e["J"])", alpha=0.1)
-
-    #lines!(ax,eigval_bin_centers,theory_ABP, color=e["J"], colorrange = (0, 1) ,  label="J = $(e["J"]) ABP theory ", alpha=0.2)
-
-
-    #lines!(ax,the_eigvals[select],theory_amin, color=e["J"], colorrange = (0, 1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
-
-    scatterlines!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])")
-
-    lines!(ax,eigval_bin_centers,theory_ABP, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) ABP theory ", alpha=0.2)
-
-
-    lines!(ax,the_eigvals,theory_amin, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
+        #lines!(ax,eigval_bin_centers,theory_ABP, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) ABP theory ", alpha=0.2)
+        scatterlines!(ax,the_eigvals,real.(B), color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])", linestyle=:dash)
+        #lines!(ax,the_eigvals,theory_I, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])", linestyle=:dash)
+        #lines!(ax,the_eigvals,theory_amin, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
     end
 
 end
@@ -249,7 +256,8 @@ for e in ensemble_files
     for i in 1:size(X)[1]
 
         for j in 1:size(X)[2]
-            X[i,j] = v0^2  * 2/tau * 2 *pi * w[j]^2/( ( (1/tau + J*a)*eigval_bin_centers[i]-w[j]^2)^2  + w[j]^2 * (eigval_bin_centers[i] - J/a + J*a + 1/tau)^2) * (t[end] - t[min_t_ind])/(2*pi)/(2*pi)
+            #X[i,j] = v0^2  * 2/tau * 2 *pi * w[j]^2/( ( (1/tau + J*a)*eigval_bin_centers[i]-w[j]^2)^2  + w[j]^2 * (eigval_bin_centers[i] - J/a + J*a + 1/tau)^2) * (t[end] - t[min_t_ind])/(2*pi)/(2*pi)
+            X[i,j] = v0^2  * 2*tau * 2 *pi * w[j]^2*(1)/( (eigvals[i]^2 + w[j]^2)*(1+tau^2 * w[j]^2)-2*J*tau/a*((1+eigvals[i]*tau)*w[j]^2 - eigvals[i]^2*a^2 ) ) * (t[end] - t[min_t_ind])/(2*pi)/(2*pi)
 
         end
     end
@@ -265,8 +273,8 @@ for e in ensemble_files
 
     # lines!(ax,eigval_bin_centers,theory_ABP, colorrange = (0, maximum(Drs) ) ,  label="v0 = $(e["v0"]),J = $(e["J"])")
     #f[1,2]=Legend(f,ax)
-    save("temp.pdf",f)
-    append_pdf!( joinpath(figure_save_folder,"Dre_0.1_wn_w_theory_a_ABP.pdf"), "temp.pdf", cleanup=true)
+    #save("temp.pdf",f)
+    #append_pdf!( joinpath(figure_save_folder,"Dre_0.1_wn_w_theory_a_ABP.pdf"), "temp.pdf", cleanup=true)
 
     display(f)
     end

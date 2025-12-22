@@ -579,20 +579,17 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
         end
 
-        if !isnothing(Tsave)
-            close(raw_data_file)
-        end
-
-
         return SIM(deepcopy(final_particle_state), deepcopy(final_field_state), deepcopy(dt), deepcopy(t_stop), deepcopy(system));
 
     catch e
-        if !isnothing(Tsave)
-            close(raw_data_file)
-        end
+
         println("Safely aborting")
         rethrow(e)
 
+    finally 
+        if !isnothing(Tsave)
+            close(raw_data_file)
+        end
     end
 end
 

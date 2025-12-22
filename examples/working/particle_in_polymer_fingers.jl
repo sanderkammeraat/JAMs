@@ -3,7 +3,7 @@ include(joinpath("..","..","src","Engine.jl"))
 
 function simulation()
 
-    pair_forces = (soft_disk_force([1,2], [1 1 ; 1 1]),ring_polymer_harmonic_bend_force(1,0.2), ring_polymer_harmonic_stretch_force(1,1.))
+    pair_forces = (soft_disk_force([1,2], [1 1 ; 1 .2]),ring_polymer_harmonic_bend_force(1,0.2), ring_polymer_harmonic_stretch_force(1,1.))
 
     
 
@@ -11,18 +11,22 @@ function simulation()
     local_dofevolvers = (overdamped_xvf_evolver([1,2]),overdamped_pq_xyc_evolver([1,2]))
     global_dofevolvers = []
     field_dofevolvers = []
-    N_in_pol=30
+    N_in_pol=100
     
     l=2
     R=N_in_pol*l/2/pi
+
+    pf=1
+
+    N = pf*R^2/1^2
+
     L=3*R
     v0=0.3
     Dr=0.01
-    J=0.1
+    J=0.0
     external_forces=(ABP_3d_propulsion_force(2), ABP_perpendicular_angular_noise(2,[0, 0 ,1]), self_align_with_v_unit_force(2,J))
     
     initial_state =  PolarPolymerParticle3d[PolarPolymerParticle3d([id],[1],[1],[id],[N_in_pol], [1], [1], [1], [0.3], [0.01], [R*cos(2*pi/N_in_pol*id) , R*sin(2*pi/N_in_pol*id),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([1,0,0]),[0,0,0],[0,0,0]) for id=1:N_in_pol];
-    N=10
     for i=1:N
 
         id = N_in_pol+i

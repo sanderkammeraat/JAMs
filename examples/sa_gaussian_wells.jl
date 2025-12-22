@@ -16,7 +16,7 @@ function simulation(v0, Dr, J, Tplot, Tsave)
     global_dofevolvers = []
     field_dofevolvers = []
 
-    N=1
+    N=1000
     ϕ = 1.0
     poly=15e-6
     Rs = rand(Uniform(1-poly, 1+poly),N)
@@ -69,15 +69,15 @@ function simulation(v0, Dr, J, Tplot, Tsave)
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
 
-    save_folder = "/Users/kammeraat/dwsa/single/simdata/v0_$v0/Dr_$Dr/J_$J/"
-
-    sim = Euler_integrator(system,0.01,1e4, Tsave=Tsave, fps=60,Tplot=Tplot,plot_functions=(plot_potential!,plot_points!, plot_velocity_vectors!), plotdim=2, save_folder_path = save_folder, save_functions = (save_2d_polar_p!,save_single_2d_field!)); 
+    #save_folder = "/Users/kammeraat/dwsa/single/simdata/v0_$v0/Dr_$Dr/J_$J/"
+    save_folder = "/Users/kammeraat/mounting/data2_kammeraat/test_saving/single/simdata/v0_$v0/Dr_$Dr/J_$J/"
+    sim = Euler_integrator(system,0.01,1, Tsave=Tsave, fps=60,Tplot=Tplot,plot_functions=(plot_potential!,plot_points!, plot_velocity_vectors!), plotdim=2, save_folder_path = save_folder, save_functions = (save_2d_polar_p!,save_single_2d_field!)); 
     return sim;
 
 end
 
 #v0, Dr, J
-simulation(0.6, 0.01 ,1, 1, nothing)
+simulation(0.6, 0.01 ,1, 1, 1)
 
 Js = [0, 0.1, 0.5, 1.0, 2.0]
 
@@ -85,9 +85,7 @@ Drs = [0.0, 0.01, 0.1]
 
 for Dr in Drs
     for J in Js
-        simulation(0.4, Dr, J, nothing, 10)
-        sleep(2)
+        simulation(0.4, Dr, J, nothing, 1)
+        #sleep(2)
     end
 end
-
-    

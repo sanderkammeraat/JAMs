@@ -403,7 +403,7 @@ function run_free_sa_analysis!(analysis_file, raw_data_file; support_raw_data_fi
     #Heavy work: doing the mode analysis
     #With boundary
     display("Constructing D_wb")
-    D_wb = construct_D(x0, y0, k, R, type)
+    D_wb = construct_D(x0, y0, k, R, type, periodic_system_sizes = system["sizes"][1:2])
 
 
     #@profview_allocs D_wb = construct_D(x0, y0, k, R, type)

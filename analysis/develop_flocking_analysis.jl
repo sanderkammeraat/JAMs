@@ -5,7 +5,7 @@ include("AnalysisPipeline.jl")
 
 
 
-file = load_file("/Users/kammeraat/sa_raw_data.h5")
+file = load_file("/Users/kammeraat/sa_raw_data.h5 2")
 
 
 frames = file["frames"]
