@@ -66,7 +66,7 @@ function simulation(relaxation)
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.05, 1e5, Tplot=10,fps=60,plot_functions=(plot_disks_type!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,0.05, 500, Tplot=10,fps=60,plot_functions=(plot_disks_type!, plot_velocity_vectors!), plotdim=2 )#, record_folder_path=joinpath(homedir(),"soft_gel_05-01-2026"), res= (1000,1000)); 
     return sim;
 
 end

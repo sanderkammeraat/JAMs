@@ -9,7 +9,7 @@ base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disor
 
 
 
-figure_save_folder = joinpath(base_folder, "figures_22_12")
+figure_save_folder = joinpath(base_folder, "figures_23_12")
 mkpath(figure_save_folder)
 
 
@@ -62,44 +62,86 @@ begin
 using CairoMakie
 CairoMakie.activate!()
 
-
+GLMakie.activate!()
 f = Figure()
 
 ax = Axis(f[1,1], xlabel=L"$\Delta t$", ylabel=L"$\langle \hat{n}(t+\Delta t)\cdot \hat{n}(t) \rangle$", title="Dr = 0.1")
 Jmax = 0.1
 for e in ensemble_files
 
-    Dre = e["Dr"]
-    Je = e["J"]
+    Dr = e["Dr"]
+    J = e["J"]
 
 
 
-    if Dre==0.1 && Je<=Jmax
+    if Dr==0.1 && J<=0.1
+
+        eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]
+
+        #a_min= @.sqrt(1 +  ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))^2 ) - ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))
+        tau = 1/Dr
+        a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals)))
+        a = a_ABP
+        tauJ = 1/(J*a+1/tau)
+
+        det = e["auto_p"]["deltat"]
+
+        the_auto = zeros(length(det))
+        #the_auto_s = zeros(length(det))
+
+        for i in eachindex(the_auto)
+            ti = det[i]
+            #the_auto_s[i] = exp(-ti/tauJ)*tauJ/tau
+            the_auto[i] = 2/length(eigvals)*  sum(@.  1/(2*a*tau*(tauJ^2*eigvals^2-1)^2) *exp(-ti*(1/tauJ + eigvals))*( -2*exp(ti/tauJ)*J*tauJ^3*eigvals + exp(ti*eigvals) *tauJ * ( a*(tauJ^2*eigvals^2-1)^2+J*(tauJ + ti+tauJ^2*(tauJ-ti)*eigvals^2)  )   ))
+        end
     
 
-    scatterlines!(ax, e["auto_p"]["deltat"], e["auto_p"]["Cavg"], colorrange = (0, Jmax ) , color=e["J"], label="J = $(e["J"])")
+    scatter!(ax,det , e["auto_p"]["Cavg"], colorrange = (0, Jmax ) , color=e["J"], label="J = $(e["J"])",alpha=0.3)
+
+    lines!(ax,det , the_auto, colorrange = (0, Jmax ) , color=e["J"])#, label="J = $(e["J"])")
     end
 
 end
 
-xlims!(ax, 0,200)
+xlims!(ax, 0,100)
 
 lines!(ax, ensemble_files[1]["auto_p"]["deltat"],exp.(-ensemble_files[1]["auto_p"]["deltat"].*0.1), color="red", label="ABP_theory")
 
-ylims!(ax, -0.02,0.02)
+ylims!(ax, -0.015,0.2)
 f[1,2]=Legend(f,ax)
 display(f)
-save(joinpath(figure_save_folder,"auto_n_zoom.pdf"), f)
+save(joinpath(figure_save_folder,"auto_n_zoom.pdf"), f, backend=CairoMakie)
 
 end
+using Roots
+function f_a(a,p)
 
+        eigvals =p[1]
+        J = p[2]
+        tau = p[3] 
 
+        Nint= length(eigvals)/2
+        the_eigvals =eigvals[1:end]
+
+        A = Complex.( sqrt.( (1/tau + J * a) .* the_eigvals))
+
+        B = Complex.(@. the_eigvals .+  .-J /a  .+ 1/tau  .+ J*a) 
+    
+        T1 =@. -(B^2 - 2*A^2)/2
+        T2 =@. 1/2*sqrt(B^2 * (B^2 - 4 * A^2)) 
+        #theory_integral = @. 2* pi* tauJ * (J*tauJ + a * (1+tauJ*eigvals)^2)/(a*tau*(1+tauJ*eigvals)^3)/4/pi
+
+        theory_integral = @. real( @. 1im * pi* ( 1/ (sqrt(T1+T2)-sqrt(T1-T2)) ) ) *4*pi/tau/(2*pi)^2/2
+
+    return 1/Nint*sum(theory_integral) - a^2
+end
+
+display(ensemble_files[1]["t"])
+using CairoMakie
 begin
-
-
 f = Figure()
 
-ax = Axis(f[1,1], xlabel=L"λ", ylabel=L"v projs /v_0^2", yscale=log10)
+ax = Axis(f[1,1], xlabel=L"λ", ylabel=L"v projs /v_0^2", xscale=log10,title=L"D_r=0.1", yscale=log10)#, xscale=log10, yscale=log10,title=L"First order in ($J \tau_J$), Dr=0.1")
 
 for e in ensemble_files
 
@@ -107,9 +149,9 @@ for e in ensemble_files
     
     Dr = e["Dr"]
     v0 = e["v0"]
-
-    if Dr==0.1# && J==0.0
-        J= e["J"]
+    J= e["J"]
+    if Dr==0.1  && J<=0.04
+        
             
         tau =1/Dr
 
@@ -119,35 +161,57 @@ for e in ensemble_files
 
         theory_ABP = v0^2  ./ (2 .+ 2 .* eigval_bin_centers .* tau)  /v0^2
 
-        eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]
-
+        eigvals = e["eigenmodes"]["eigvals"]["seed_2.h5"]
 
         a_min= @.sqrt(1 +  ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))^2 ) - ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))
-        display(a_min)
+
         a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) 
+
+        p= [eigvals, J, tau]
+        a_num = find_zero(f_a,0.9,p)
+        #display(a_num)
+        #display(e["vrms"]/v0)
         #a based on loweest mode selection
-        #a = e["vrms"]/v0
+        #a =copy( e["vrms"]/v0)
         #display(a)
-        #a = e["vrms"]/v0
-        #a = a_ABP
-        a = a_min
+        #a = e["vrms_r"]["vrms_r"][2]/v0
+        #a = a_num
+
+        #a = a_alt
         #a=1
+        #a = a_num
+        a = a_ABP
+        #display(abs(a_num-e["vrms"]/v0)/a_num*100)
+        
+        
+        the_eigvals =eigvals[2:end]
+        tauJ = 1/(J*a+1/tau)
+        C =@.  1 - 2*(the_eigvals+1/tauJ)*a/J
+        A = Complex.( sqrt.( (1/tau + J * a) .* the_eigvals))
 
-        the_eigvals = eigvals[1:end]
-
-        A =@. Complex( sqrt.( (1/tau + J * a) .* the_eigvals))
-
-        B =@. Complex(the_eigvals .+  .-J /a  .+ 1/tau  .+ J*a)
+        B = Complex.(@. the_eigvals .+  .-J /a  .+ 1/tau  .+ J*a) 
     
+        T1 =@. -(B^2 - 2*A^2)/2
+        T2 =@. 1/2*sqrt(B^2 * (B^2 - 4 * A^2)) 
         #B=@.B + 0-B[1]
 
-        I= @.real( 1im * sqrt(2) *pi/(sqrt(2 *A^2+B*(-B+sqrt(-4 *A^2+B^2)))+sqrt(2 *A^2-B*(B+sqrt(-4* A^2+B^2)))))
-        #T1 = -(B^2 - 2*A^2)/2
-        #T2 = 1/2*sqrt(Complex(B^2 * (B^2 - 4 * A^2))) 
+        #integral= @.real( 1im * sqrt(2) *pi/(sqrt(2 *A^2+B*(-B+sqrt(-4 *A^2+B^2)))+sqrt(2 *A^2-B*(B+sqrt(-4* A^2+B^2)))))
+        #theory_integral= @.real( 1im  *pi* ( T1+T2 + sqrt(T1-T2)*sqrt(T1+T2))/ (2 *sqrt(T1-T2)*T2) ) ./tau
+
+        theory_integral = @. real( @. 1im * pi* ( 1/ (sqrt(T1+T2)-sqrt(T1-T2)) ) ) *4*pi/tau/(2*pi)^2/2
 
         
-        theory_amin = @. pi * ( B - sqrt(B^2 - 4 * A^2))/B/sqrt(-4*A^2 + 2 * B * (B - sqrt(B^2-4*A^2)) ) * 2/tau /4/pi 
-        theory_I= I* 2/tau /4/pi 
+        #theory_integral = @. 2* pi* tauJ * (J*tauJ + a * (1+tauJ*the_eigvals)^2)/(a*tau*(1+tauJ*the_eigvals)^3)
+
+        #theory_integral = @. 4* pi^2 * tauJ/tau * ( 1/(1+tauJ*the_eigvals) + 1* J*tauJ *1/(a*(1+tauJ*the_eigvals)^3))/(2 *pi)^2/2
+
+        #theory_integral_2 =  @. 2* pi* tauJ^2 * (3*J^2 *tauJ +2*J*(1+tauJ *the_eigvals)^3 + 2*(1+tauJ *the_eigvals)^4/tauJ - tauJ*(J+J*tauJ *the_eigvals)^2 /a )/(2*(1+tauJ *the_eigvals)^5*tau)
+        
+        
+        
+        #theory_amin = @. pi * ( B - sqrt(B^2 - 4 * A^2))/B/sqrt(-4*A^2 + 2 * B * (B - sqrt(B^2-4*A^2)) ) * 2/tau /4/pi 
+        #theory_integral= theory_integral
+       # theory_integral_2 = theory_integral_2/4/pi
         #scatter!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2, color=e["J"], colorrange = (0, 1) ,  label="J = $(e["J"])", alpha=0.1)
 
         #lines!(ax,eigval_bin_centers,theory_ABP, color=e["J"], colorrange = (0, 1) ,  label="J = $(e["J"]) ABP theory ", alpha=0.2)
@@ -155,21 +219,23 @@ for e in ensemble_files
 
         #lines!(ax,the_eigvals[select],theory_amin, color=e["J"], colorrange = (0, 1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
 
-        scatterlines!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])")
+        scatter!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])",alpha=0.3)
 
         #lines!(ax,eigval_bin_centers,theory_ABP, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) ABP theory ", alpha=0.2)
        
         #scatterlines!(ax,the_eigvals,real.(B), color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])", linestyle=:dash)
 
         
-        #lines!(ax,the_eigvals,theory_I, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])", linestyle=:dash)
+        lines!(ax,the_eigvals,theory_integral, color=e["J"], colorrange = (0, .1) , linestyle=:solid)#,  label="J = $(e["J"])")
         #lines!(ax,the_eigvals,theory_amin, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
     end
 
 end
-xlims!(ax, 0,1)
+
+xlims!(ax, 0.002,1)
 f[1,2]=Legend(f,ax)
-display(f)
+save(joinpath(figure_save_folder,"v_projs_tau_J_theory_aABP.pdf"), f,backend=CairoMakie)
+display(f)#
 end
 
 
@@ -259,6 +325,7 @@ for e in ensemble_files
     #a = a_min = sqrt(1 +  (eigval_bin_centers[eigval_ind]/(2 * J) + 1/(2 * tau *J ))^2 ) - (eigval_bin_centers[eigval_ind]/(2 * J) + 1/(2 * tau *J))
     a = a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) #
     #a = vrms/v0
+
 
     for i in 1:size(X)[1]
 
@@ -499,6 +566,7 @@ end
 
 
 using CairoMakie
+GLMakie.activate!()
 CairoMakie.activate!()
 begin
 
@@ -508,14 +576,34 @@ ax = Axis(f[1,1], title="Dr = 0.1", xlabel=L"$ω$", ylabel=L"$\langle |\tilde{p}
 
 for e in ensemble_files
 
-    Dre = e["Dr"]
-    Je = e["J"]
+    Dr = e["Dr"]
+    J = e["J"]
 
     Jmax=0.1
-    if Dre==0.1 && Je<=Jmax
-    
+    if Dr==0.1 && J<=0.1
 
-    scatterlines!(ax, e["FT_px"]["w"],e["FT_px"]["X2"][1,:], colorrange = (0, Jmax ) , color=(e["J"]), label="J = $(e["J"])")
+    eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]
+    tau=1/Dr
+    a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) 
+    w = e["FT_px"]["w"]
+    t = e["t"]
+    min_t_ind = e["min_t_ind"]
+
+    
+    the_px = zeros(length(w))
+    the_px_full = zeros(length(w))
+    #a = e["vrms"]/e["v0"]
+    a = a_ABP
+    tauJ = 1/(a*J+1/tau)
+    for i in eachindex(the_px)
+        the_px[i] =  1/(length(eigvals)) *sum(  @.  tauJ^2 /tau /(1+tauJ^2 * w[i]^2) * ( 1 +1* tauJ*J * 2*w[i]^2/a /( (1+tauJ^2 * w[i]^2)*(eigvals^2 + w[i]^2) ) ) )* (t[end] - t[min_t_ind])/4
+        the_px_full[i] = 1/(length(eigvals)) *sum(  @.         tauJ^2/tau *  (eigvals^2 + w[i]^2)/( (eigvals^2 + w[i]^2)*(1+tauJ^2 * w[i]^2)+w[i]^2*tauJ^2 *J^2/a^2*(1 - 2*(eigvals+1/tauJ)*a/J))         )* (t[end] - t[min_t_ind])/4
+    end
+
+    scatter!(ax, e["FT_px"]["w"],e["FT_px"]["X2"], colorrange = (0, Jmax ) , color=(e["J"]), label="J = $(e["J"])",alpha=0.3)
+
+    lines!(ax,w,the_px, colorrange = (0, Jmax ) , color=(e["J"]))#, label="J = $(e["J"])")
+    #lines!(ax,w,the_px_full, colorrange = (0, Jmax ) , color=(e["J"]))#, label="J = $(e["J"])")
     end
 
 end
@@ -527,9 +615,10 @@ xlims!(10^(-3.5), 10^(0.3))
 ylims!(10^(4), 10^(4.4))
 
 display(f)
-save(joinpath(figure_save_folder,"FT_px_zoom.pdf"), f)
-
+save(joinpath(figure_save_folder,"FT_px_zoom.pdf"), f,backend=CairoMakie)#
 end
+
+
 
 
 using Integrals

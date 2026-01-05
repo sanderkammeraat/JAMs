@@ -443,10 +443,10 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         cfsO = Observable(current_field_state)
         tO = Observable(0.)
         f, ax = setup_system_plotting(system.sizes,plot_functions, plotdim,cpsO,cfsO,tO,fps,res=res)
-        video_stream = !isnothing(record_folder_path) ? VideoStream(f, format = format, framerate = fps, visible=true,compression=crf) : nothing
+        
 
     end
-
+    video_stream = ( !isnothing(record_folder_path) && !isnothing(Tplot) ) ? VideoStream(f, format = format, framerate = fps, visible=true,compression=crf) : nothing
     #Open the files to update over simulation run time
     raw_data_file = !isnothing(Tsave) ? h5open(joinpath(save_folder_path, raw_data_file_name),"r+") : nothing
 
