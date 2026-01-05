@@ -48,7 +48,7 @@ function simulation(relaxation)
     
 
     #pair_forces = (soft_disk_force([1,2],[0.01 1. ; 1. 1.]),)
-    pair_forces = (soft_disk_force([1,2],[0.01 1. ; 1. 1.]),pairAN_force([1,2],true,true,1.3, 1, 0, [0.0  0.3]), pair_nematic_alignment_force([1,2],2.5,0.3))  
+    pair_forces = (soft_disk_force([1,2],[0.01 1. ; 1. 1.]),pairAN_force([1,2],true,true,1.3, 0, -1, [0.0  0.3]), pair_nematic_alignment_force([1,2],2.5,0.3))  
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers = (overdamped_xvf_evolver([1,2]),overdamped_pq_xyc_evolver([1,2]))
     global_dofevolvers = []
@@ -68,7 +68,7 @@ function simulation(relaxation)
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.05, 500, Tplot=10,fps=60,plot_functions=(plot_disks_type!, plot_velocity_vectors!), plotdim=2 )#, record_folder_path=joinpath(homedir(),"soft_gel_05-01-2026"), res= (1000,1000)); 
+    sim = Euler_integrator(system,0.05, 500, Tplot=10,fps=60,plot_functions=(plot_disks_type!, plot_nematic_directors!), plotdim=2 )#, record_folder_path=joinpath(homedir(),"soft_gel_05-01-2026"), res= (1000,1000)); 
     return sim;
 
 end

@@ -9,20 +9,24 @@ include("AnalysisPipeline.jl")
 
 #base_folder = "/data1/kammeraatsc1/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 
-# base_folder = "/data2/kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
-
-# ef, sf = auto_ensemble_dir(base_folder,"seed_")
 
 
+base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/free/phi_1.0/N_2000/analysis/"
 
-# run_sequential_ensemble(ef, sf, sa_ensemble!, overwrite=true)
+ef, sf = auto_ensemble_dir(base_folder,"seed_")
+
+
+#base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
+
+
+run_sequential_ensemble(ef, sf, sa_ensemble!)#, overwrite=true)
 
 
 
 #base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 
 
-base_folder = "/data1/kammeraatsc1/sa/statistics/free/phi_1.0/N_2000"
+#base_folder = "/data1/kammeraatsc1/sa/statistics/free/phi_1.0/N_2000"
 # base_folder = "/data2/kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 # rp, sp, ap = auto_analysis_dir(base_folder, "sa_raw_data.h5"; support_raw_data_file_name_pattern = "ra_raw_data.h5")
 
