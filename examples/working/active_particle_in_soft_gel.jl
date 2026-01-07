@@ -38,7 +38,7 @@ function relaxation()
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.05, 60, Tplot=10,fps=60,plot_functions=(plot_disks_type!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,0.05, 60, Tplot=nothing,fps=60,plot_functions=(plot_disks_type!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim;
 
 end
@@ -48,7 +48,7 @@ function simulation(relaxation)
     
 
     #pair_forces = (soft_disk_force([1,2],[0.01 1. ; 1. 1.]),)
-    pair_forces = (soft_disk_force([1,2],[0.01 1. ; 1. 1.]),pairAN_force([1,2],true,true,1.3, 1, 0, [0.0  0.3]), pair_nematic_alignment_force([1,2],2.5,0.3))  
+    pair_forces = (soft_disk_force([1,2],[0.01 1. ; 1. 1.]),)  
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers = (overdamped_xvf_evolver([1,2]),overdamped_pq_xyc_evolver([1,2]))
     global_dofevolvers = []
@@ -61,14 +61,14 @@ function simulation(relaxation)
     field_forces = []
     field_updaters = []
 
-    external_forces = (ABP_3d_propulsion_force(3),ABP_perpendicular_angular_noise(2,[0,0,1]))
+    external_forces = (ABP_3d_propulsion_force(2),ABP_perpendicular_angular_noise(2,[0,0,1]))
 
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,relaxation.system.rcut_pair_global);
 
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.05, 500, Tplot=10,fps=60,plot_functions=(plot_disks_type!, plot_velocity_vectors!), plotdim=2 )#, record_folder_path=joinpath(homedir(),"soft_gel_05-01-2026"), res= (1000,1000)); 
+    sim = Euler_integrator(system,0.05, 500, Tplot=10,fps=60,plot_functions=(plot_disks_type!,),plotdim=2)# plot_velocity_vectors!), plotdim=2 )#, record_folder_path=joinpath(homedir(),"soft_gel_05-01-2026"), res= (1000,1000)); 
     return sim;
 
 end

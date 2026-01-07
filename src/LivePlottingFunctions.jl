@@ -1,6 +1,13 @@
 #Set default plotting backend
 using GLMakie
 
+if pkgversion(Makie) >= v"0.23-"
+    gen_arrows_2d!(args...; kwargs...) = arrows2d!(args...; kwargs...)
+    gen_arrows_3d!(args...; kwargs...) = arrows3d!(args...; kwargs...)
+else
+    gen_arrows_2d!(args...; kwargs...) = arrows!(args...; kwargs...)
+    gen_arrows_3d!(args...; kwargs...) = arrows!(args...; kwargs...)
+end
 
 function plot_points!(f,ax, cpsO, cfsO)
 
@@ -400,7 +407,7 @@ function plot_directors!(f,ax, cpsO, cfsO)
         x = @lift([ Point3f( p_i.x[1],p_i.x[2],p_i.x[3]) for p_i in $cpsO])
         p = @lift([ Point3f( p_i.p[1],p_i.p[2],p_i.p[3]) for p_i in $cpsO])
         c = @lift([ angle(p_i.p[1]+1im*p_i.p[2]) for p_i in $cpsO])
-        arrows!(ax, x, p , color=c,  colormap=:hsv,colorrange=(-pi,pi))
+        gen_arrows_3d!(ax, x, p , color=c,  colormap=:hsv,colorrange=(-pi,pi))
         
 
 
@@ -408,7 +415,7 @@ function plot_directors!(f,ax, cpsO, cfsO)
         nx = @lift(cos.([ p_i.θ[1] for p_i in $cpsO]))
         ny = @lift(sin.([ p_i.θ[1] for p_i in $cpsO]))
         c = @lift(angle2range.([ p_i.θ[1] for p_i in $cpsO]))
-        arrows!(ax, x, y, nx, ny, color=c,  colormap=:hsv,colorrange=(0, 2*pi))
+        gen_arrows_2d!(ax, x, y, nx, ny, color=c,  colormap=:hsv,colorrange=(0, 2*pi))
 
 
     end
@@ -431,8 +438,8 @@ function plot_nematic_directors!(f,ax, cpsO, cfsO)
 
 
         c = @lift([ angle( exp(angle(p_i.p[1]+1im*p_i.p[2])*2  * 1im)) for p_i in $cpsO])
-        arrows!(ax, x, p , color=c,  colormap=:hsv,colorrange=(-pi,pi))
-        arrows!(ax, x, pmin , color=c,  colormap=:hsv,colorrange=(-pi,pi))
+        gen_arrows_3d!(ax, x, p , color=c,  colormap=:hsv,colorrange=(-pi,pi))
+        gen_arrows_3d!(ax, x, pmin , color=c,  colormap=:hsv,colorrange=(-pi,pi))
 
 
     else
@@ -445,8 +452,8 @@ function plot_nematic_directors!(f,ax, cpsO, cfsO)
 
 
         c = @lift([ angle( exp(angle(p_i.p[1]+1im*p_i.p[2])*2  * 1im)) for p_i in $cpsO])
-        arrows!(ax, x, y, nx, ny, color=c,  colormap=:hsv,colorrange=(0, 2*pi))
-        arrows!(ax, x, y, nxmin, nymin, color=c,  colormap=:hsv,colorrange=(0, 2*pi))
+        gen_arrows_2d!(ax, x, y, nx, ny, color=c,  colormap=:hsv,colorrange=(0, 2*pi))
+        gen_arrows_2d!(ax, x, y, nxmin, nymin, color=c,  colormap=:hsv,colorrange=(0, 2*pi))
 
     end
     return ax
@@ -464,7 +471,7 @@ function plot_velocity_vectors!(f,ax,cpsO, cfsO)
         x = @lift([ Point3f( p_i.x[1],p_i.x[2],p_i.x[3]) for p_i in $cpsO])
         v = @lift([ Point3f( p_i.v[1],p_i.v[2],p_i.v[3]) for p_i in $cpsO])
         c = @lift([ angle(p_i.v[1]+1im*p_i.v[2]) for p_i in $cpsO])
-        arrows!(ax, x, v , color=c,  colormap=:hsv,colorrange=(-pi,pi))
+        gen_arrows_3d!(ax, x, v , color=c,  colormap=:hsv,colorrange=(-pi,pi))
         
 
 
@@ -472,7 +479,7 @@ function plot_velocity_vectors!(f,ax,cpsO, cfsO)
         vx = @lift([ p_i.v[1] for p_i in $cpsO])
         vy = @lift([ p_i.v[2] for p_i in $cpsO])
         c = @lift([ angle(p_i.v[1]+1im*p_i.v[2]) for p_i in $cpsO])
-        arrows!(ax, x, y, vx, vy, color=c, colormap=:hsv,colorrange=(-pi,pi))
+        gen_arrows_2d!(ax, x, y, vx, vy, color=c, colormap=:hsv,colorrange=(-pi,pi))
 
 
     end
