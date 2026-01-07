@@ -361,7 +361,7 @@ function run_sequential_analysis(raw_data_file_paths, analysis_save_paths,custom
         catch e
             1234
             #Do not rethrow, this will stop the loop
-            #rethrow(e)
+            rethrow(e)
         end
             
 

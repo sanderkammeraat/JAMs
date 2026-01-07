@@ -13,17 +13,17 @@ GLMakie.activate!()
 # run_multithreaded_analysis(rp, ap,custom_analysis_function, support_raw_data_file_paths=sp)
 
 base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/free/phi_1.0/N_2000/"
-rp, mp =  auto_movie_dir(base_folder, "sa_raw_data.h5")
+rp, mp =  auto_movie_dir(base_folder, "ra_raw_data.h5")
 
 
 
 @views function make_movie_sa(raw_data_file,movie_save_path)
     save_tax = raw_data_file["integration_info"]["save_tax"]
 
-    J = raw_data_file["system"]["forces"]["external"]["self_align_with_v_unit_force"]["β"]
+    J = 0#raw_data_file["system"]["forces"]["external"]["self_align_with_v_unit_force"]["β"]
 
     
-    frame_numbers = 1:10:length(save_tax)
+    frame_numbers = 1:1:length(save_tax)
 
     frames = raw_data_file["frames"]
 
@@ -57,7 +57,10 @@ rp, mp =  auto_movie_dir(base_folder, "sa_raw_data.h5")
     ax = Axis(f[1,1], aspect=DataAspect(),title = @lift("t = $(round($t, digits = 1))"), xlabel="x", ylabel="y");
 
     #ax2 = Axis(f[1,2],title = @lift("t = $(round($t, digits = 1)), Dr=$Dr, J=$J "), xlabel="t", ylabel="std(px), mean(px)");
-
+    Lx = raw_data_file["system"]["sizes"][1]
+    Ly= raw_data_file["system"]["sizes"][2]
+    xlims!(ax, -Lx/2, Lx/2)
+    ylims!(ax, -Ly/2, Ly/2)
 
     #disks
     c = @lift( angle.($px+1im*$py) )
@@ -107,8 +110,8 @@ rp, mp =  auto_movie_dir(base_folder, "sa_raw_data.h5")
         stri = string(i)
         t[] = frames[stri]["t"]
 
-        x[] = frames[stri]["xuw"]
-        y[] = frames[stri]["yuw"]
+        x[] = frames[stri]["x"]
+        y[] = frames[stri]["y"]
 
         vx[] = frames[stri]["vx"]
         vy[] = frames[stri]["vy"]
@@ -125,10 +128,10 @@ rp, mp =  auto_movie_dir(base_folder, "sa_raw_data.h5")
     end
 end
 
-
+rp[131]
 #movie_single(rp[1], mp[1], make_movie_sa)
 
-movie_single(rp[200], "/Users/kammeraat/test_uw_movie/movie.mp4", make_movie_sa)
+movie_single(rp[131], "/Users/kammeraat/test_free_relax/movie_ra.mp4", make_movie_sa)
 
 # run_sequential_movie(rp, mp, make_movie_sa)
 

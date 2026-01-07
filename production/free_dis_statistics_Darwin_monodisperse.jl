@@ -19,7 +19,7 @@ function relaxation_step(save_folder_path; Tsave=nothing, Tplot=nothing, N=2000)
     field_dofevolvers = []
     N=N
     ϕ = 1.
-    poly=15e-2
+    poly=15e-6
     Rs = rand(Uniform(1-poly, 1+poly),N)
     display(size(Rs))
 
@@ -36,7 +36,7 @@ function relaxation_step(save_folder_path; Tsave=nothing, Tplot=nothing, N=2000)
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, field_dofevolvers, true,2.5*(1+poly));
 
     #Run integration
-    sim = Euler_integrator(system,0.05, 1e3,Tsave=Tsave, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="rx")#, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=Tplot); 
+    sim = Euler_integrator(system,0.05, 1e4,Tsave=Tsave, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="rx", plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=Tplot); 
     return sim
 
 end
@@ -128,7 +128,7 @@ end
 
 base_path ="/Volumes/T7_Shield/sa/statistics/free/"
 
-base_path = "/Users/kammeraat/test_free_eigen/"
+base_path = "/Users/kammeraat/test_free_eigen_monodisperse/"
 Drs = [0.1]#[ 0.01, 0.1] 
 
 #13 Js
@@ -147,7 +147,7 @@ for m in eachindex(seeds)
     display("Relaxation step")
 
     rx_save_folder_path = joinpath(base_path,"phi_1.0","N_2000","simdata","initial_relaxation","seed_$seed")
-    rx_result= relaxation_step(rx_save_folder_path, Tsave=1000)
+    rx_result= relaxation_step(rx_save_folder_path, Tsave=1000, Tplot=10)
 
     for k in eachindex(v0s)
 

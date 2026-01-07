@@ -575,6 +575,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
     finally 
         if !isnothing(Tsave)
+            flush(raw_data_file)
             close(raw_data_file)
         end
         if !isnothing(video_stream)
@@ -804,7 +805,7 @@ function construct_cell_lists!(system)
 
         lbins=(x_lbin, y_lbin, z_lbin)
     end
-    @views cells = update_ghost_cells!(cells,system)
+    cells = update_ghost_cells!(cells,system)
 
     return system, cells, cell_bin_centers, stencils, lbins
 end

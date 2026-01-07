@@ -12,7 +12,7 @@ base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/f
 
 
 
-figure_save_folder = joinpath(base_folder, "figures_06_01")
+figure_save_folder = joinpath(base_folder, "figures_07_01")
 mkpath(figure_save_folder)
 
 
@@ -88,7 +88,7 @@ for e in ensemble_files
 
     if Dr==0.1 && J<=0.1
 
-        eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]
+        eigvals = e["eigenmodes"]["eigvals"]["seed_5.h5"]
         
 
         #a_min= @.sqrt(1 +  ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))^2 ) - ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))
@@ -185,7 +185,7 @@ GLMakie.activate!()
 begin
 f = Figure(size=(1000,1000))
 
-ax = Axis(f[1,1], xlabel=L"λ", ylabel=L"v projs /v_0^2", xscale=log10,title=L"D_r=0.1", yscale=log10)#, xscale=log10, yscale=log10,title=L"First order in ($J \tau_J$), Dr=0.1")
+ax = Axis(f[1,1], xlabel=L"λ", ylabel=L"v projs /v_0^2",title=L"D_r=0.1", yscale=log10)#, xscale=log10, yscale=log10,title=L"First order in ($J \tau_J$), Dr=0.1")
 ϵs = zeros(12)
 
 # J= [0.001, 0.01, 0.02, 0.04, 0.08, 0.10, 0.12, 0.16. 0.2, 0.4, 0.8, 1.0]
@@ -199,7 +199,7 @@ for e in ensemble_files
     Dr = e["Dr"]
     v0 = e["v0"]
     J= e["J"]
-    if Dr==0.1 #&& J>0
+    if Dr==0.1# && J==0
         display(J)
         
             
@@ -288,18 +288,18 @@ for e in ensemble_files
 
         scatter!(ax,e["v_projs_time_avg"]["eigval_bin_centers"],e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2,color=log10(e["J"]), colorrange = (-3, 0))# ,  label="J = $(e["J"])",alpha=0.3)
 
-        #lines!(ax,the_eigvals,theory_ABP, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) ABP theory ", alpha=0.2)
+        lines!(ax,the_eigvals,theory_ABP, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) ABP theory ", alpha=0.2)
        
         #scatterlines!(ax,the_eigvals,real.(B), color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])", linestyle=:dash)
 
         
-        lines!(ax,the_eigvals,theory_integral, color=log10(e["J"]), colorrange = (-3, 0) , linestyle=:solid, label="J = $(e["J"]), a = $(e["vrms"]/v0)")#,  label="J = $(e["J"])")
+        #lines!(ax,the_eigvals,theory_integral, color=log10(e["J"]), colorrange = (-3, 0) , linestyle=:solid, label="J = $(e["J"])")#, a = $(e["vrms"]/v0)")#,  label="J = $(e["J"])")
         #lines!(ax,the_eigvals,theory_amin, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
     end
 
 end
 
-xlims!(ax, 0.002,1)
+#xlims!(ax, 0.002,1)
 f[1,2]=Legend(f,ax)
 save(joinpath(figure_save_folder,"v_projs_tau_J_theory_aABP.pdf"), f,backend=CairoMakie)
 display(f)#
