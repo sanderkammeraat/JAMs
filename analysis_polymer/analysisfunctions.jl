@@ -1,15 +1,13 @@
 function save_data(data, file_name::Array, path)
-    
-    for i in eachindex(data)
-        name = folder_name[i]
-        save(joinpath(path,"analysis.jld2"), Dict("$name" => data[i]))
-    end
+
+    display(file_name)
+    save(joinpath(path,"analysis.jld2"), Dict(file_name[i] => data[i,:] for i in eachindex(file_name)))
 
 end
 
 function save_data(data, file_name::String, path)
 
-    save(joinpath(path,"analysis.jld2"), Dict("$file_name" => data))
+    save(joinpath(path,"analysis.jld2"), Dict(file_name => data))
 
 end
 
@@ -40,18 +38,19 @@ function MSD(x, y, numb_frames, numb_particles)
     end
 
     return MSD
-
 end
 
 
-function end_to_end_distance(x, y, pol_id, id_in_pol, numb_frames, numb_particles)
+function end_to_end_distance(x, y, id_in_pol, numb_frames, Npol, N)
 
-    length_polymer = max(id_in_pol)
-    numb_polymers = numb_particles/
+    length_polymer = maximum(id_in_pol)
     end_to_end_distance = zeros(numb_frames)
-    for i in 1:numb_polymers
-        end_to_end_distance[i] = 2
+    for i in 1:numb_frames
+        for j in 1:Npol
+            end_to_end_distance[i] += sqrt((x[(j-1)*length_polymer+1] - x[j*length_polymer])^2 + (y[(j-1)*length_polymer+1] - y[j*length_polymer])^2)
+        end
     end
+    return end_to_end_distance/Npol
 end
 
 
