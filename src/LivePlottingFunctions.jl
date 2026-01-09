@@ -302,7 +302,7 @@ function plot_disks_uw!(f,ax, cpsO, cfsO)
     c = @lift([ p_i.id[1] for p_i in $cpsO])
 
     
-    s = @lift([p_i.R[1]  for p_i in $cpsO])
+    s = @lift([2*p_i.R[1]  for p_i in $cpsO])
     scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1)
 
     return ax

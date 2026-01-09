@@ -5,6 +5,7 @@ using JLD2
 using HDF5
 using CodecZlib
 using ProgressMeter
+using ChunkSplitters
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
 include("Particles.jl")
@@ -19,7 +20,7 @@ catch LoadError
 end
 include("SaveFunctions.jl")
 
-@views function periodic!(p_i::Particle, systemsizes)
+function periodic!(p_i::Particle, systemsizes)
 
     for (i, xi) in pairs(p_i.x)
 
@@ -32,7 +33,7 @@ include("SaveFunctions.jl")
     return p_i
 end
 
-@views function periodic!(p_i::RigidBody, systemsizes)
+function periodic!(p_i::RigidBody, systemsizes)
 
     for (i, xi) in pairs(p_i.x)
 
@@ -82,7 +83,6 @@ end
 end
 #dx is assumed to be pre-allocated
 function minimal_image_difference!(dx,xi, xj, system_sizes, system_Periodic)
-
     
     for n in eachindex(xi)
         dx[n]=xj[n]-xi[n]
@@ -458,16 +458,18 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     #Loop over time
     #Variable to keep track of the number of frames saved
     frame_counter = 1
+    #We are going to use chunksplitters to reduce the allocations necessary for the dx in a threadsafe way
+    n_chunks = Threads.nthreads()
+    dxbuffers = @MVector [ @MVector zeros(length(system.sizes)) for n = 1:Threads.nthreads()]
+    
     try # Catch mechanism to close raw data file in case of an interruption
         @showprogress dt = 1 desc="JAMming in progress..." showspeed=true for (n, t) in pairs(integration_tax)
             #Threads.@threads 
             #Loop over particles and write generalized forces to p_i in place!
 
-            current_particle_state = threaded_particle_step!(current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
+            
+            current_particle_state = threaded_particle_step!(current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles, dxbuffers,n_chunks)
 
-
-
-            #Threadsafe field 
             if Nfield>0
                 for i in eachindex(current_particle_state)
                     p_i = current_particle_state[i]
@@ -532,7 +534,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
             current_particle_state = threaded_periodic_bc!(current_particle_state,system)
 
-            current_particle_state,cells = update_cells!(current_particle_state, cells, cell_bin_centers,system,lbins)
+            current_particle_state, cells = update_cells!(current_particle_state, cells, cell_bin_centers,system,lbins)
 
             #DOF evolver fields
             for i in eachindex(current_field_state)
@@ -554,8 +556,8 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
                         GLMakie.closeall()
                         error("Closing the program, because live plotting window is closed.")
                     end
-                    cpsO[] = current_particle_state
-                    cfsO[]= current_field_state
+                    notify(cpsO)#[] = current_particle_state
+                    notify(cfsO)#[]= current_field_state
                     tO[] = t
                     if !isnothing(video_stream)
                         recordframe!(video_stream)
@@ -584,11 +586,15 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     end
 end
 
-function threaded_particle_step!(current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
-    Threads.@threads for i in eachindex(current_particle_state)
+function threaded_particle_step!(current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles,dxbuffers,n_chunks)
+    Threads.@threads for (chunk_id, p_indices_chunk) in enumerate( chunks(eachindex(current_particle_state); n=n_chunks))
+
+        dxbuffer = dxbuffers[chunk_id]
+        for i in p_indices_chunk
             p_i = current_particle_state[i]
             init_unwrap!(p_i, t)
-            particle_step!(i,p_i, current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
+            particle_step!(i,p_i, current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles,dxbuffer)
+        end
     end
     return current_particle_state
 end
@@ -640,9 +646,9 @@ end
 
 
 
-function particle_step!(i,p_i, current_particle_state,Next,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
+function particle_step!(i,p_i, current_particle_state,Next,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles,dxbuffer)
     if Npair>0
-        p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system,cells,stencils,rngs_particles)
+        p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system,cells,stencils,rngs_particles,dxbuffer)
     end
     if Next>0
         p_i=external_force_iterate!(p_i, t, dt,rngs_particles, system, system.external_forces)
@@ -691,9 +697,9 @@ end
 
 
 
-function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cells,stencils,rngs_particles)
+function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cells,stencils,rngs_particles,dxbuffer)
     
-    dx = @MVector zeros(Float64,length(p_i.x))
+    dx = dxbuffer
 
     candidate_cell_ind=@MVector zeros(Int64, length(p_i.ci))
     for stencil in stencils
@@ -731,8 +737,9 @@ function construct_cell_list_centers(L,rcut_pair_global)
     nbin = floor(Int64,L/rcut_pair_global)
 
     #In case user sets irrelevant dimension smaller than rcut_pair_global
-    if nbin==0
-        nbin=1
+
+    if nbin<1
+        nbin=2 #very important, must have at least 2 real bins besides the ghost cells 
     end
     lbin = L/nbin
 
@@ -850,7 +857,7 @@ end
 
 
 
-@views function update_ghost_cells!(cells,system)
+function update_ghost_cells!(cells,system)
     
     if system.Periodic
         dims = length(system.sizes)
@@ -871,59 +878,61 @@ end
 
         if dims==3
 
-            cells[1,:,:].= cells[end-1,:,:]
-            cells[end,:,:].= cells[2,:,:]
+            #6 faces
+            #x- 
+            cells[1,2:end-1, 2:end-1] = cells[end-1,2:end-1, 2:end-1 ]
+            #x+
+            cells[end,2:end-1, 2:end-1] = cells[2,2:end-1, 2:end-1 ]
 
-            cells[:,1,:].=  cells[:,end-1,:]
-            cells[:,end,:].= cells[:,2,:]
+            #y-
+            cells[2:end-1,1, 2:end-1] = cells[2:end-1,end-1, 2:end-1 ]
+            #y+
+            cells[2:end-1,end, 2:end-1] = cells[2:end-1,2, 2:end-1 ]
 
-            cells[:,:,1].=  cells[:,:,end-1]
-            cells[:,:,end].=  cells[:,:,2]
+            #z-
+            cells[2:end-1, 2:end-1,1] = cells[2:end-1, 2:end-1, end-1]
+            #z+
+            cells[2:end-1, 2:end-1,end] = cells[2:end-1, 2:end-1,2 ]
 
-            #set the rings
-            #Write for three faces sharing a vertex, comment out duplicates, then do the remaining edges
-            ##face 1
-            cells[1,:,1].= cells[end-1,:,end-1]
-            cells[1,:,end].= cells[end-1,:,2]
+            #8 corner points
+            cells[1,1,1]=cells[end-1, end-1, end-1]
+            cells[end, 1, 1] =cells[2, end-1, end-1]
+            cells[1,1,end] =cells[end-1, end-1, 2]
+            cells[1,end,1] = cells[end-1,2,end-1]
 
-            cells[1,1,:].= cells[end-1,end-1,:]
-            cells[1,end,:].= cells[end-1,2,:]
+            cells[1, end, end] = cells[end-1, 2, 2]
+            cells[end, end, 1] = cells[2,2, end-1]
+            cells[end, 1, end] = cells[2, end-1, 2]
+            cells[end, end, end] = cells[2,2,2]
 
-            ## face 2
+            #12 edges minus corner points
 
-            cells[:,1,1].= cells[:,end-1, end-1]
-            cells[:,end,1].= cells[:,2,end-1]
+            #4 along x, constant y z
+            cells[2:end-1,1,1].= cells[2:end-1,end-1,end-1]
 
-            #cells[1,:,1] = cells[end-1,:,end-1]
-            cells[end,:,1].= cells[2,:,end-1]
+            cells[2:end-1,end,end].= cells[2:end-1,2,2]
 
-            ## face 3
+            cells[2:end-1,1,end].= cells[2:end-1,end-1,2]
 
-            #cells[1,1,:] = cells[end-1, end-1,:]
-            cells[end,1,:].= cells[2,end-1,:]
+            cells[2:end-1,end,1].= cells[2:end-1,2,end-1]
 
-            #cells[:,1,1] = cells[:,end-1,end-1]
-            cells[:,1,end].= cells[:,end-1,2]
+            #4 along y, constant x z
+            cells[1,2:end-1,1].= cells[end-1,2:end-1,end-1]
 
-            #We are now at 9 of 12 edges
-            cells[end, end,:].= cells[2,2,:]
-            cells[end,:,end].= cells[2,:,2]
-            cells[:,end, end].= cells[:,2,2]
-            #Done
+            cells[end,2:end-1,end].= cells[2,2:end-1,2]
 
-            #set the 8 corner points
+            cells[1,2:end-1,end].= cells[end-1,2:end-1,2]
 
-            cells[1,1,1].=cells[end-1, end-1, end-1]
+            cells[end,2:end-1,1].= cells[2,2:end-1,end-1]
 
-            cells[end, 1, 1] .=cells[2, end-1, end-1]
-            cells[1,1,end] .=cells[end-1, end-1, 2]
-            cells[1,end,1] .= cells[end-1,2,end-1]
+            #4 along z, constant x y
+            cells[1,1,2:end-1].= cells[end-1,end-1,2:end-1]
 
-            cells[1, end, end] .= cells[end-1, 2, 2]
-            cells[end, end, 1] .= cells[2,2, end-1]
-            cells[end, 1, end] .= cells[2, end-1, 2]
+            cells[end,end,2:end-1].= cells[2,2,2:end-1]
 
-            cells[end, end, end] .= cells[2,2,2]
+            cells[1,end,2:end-1].= cells[end-1,2,2:end-1]
+
+            cells[end,1,2:end-1].= cells[2,end-1,2:end-1]
 
         end
 

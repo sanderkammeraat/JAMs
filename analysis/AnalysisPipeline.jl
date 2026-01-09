@@ -66,29 +66,24 @@ function analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_
 
             #Closing the files
             close(initialized_analysis_file)
-            GC.gc()
 
             if !isnothing(loaded_support_raw_data_file)
                 close(loaded_support_raw_data_file)
-                GC.gc()
             end
 
             close(loaded_raw_data_file)
-            GC.gc()
 
         catch e 
 
             println("Something in the custom analysis function went wrong. Safely aborting and closing the files.")
             close(initialized_analysis_file)
-            GC.gc()
 
             if !isnothing(loaded_support_raw_data_file)
                 close(loaded_support_raw_data_file)
-                GC.gc()
+
             end
 
             close(loaded_raw_data_file)
-            GC.gc()
 
             rethrow(e)
         end
@@ -99,18 +94,13 @@ function analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_
 
         if !isnothing(loaded_support_raw_data_file)
             close(loaded_support_raw_data_file)
-            GC.gc()
         end
 
         close(loaded_raw_data_file)
-        GC.gc()
 
         rethrow(e)
 
     end
-
-    GC.gc()
-    
 
 end
 
@@ -350,19 +340,14 @@ function run_sequential_analysis(raw_data_file_paths, analysis_save_paths,custom
 
     for i in eachindex(raw_data_file_paths)
 
-        try 
+
         raw_data_file_path = raw_data_file_paths[i]
         println(raw_data_file_path)
         analysis_save_path = analysis_save_paths[i]
         support_raw_data_file_path = !isnothing(support_raw_data_file_paths) ? support_raw_data_file_paths[i] : nothing
 
         analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=support_raw_data_file_path,  overwrite = overwrite, append = append)
-        GC.gc() #Explitict garbage collection
-        catch e
-            1234
-            #Do not rethrow, this will stop the loop
-            rethrow(e)
-        end
+
             
 
     end

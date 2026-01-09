@@ -8,7 +8,7 @@ include(joinpath("../io","InitialPositionGenerators.jl"))
 # @everywhere include(joinpath("..","io","InitialPositionGenerators.jl"))
 
 
-function relaxation_step(save_folder_path; Tsave=nothing, Tplot=nothing, N=2000)
+function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing, N=800)
 
     external_forces = []#[thermal_translational_noise(1, 0 .*[1.,1.,0])]
 
@@ -18,7 +18,7 @@ function relaxation_step(save_folder_path; Tsave=nothing, Tplot=nothing, N=2000)
     global_dofevolvers = []
     field_dofevolvers = []
     N=N
-    ϕ = 1.
+    ϕ = 1.3
     poly=15e-2
     Rs = rand(Uniform(1-poly, 1+poly),N)
     display(size(Rs))
@@ -36,7 +36,7 @@ function relaxation_step(save_folder_path; Tsave=nothing, Tplot=nothing, N=2000)
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, field_dofevolvers, true,2.5*(1+poly));
 
     #Run integration
-    sim = Euler_integrator(system,0.05, 1e3,Tsave=Tsave, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="rx")#, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=Tplot); 
+    sim = Euler_integrator(system,0.1, 2000,Tsave=Tsave, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="rx", plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=10); 
     return sim
 
 end
@@ -72,7 +72,7 @@ function self_aligning_step(rx_step,J,v0, Dr, seed,save_folder_path; Tsave=nothi
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,true,rx_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,0.01, 1e4,Tsave=Tsave,seed=seed, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="sa")#,  plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=Tplot); 
+    sim = Euler_integrator(system,0.01, 1000,Tsave=250,seed=seed, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="sa",  plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=10); 
     return sim
 end
 
@@ -106,7 +106,7 @@ function relax_again_step(sa_step, save_folder_path; Tsave=nothing, Tplot=nothin
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,true,sa_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,0.05, 1e3,Tsave=Tsave,seed=nothing, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="ra")#, fps=Inf, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=Tplot)# , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,0.01, 1000,Tsave=50000,seed=nothing, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="ra", fps=60, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=10)# , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 end
 
@@ -116,7 +116,7 @@ end
 
 
 
-# rx_result= relaxation_step(save_folder_path, Tsave=2000)
+#rx_result= relaxation_step(" ")
 
 # # rx_step,J,v0, Dr, seed, save_folder_path
 # sa_result=self_aligning_step(rx_result, .1 , 0.001, 0.01,100, save_folder_path, Tplot=100,  Tsave=nothing);
@@ -126,10 +126,10 @@ end
 #@everywhere base_path = "/Users/kammeraat/test_free/"#"/data1/kammeraatsc1/sa/statistics/free/"
 
 
-base_path ="/Volumes/T7_Shield/sa/statistics/free/"
+#base_path ="/Volumes/T7_Shield/sa/statistics/free/"
 
-base_path = "/Users/kammeraat/test_free_eigen/"
-Drs = [0.1]#[ 0.01, 0.1] 
+base_path = "/Users/kammeraat/compare_SAMoSA_ABP/"
+Drs = [0.05]#[ 0.01, 0.1] 
 
 #13 Js
 Js=[0.0]#[0.0, 0.001, 0.01, 0.02, 0.04, 0.08, 0.10, 0.12, 0.16, 0.2, 0.4, 0.8, 1]#[0.1, 0.01]
@@ -146,8 +146,8 @@ for m in eachindex(seeds)
 
     display("Relaxation step")
 
-    rx_save_folder_path = joinpath(base_path,"phi_1.0","N_2000","simdata","initial_relaxation","seed_$seed")
-    rx_result= relaxation_step(rx_save_folder_path, Tsave=1000)
+    rx_save_folder_path = joinpath(base_path,"phi_1.3","N_800","simdata","initial_relaxation")
+    rx_result= relaxation_step(rx_save_folder_path)
 
     for k in eachindex(v0s)
 
@@ -165,13 +165,13 @@ for m in eachindex(seeds)
                 
                 
 
-                save_folder_path = joinpath(base_path,"phi_1.0","N_2000","simdata","v0_$(v0)","Dr_$Dr","J_$J","seed_$seed");
+                save_folder_path = joinpath(base_path,"phi_1.3","N_800","simdata","v0_$(v0)");
                 display(save_folder_path)
 
                 # rx_step,J,v0, Dr, seed, save_folder_path
-                sa_result=self_aligning_step(deepcopy(rx_result), J , v0, Dr,nothing, save_folder_path,Tsave=200);
+                sa_result=self_aligning_step(deepcopy(rx_result), J , v0, Dr,nothing, save_folder_path);
 
-                ra_result=relax_again_step(deepcopy(sa_result), save_folder_path, Tsave=1000);
+                ra_result=relax_again_step(deepcopy(sa_result), save_folder_path);
 
 
             end
@@ -179,42 +179,3 @@ for m in eachindex(seeds)
     end
 end
 
-# for m in eachindex(seeds)
-#     seed = seeds[m]
-
-#     rx_save_folder_path = joinpath(base_path,"hex_disordered","phi_1.3","Nlin_20","simdata","initial_relaxation","seed_$seed","rx_JAMs_final_state.jld2")
-
-
-#     jldopen(rx_save_folder_path, "r", iotype=IOStream ) do rx_file
-
-
-#         rx_result = rx_file["SIM"]
-
-#             for i in eachindex(Drs)
-
-#                 @sync @distributed for k in eachindex(v0s)
-
-
-#                     display(Threads.nthreads())
-
-#                     J = Js[i]
-#                     Dr = Drs[i]
-
-#                     v0 = v0s[k]
-#                     seed = seeds[m]
-                    
-                    
-
-#                     save_folder_path = joinpath(base_path,"hex_disordered","phi_1.3","Nlin_20","simdata","v0_$(v0)","Dr_$Dr","J_$J","seed_$seed");
-#                     display(save_folder_path)
-
-#                     # rx_step,J,v0, Dr, seed, save_folder_path
-#                     sa_result=self_aligning_step(deepcopy(rx_result), J , v0, Dr,nothing, save_folder_path,Tsave=100);
-
-#                     ra_result=relax_again_step(deepcopy(sa_result), save_folder_path, Tsave=1000);
-
-
-#             end
-#         end
-#     end
-# end
