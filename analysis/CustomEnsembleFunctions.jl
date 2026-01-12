@@ -142,13 +142,25 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
 
     v_projs = []
     eigvals = []
+    create_group(ensemble_file, "v_projs_time_avg")
+    create_group(ensemble_file["v_projs_time_avg"],"runs" )
     for i in eachindex(loaded_seed_files)
-        v_projs=vcat(v_projs, mean(reference_seed["projs"]["v_projs"][:,min_t_ind:end].^2, dims=2)[:,1])
-        eigvals=vcat(eigvals, loaded_seed_files[i]["eigenmodes"]["eigvals"])
+
+        create_group(ensemble_file["v_projs_time_avg"]["runs"], seed_names[i])
+
+        v_projs_i = mean(reference_seed["projs"]["v_projs"][:,min_t_ind:end].^2, dims=2)[:,1]
+        eigvals_i = loaded_seed_files[i]["eigenmodes"]["eigvals"]
+
+        ensemble_file["v_projs_time_avg"]["runs"][seed_names[i]]["v_projs"] = v_projs_i
+        ensemble_file["v_projs_time_avg"]["runs"][seed_names[i]]["eigvals"] = eigvals_i
+
+        v_projs=vcat(v_projs, v_projs_i)
+        eigvals=vcat(eigvals,eigvals_i )
+
     end
 
     binned_v_projs_data = bin_vector_data(eigvalbins, eigvals, v_projs)
-    create_group(ensemble_file, "v_projs_time_avg")
+    
 
     ensemble_file["v_projs_time_avg"]["eigval_bin_centers"] = binned_v_projs_data.bin_centers
     ensemble_file["v_projs_time_avg"]["v_projs_time_avg"] = binned_v_projs_data.bin_values

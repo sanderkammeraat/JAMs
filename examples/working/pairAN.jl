@@ -15,7 +15,7 @@ function simulation()
     global_dofevolvers = ()
     field_dofevolvers = ()
 
-    N=10000
+    N=5000
     ϕ = 1.0
     poly=15e-6
     Rs = rand(Uniform(1-poly, 1+poly),N)
@@ -27,7 +27,7 @@ function simulation()
 
 
     display(L)
-    sizes = [L,L,4];
+    sizes = [L,L,2];
     print(sizes)
     initial_field_state= ()
     field_forces = ()
@@ -41,14 +41,14 @@ function simulation()
     #Run integrationov
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plot}ting
-    sim = Euler_integrator(system,0.05, 100,fps=60,Tplot=10,plot_functions=(plot_transparant_disks!,plot_nematic_directors! ),plotdim=2)#, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,0.05, 1e4,fps=60,Tplot=10,plot_functions=(plot_transparant_disks!,plot_nematic_directors! ),plotdim=2)#, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim;
 
 end
 
 sim = simulation()  
 
-@profview_allocs simulation()
+@profview simulation()
 
 
 

@@ -8,7 +8,7 @@ include(joinpath("../io","InitialPositionGenerators.jl"))
 # @everywhere include(joinpath("..","io","InitialPositionGenerators.jl"))
 
 
-function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing, N=800)
+function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing, N=2000)
 
     external_forces = []#[thermal_translational_noise(1, 0 .*[1.,1.,0])]
 
@@ -72,7 +72,7 @@ function self_aligning_step(rx_step,J,v0, Dr, seed,save_folder_path; Tsave=nothi
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,true,rx_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,0.01, 1000,Tsave=250,seed=seed, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="sa",  plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=10); 
+    sim = Euler_integrator(system,0.01, 5e3,Tsave=250,seed=seed, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="sa",  plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=10); 
     return sim
 end
 
@@ -106,7 +106,7 @@ function relax_again_step(sa_step, save_folder_path; Tsave=nothing, Tplot=nothin
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,true,sa_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,0.01, 1000,Tsave=50000,seed=nothing, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="ra", fps=60, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=10)# , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,0.01, 1000,Tsave=5000,seed=nothing, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="ra", fps=60, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=10)# , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 end
 
@@ -129,6 +129,9 @@ end
 #base_path ="/Volumes/T7_Shield/sa/statistics/free/"
 
 base_path = "/Users/kammeraat/compare_SAMoSA_ABP/"
+
+base_path = "/Users/kammeraat/ABP_large/"
+
 Drs = [0.05]#[ 0.01, 0.1] 
 
 #13 Js
@@ -146,7 +149,7 @@ for m in eachindex(seeds)
 
     display("Relaxation step")
 
-    rx_save_folder_path = joinpath(base_path,"phi_1.3","N_800","simdata","initial_relaxation")
+    rx_save_folder_path = joinpath(base_path,"phi_1.3","N_2000","simdata","initial_relaxation")
     rx_result= relaxation_step(rx_save_folder_path)
 
     for k in eachindex(v0s)
@@ -165,7 +168,7 @@ for m in eachindex(seeds)
                 
                 
 
-                save_folder_path = joinpath(base_path,"phi_1.3","N_800","simdata","v0_$(v0)");
+                save_folder_path = joinpath(base_path,"phi_1.3","N_2000","simdata","v0_$(v0)");
                 display(save_folder_path)
 
                 # rx_step,J,v0, Dr, seed, save_folder_path

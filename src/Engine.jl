@@ -84,7 +84,7 @@ end
 #dx is assumed to be pre-allocated
 function minimal_image_difference!(dx,xi, xj, system_sizes, system_Periodic)
     
-    for n in eachindex(xi)
+    @inbounds for n in eachindex(xi)
         dx[n]=xj[n]-xi[n]
         if system_Periodic
             if dx[n]>system_sizes[n]/2
@@ -703,10 +703,10 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cel
 
     candidate_cell_ind=@MVector zeros(Int64, length(p_i.ci))
     for stencil in stencils
-        for i in eachindex(candidate_cell_ind)
+        @inbounds for i in eachindex(candidate_cell_ind)
             candidate_cell_ind[i]= p_i.ci[i] + stencil[i]
         end
-        for n in cells[candidate_cell_ind...]
+        @inbounds for n in cells[candidate_cell_ind...]
             if i!=n
                 p_j = current_particle_state[n]
 
