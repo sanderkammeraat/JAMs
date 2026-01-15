@@ -148,7 +148,7 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
 
         create_group(ensemble_file["v_projs_time_avg"]["runs"], seed_names[i])
 
-        v_projs_i = mean(reference_seed["projs"]["v_projs"][:,min_t_ind:end].^2, dims=2)[:,1]
+        v_projs_i = mean(loaded_seed_files[i]["projs"]["v_projs"][:,min_t_ind:end].^2, dims=2)[:,1]
         eigvals_i = loaded_seed_files[i]["eigenmodes"]["eigvals"]
 
         ensemble_file["v_projs_time_avg"]["runs"][seed_names[i]]["v_projs"] = v_projs_i

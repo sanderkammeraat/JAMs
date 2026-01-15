@@ -11,7 +11,8 @@ include("AnalysisPipeline.jl")
 
 
 
-base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/free/phi_1.0/N_2000/analysis/"
+#base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/free/phi_1.0/N_2000/analysis/"
+base_folder = "/Volumes/T7_Shield/sa/statistics/free/phi_1.3/N_2000/analysis/"
 
 ef, sf = auto_ensemble_dir(base_folder,"seed_")
 
