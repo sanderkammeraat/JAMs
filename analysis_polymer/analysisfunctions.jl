@@ -41,6 +41,17 @@ function MSD(x, y, numb_frames, numb_particles)
 end
 
 
+function basic_MSD(x, y, numb_frames, numb_particles)
+    
+    MSD = zeros(numb_frames)
+
+    for t in 1:numb_frames
+        MSD[t] += sum((x[Δt+1:numb_frames,:] - x[1:numb_frames-Δt,:]).^2 + (y[Δt+1:numb_frames,:] - y[1:numb_frames-Δt,:]).^2)/numb_particles
+    end
+
+    return MSD
+end
+
 function end_to_end_distance(x, y, id_in_pol, numb_frames, Npol, N)
 
     length_polymer = maximum(id_in_pol)

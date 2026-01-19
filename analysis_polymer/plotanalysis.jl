@@ -1,22 +1,23 @@
 using CairoMakie
 using JLD2
 
-include("loopanalysis.jl")
+include("loaddata.jl")
 
-CairoMakie.activate!(type = "png")
+CairoMakie.activate!(type = "pdf")
 
-function plot_data!(data, scale, end_time, savebool)
+function plot_data!(data, scale, end_time, savebool, path, name)
 
     f = Figure()
     ax = Axis(f[1, 1], xscale=scale, yscale=scale)
     time = 1:length(data)
-    #ylims!(ax, 1e-3,maximum(data)*1.5)
-    display(typeof(data))
+    if scale == log10
+        ylims!(ax, 1e-3,maximum(data)*1.5)
+    end
 
     lines!(ax, time*end_time/length(data), data)
     display(f)
     if savebool
-        save(raw"E:\martin\sim_data\plots\average_velocity\p_0_01.png", f)
+        save(joinpath(path, "plots", name), f)
     end
 end
 
@@ -52,19 +53,33 @@ function plot_radius_of_gyration!(multiple, datas, p, end_time)
 end
 
 
-file = load_file(raw"E:\martin\sim_data\p_0.01\analysis.jld2")
-average_velocity_data = file["average_velocity"][1]
-close(file)
+sim_folder_name = "sim_varyingp_1612"
+#for windows
+path_data = joinpath("E:", "martin", sim_folder_name)
 
-plot_data!(average_velocity_data, identity, 51, true)
+#for linux
+#path_data = joinpath("/run/media/martin/HENKESGRFAT/martin", sim_folder_name)
 
+ksd = [1.]
+kbend = [.3]
+kstretch = [1.]
+fstretch = [.7]
+p = [0.01, 0.04, 0.06, 0.08, 0.1, 0.15, 0.2]
+kperp = [0]
+kpar = [-1]
+Npol = [150]
+N = [1500]
 
 dowesave = true
 
 plotMSD = true
 plotaverage_velocity = true
-plotradius_of_gyration = true
+plotradius_of_gyration = false
 plotend_to_end_distance = true
+
+integration_info = load_file(joinpath(path_data, "p_0.01/JAMs_container.jld2"))
+end_time = integration_info["integration_info/t_stop"]
+close(integration_info)
 
 for ksd_value in ksd
 for kbend_value in kbend
@@ -78,24 +93,26 @@ for N_value in N
 
     parameters = "p_$p_value" #"ksd_$ksd_value_kbend_$kbend_value_kstretch_$kstretch_value_fstretch_$f_stretch_value_p_$p_value_kperp_$kperp_value_kpar_$kpar_value_Npol_$Npol_value_N_$N_value"
 
-    #for windows
-    path_data = joinpath("E:", "martin", sim_folder_name, parameters)
-
-    #for linux
-    #path_data = joinpath("/run/media/martin/HENKESGRFAT/martin", sim_folder_name, parameters)
-
     analysis = load_file(joinpath(path_data, parameters, "analysis.jld2"))
 
-    if plotMSD & MSDbool
+    if plotMSD
         MSD_data = analysis["MSD"][1]
-        plot_data!(MSD_data, log10, 51, dowesave)
+        plot_data!(MSD_data, log10, end_time, dowesave, path_data, "MSD/$parameters.png")
     end
-    if plotaverage_velocity & average_velocitybool
+    if plotaverage_velocity
+        average_velocity_data = analysis["average_velocity"][1]
+        plot_data!(average_velocity_data, identity, end_time, dowesave, path_data, "average_velocity/$parameters.png")
     end
-    if plotend_to_end_distance & end_to_end_distancebool
+    if plotend_to_end_distance
+        end_to_end_distance_data = analysis["end_to_end_distance"][1]
+        plot_data!(end_to_end_distance_data, identity, end_time, dowesave, path_data, "end_to_end_distance/$parameters.png")
     end
-    if plotradius_of_gyration & radius_of_gyrationbool
+    if plotradius_of_gyration
+        radius_of_gyration_data = analysis["radius_of_gyration"][1]
+        plot_data!(radius_of_gyration_data, identity, end_time, dowesave, path_data, "radius_of_gyration/$parameters.png")
     end
+
+    close(analysis)
 end
 end
 end

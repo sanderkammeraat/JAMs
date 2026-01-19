@@ -31,6 +31,7 @@ struct simulation_data
     #kpar::Float64
     Npol::Int64
     N::Int64
+    L::Float64
 end
 
 
@@ -80,8 +81,9 @@ function get_data(file_location)
     #kperp = file["system/forces/pair/polymer_pairAN_force/k_perp"]
     #kpar = file["system/forces/pair/polymer_pairAN_force/k_par"]
     Npol = maximum(pol_id)
+    L =
 
     close(file)
 
-    return simulation_data(x, y, v_x, v_y, p_x, p_y, id, pol_id, id_in_pol, R, numb_frames, dt, Tsave, ksd, kbend, kstretch, fstretch, Npol, N)
+    return simulation_data(x, y, v_x, v_y, p_x, p_y, id, pol_id, id_in_pol, R, numb_frames, dt, Tsave, ksd, kbend, kstretch, fstretch, Npol, N, L)
 end
