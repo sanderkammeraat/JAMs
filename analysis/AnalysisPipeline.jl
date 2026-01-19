@@ -9,7 +9,7 @@ include("CustomEnsembleFunctions.jl")
 function load_file(file_location)
 
     file = jldopen(file_location, "r",iotype=IOStream)
-
+    return file
 end
 
 #Helper function
@@ -80,6 +80,7 @@ function analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_
 
             if !isnothing(loaded_support_raw_data_file)
                 close(loaded_support_raw_data_file)
+
             end
 
             close(loaded_raw_data_file)
@@ -100,7 +101,6 @@ function analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_
         rethrow(e)
 
     end
-    
 
 end
 
@@ -340,13 +340,15 @@ function run_sequential_analysis(raw_data_file_paths, analysis_save_paths,custom
 
     for i in eachindex(raw_data_file_paths)
 
+
         raw_data_file_path = raw_data_file_paths[i]
         println(raw_data_file_path)
         analysis_save_path = analysis_save_paths[i]
         support_raw_data_file_path = !isnothing(support_raw_data_file_paths) ? support_raw_data_file_paths[i] : nothing
 
         analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=support_raw_data_file_path,  overwrite = overwrite, append = append)
-        GC.gc() #Explitict garbage collection
+
+            
 
     end
     
@@ -367,17 +369,31 @@ end
 
 function run_sequential_movie(raw_data_file_paths, movie_save_paths,custom_movie_function; only_seed="seed_1")
 
-    @showprogress showspeed=true for i in eachindex(raw_data_file_paths)
+    if !isnothing(only_seed)
+        @showprogress showspeed=true for i in eachindex(raw_data_file_paths)
 
-        raw_data_file_path = raw_data_file_paths[i]
+            raw_data_file_path = raw_data_file_paths[i]
 
-        if splitpath(raw_data_file_path)[end-1] == only_seed
-        
+            if splitpath(raw_data_file_path)[end-1] == only_seed
+            
+                println(raw_data_file_path)
+                movie_save_path = movie_save_paths[i]
+
+                movie_single(raw_data_file_path, movie_save_path, custom_movie_function)
+            end
+        end
+    else
+        @showprogress showspeed=true for i in eachindex(raw_data_file_paths)
+
+            raw_data_file_path = raw_data_file_paths[i]
+
             println(raw_data_file_path)
             movie_save_path = movie_save_paths[i]
 
             movie_single(raw_data_file_path, movie_save_path, custom_movie_function)
         end
+
     end
+    
 
 end

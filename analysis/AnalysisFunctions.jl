@@ -1,5 +1,21 @@
 
 using FFTW
+function minimal_image_difference!(dx, xi, xj, system_sizes, system_Periodic)
+
+    
+    for n in eachindex(xi)
+        dx[n]=xj[n]-xi[n]
+        if system_Periodic
+            if dx[n]>system_sizes[n]/2
+                dx[n]-=system_sizes[n]
+            end
+            if dx[n]<=-system_sizes[n]/2
+                dx[n]+=system_sizes[n]
+            end
+        end 
+    end
+    return dx
+end
 
 
 function temporal_Fourier_transform(dt, x;  min_t_ind=1, output_not_avg=false)
@@ -223,12 +239,37 @@ function auto_correlation(t, px, py; normalized=false, minrow=1, maxrow=nothing)
 end
 
 
+function auto_correlation_v2(t, px, py; minrow=1)
+
+    Cp = zeros(size(px[:,minrow:end]))
+    delta_t = zeros(length(t[minrow:end]))
+
+    for i in 1:size(Cp)[1]
+        for j in 1:size(Cp)[2]
+
+            Cp[i,j] = px[i,minrow - 1 +j ] * px[i, minrow] + py[i,minrow - 1 +j ] * py[i, minrow]
+            delta_t[j] = t[minrow-1+j] - t[minrow]
+        end
+    end
+    Cavg = mean(Cp, dims=1)[1,:]
+
+    return Dict("Cavg"=>Cavg, "t"=>t, "deltat"=>delta_t)
+
+
+end
 ## Dynamical matrix analysis
 # Helper functions
-function construct_n_ij_projector!(n_ij_projector, i,j,x,y)
+function construct_n_ij_projector!(n_ij_projector, i,j,x,y, periodic_system_sizes)
 
 
     r_ij_0_vec = @MVector [x[j]-x[i], y[j] - y[i]]
+
+    r_i_0_vec = @MVector [x[i],y[i]]
+    r_j_0_vec = @MVector [x[j],y[j]]
+
+    if !isnothing(periodic_system_sizes)
+        r_ij_0_vec = minimal_image_difference!(r_ij_0_vec, r_i_0_vec, r_j_0_vec, periodic_system_sizes, true)
+    end
 
     r_ij_0_norm = norm(r_ij_0_vec)
 
@@ -277,14 +318,14 @@ function u_ij_2(i,j,r_ij_0_norm, k, R,type)
     end
 end
 
-@views function construct_M_ij!(M_ij,n_ij_projector, i,j,x,y, k, R,type)
+@views function construct_M_ij!(M_ij,n_ij_projector, i,j,x,y, k, R,type, periodic_system_sizes)
 
     M_ij .*=  0
 
     if i!=j
-        n_ij_projector, r_ij_0_norm = construct_n_ij_projector!(n_ij_projector,i,j,x,y)
+        n_ij_projector, r_ij_0_norm = construct_n_ij_projector!(n_ij_projector,i,j,x,y,periodic_system_sizes)
 
-        M_ij.+= u_ij_1(i,j,r_ij_0_norm, k, R, type) / r_ij_0_norm .* (I - n_ij_projector)
+        M_ij.+= -u_ij_1(i,j,r_ij_0_norm, k, R, type) ./ r_ij_0_norm .* (I - n_ij_projector)
 
         M_ij.+= u_ij_2(i,j,r_ij_0_norm, k, R, type) .* n_ij_projector
 
@@ -293,45 +334,85 @@ end
     return M_ij
 
 end
+function construct_D(x0, y0, k, R,type ;periodic_system_sizes=nothing)
+D=zeros(2*length(x0), 2*length(x0))
+Id = [1 0 ; 0 1]
+nij = zeros(2,2)
+dX = @MVector [0., 0., 0.]
+for i in eachindex(x0)
+    for j in eachindex(x0)
+        if i!==j
 
+            dX[1] = x0[j] - x0[i]
+            dX[2] = y0[j] - y0[i]
 
-# Actual D construction
-@views function construct_D(x0,y0, k, R, type)
-
-    M=zeros(2*length(x0), 2*length(x0))
-
-    D = copy(M)
-
-    #Allocate once
-    M_ij_0=  @MMatrix zeros(2,2)
-
-    n_ij_projector =  @MMatrix zeros(2,2)
-    
-
-    @showprogress for i in eachindex(x0)
-
-        for j in i:length(x0)
-
-            M[2i-1:2i,2j-1:2j] .= construct_M_ij!(M_ij_0, n_ij_projector,i, j, x0, y0, k , R,type)
-        end
-
-    end
-    D  .= -(M + transpose(M))
-
-    @showprogress for i in eachindex(x0)
-
-        for j in eachindex(x0)
-
-            #In principle unnecessary because Mii =0, but just to be sure
-            if i!=j
-                 D[2i-1:2i,2i-1:2i] .-= D[2i-1:2i,2j-1:2j]
+            if isnothing(periodic_system_sizes)
+            else
+                minimal_image_difference!(dX, [x0[i],y0[i],0], [x0[j],y0[j],0],periodic_system_sizes,true )
             end
+            dx = dX[1]
+            dy = dX[2]
+
+            dr2 = dx^2 + dy^2
+            dr = sqrt(dr2)
+            kij = k[type[i],type[j]]
+
+            Rij = R[i]+R[j]
+            if dr<Rij
+                nij[1,1] =  dx*dx/dr2
+                nij[1,2] =  dx*dy/dr2
+                nij[2,1] =  dx*dy/dr2
+                nij[2,2] =  dy*dy/dr2
+                D[2i-1:2i,2j-1:2j] = -kij * nij - kij * (1 - Rij/dr) * (Id .- nij)
+
+                D[2i-1:2i, 2i-1:2i] -= D[2i-1:2i,2j-1:2j]
+
+            end
+
         end
+
     end
-    return Symmetric(D)
+
+end
+#By applying
+return Symmetric(D)
 end
 
+# Actual D construction
+# @views function construct_D(x0,y0, k, R, type; periodic_system_sizes=nothing)
 
+#     M=zeros(2*length(x0), 2*length(x0))
+
+#     D = copy(M)
+
+#     #Allocate once
+#     M_ij_0=  @MMatrix zeros(2,2)
+
+#     n_ij_projector =  @MMatrix zeros(2,2)
+    
+
+#     @showprogress for i in eachindex(x0)
+
+#         for j in i+1:length(x0)
+
+#             M[2i-1:2i,2j-1:2j] .= construct_M_ij!(M_ij_0, n_ij_projector,i, j, x0, y0, k , R,type, periodic_system_sizes)
+#         end
+
+#     end
+#     D  .= -(M + transpose(M))
+
+#     @showprogress for i in eachindex(x0)
+
+#         for j in eachindex(x0)
+
+#             #In principle unnecessary because Mii =0, but just to be sure
+#             if i!=j
+#                  D[2i-1:2i,2i-1:2i] .-= D[2i-1:2i,2j-1:2j]
+#             end
+#         end
+#     end
+#     return D
+# end
 
 
 
@@ -347,7 +428,7 @@ end
 
 
 
-@views function project_on_eigvecs(eigvecs, xinterior, yinterior)
+function project_on_eigvecs(eigvecs, xinterior, yinterior)
 
     Neigvecs = size(eigvecs)[2]
     Nt = size(xinterior)[2]
@@ -356,7 +437,7 @@ end
 
     @showprogress dt = 1 desc="Projection on eigvecs" showspeed=true   for i in 1:Nt
 
-         Threads.@threads for j in 1:Neigvecs
+        for j in 1:Neigvecs
              projs[j,i] =  project_on_eigvec(eigvecs[:,j], xinterior[:,i], yinterior[:,i])
 
         end
@@ -367,10 +448,11 @@ end
     return projs
 end
 
-@views function project_on_eigvec(eigvec, xi, yi)
-
-    xy_zip = collect(Iterators.flatten(zip(xi, yi)))
-    proj = sum( xy_zip .* eigvec)
+function project_on_eigvec(eigvec, xi, yi)
+    proj=0
+    for k in eachindex(xi)
+        proj+= xi[k] * eigvec[(2*k -1)] + yi[k] * eigvec[(2*k)]
+    end
     return proj
 end
 

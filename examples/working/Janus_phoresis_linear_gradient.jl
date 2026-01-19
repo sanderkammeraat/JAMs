@@ -2,11 +2,12 @@ include(joinpath("..","..","src","Engine.jl"))
 
 function simulation(save_path)
 
-    external_forces = [ABP_perpendicular_angular_noise(1,[0,0,1])]
+    external_forces = [ABP_perpendicular_angular_noise(1,[0,0,1]), self_align_with_v_force(1,4)]
 
-    pair_forces = [soft_disk_force(1,1.)]
+    pair_forces = []#[soft_disk_force(1,1.)]
     #type,  consumption, cmid, v0max, σ in Lorentzian
-    field_forces = (field_propulsion_distr_force(1,0.0, log10(0.5) ,0.3,30), self_align_with_∇C_force(1,3), grad_field_propulsion_force(1,0.,-3))
+    
+    field_forces = (field_propulsion_distr_force(1,0.0, log10(0.5) ,0.8,30), self_align_with_∇C_force(1,3), grad_field_propulsion_force(1,0.,-2))
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers =  [overdamped_xvf_evolver(1), overdamped_pq_xyc_evolver(1)]
     global_dofevolvers =  []
@@ -15,8 +16,8 @@ function simulation(save_path)
     ϕ = 0.1
     L =  100.
 
-    Lx=L*3
-    Ly=L*3
+    Lx=L*2
+    Ly=L*2
     initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [1], [0.3], [0.001], [-3*L/4,0,0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
 
 
@@ -50,7 +51,7 @@ function simulation(save_path)
     #Run integration
     #Use plot_disks! for nice visuals
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.05, 1e4, Tplot= 20, fps=Inf, Tsave = nothing ,save_folder_path = save_path, save_functions=(save_2d_polar_p!,save_single_2d_field!),plot_functions=(plot_field_magnitude!,plot_disks_orientation!, plot_directors!), plotdim=2); 
+    sim = Euler_integrator(system,0.05, 1e4, Tplot= 20, fps=60, Tsave = nothing ,save_folder_path = save_path, save_functions=(save_2d_polar_p!,save_single_2d_field!),plot_functions=(plot_field_magnitude!,plot_disks_orientation!, plot_directors!), plotdim=2); 
     return sim
 
 end

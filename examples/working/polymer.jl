@@ -26,8 +26,8 @@ function simulation(p,N_in_pol)
 
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1))
-    global_dofevolvers = []
-    field_dofevolvers = []
+    global_dofevolvers = ()
+    field_dofevolvers = ()
 
     pf = 1.
     R = 1
@@ -41,16 +41,17 @@ function simulation(p,N_in_pol)
     display(Npols*N_in_pol)
 
     sizes = [L,L,2];
-    display(sizes)
-    initial_field_state=[]
-    field_forces = []
-    field_updaters = []
+    print(sizes)
+    initial_field_state=()
+    field_forces = ()
+    field_updaters = ()
 
     #β=-1 interesting!
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,6.);
 
     save_folder = "/run/media/martin/HENKESGRFAT/martin/sim_data/p_$p/"
     sim = Euler_integrator(system,0.025, 5000, fps=30, Tplot=20, plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=nothing, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = save_folder); 
+    sim = Euler_integrator(system,0.025, 100, Tplot=20,plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=nothing, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = joinpath(homedir(),"ANP","demos","N_in_pol_$(N_in_pol)","k_par_$(kpar)","k_per_$(kper)")); 
     return sim;
 
 end 

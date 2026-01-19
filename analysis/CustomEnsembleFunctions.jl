@@ -142,13 +142,25 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
 
     v_projs = []
     eigvals = []
+    create_group(ensemble_file, "v_projs_time_avg")
+    create_group(ensemble_file["v_projs_time_avg"],"runs" )
     for i in eachindex(loaded_seed_files)
-        v_projs=vcat(v_projs, mean(reference_seed["projs"]["v_projs"][:,min_t_ind:end].^2, dims=2)[:,1])
-        eigvals=vcat(eigvals, loaded_seed_files[i]["eigenmodes"]["eigvals"])
+
+        create_group(ensemble_file["v_projs_time_avg"]["runs"], seed_names[i])
+
+        v_projs_i = mean(loaded_seed_files[i]["projs"]["v_projs"][:,min_t_ind:end].^2, dims=2)[:,1]
+        eigvals_i = loaded_seed_files[i]["eigenmodes"]["eigvals"]
+
+        ensemble_file["v_projs_time_avg"]["runs"][seed_names[i]]["v_projs"] = v_projs_i
+        ensemble_file["v_projs_time_avg"]["runs"][seed_names[i]]["eigvals"] = eigvals_i
+
+        v_projs=vcat(v_projs, v_projs_i)
+        eigvals=vcat(eigvals,eigvals_i )
+
     end
 
     binned_v_projs_data = bin_vector_data(eigvalbins, eigvals, v_projs)
-    create_group(ensemble_file, "v_projs_time_avg")
+    
 
     ensemble_file["v_projs_time_avg"]["eigval_bin_centers"] = binned_v_projs_data.bin_centers
     ensemble_file["v_projs_time_avg"]["v_projs_time_avg"] = binned_v_projs_data.bin_values
@@ -204,8 +216,52 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
     ensemble_file["FT_v_projs"]["eigval_bin_centers"] = binned_X.bin_centers
     ensemble_file["FT_v_projs"]["X2"] = binned_X.bin_values
 
+    #auto_p
+    Cavg = []
+    deltat = []
+    for i in eachindex(loaded_seed_files)
+
+        if i==1
+
+            deltat =loaded_seed_files[i]["auto_p"]["deltat"]
+
+            Cavg = loaded_seed_files[i]["auto_p"]["Cavg"]
+        else
+
+            Cavg = vcat(Cavg, loaded_seed_files[i]["auto_p"]["Cavg"])
+        end
+    end
+    create_group(ensemble_file, "auto_p")
+    ensemble_file["auto_p"]["Cavg"] = mean(Cavg, dims=1)[1,:] 
+    ensemble_file["auto_p"]["deltat"] = deltat
+
+
     return ensemble_file
 end
 
+function sa_ensemble_add_FT_px!(ensemble_file, loaded_seed_files, seed_names)
 
+
+    X = []
+    w = []
+    for i in eachindex(loaded_seed_files)
+
+        if i==1
+
+            w =loaded_seed_files[i]["FT_px"]["w"]
+
+            X = reshape(loaded_seed_files[i]["FT_px"]["pavg_X2"], 1, length(w))
+        else
+
+            X = vcat(X, reshape(loaded_seed_files[i]["FT_px"]["pavg_X2"], 1, length(w)))
+        end
+    end
+    create_group(ensemble_file,"FT_px_w")
+    ensemble_file["FT_px_w"]["X2"] = mean(X, dims=1)[1,:]
+    ensemble_file["FT_px_w"]["w"] = w
+
+
+    return ensemble_file
+
+end
 

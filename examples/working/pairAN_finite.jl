@@ -2,21 +2,22 @@ include(joinpath("..","..","src","Engine.jl"))
 
 function simulation()
 
+    
 
     #pair_forces = (soft_disk_force(1,1),pairAN_force(1,1.2,0.3,0.3,true), pair_nematic_alignment_force(1,2.5,0.1))
     #type, torque, rfact, kpar, kper
     #1.3 -1 0 0.3
     #pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,1.3, 1, 0., 0.3), pair_nematic_alignment_force(1,2.5,0.15))
-    pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,true,1.3, 1, 0, 0.1), pair_nematic_alignment_force(1,2.5,0.01))
+    pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,true,1.3, 1, 0, 0.2), pair_nematic_alignment_force(1,2.5,0.0))
 
 
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1))
-    global_dofevolvers = ()
-    field_dofevolvers = ()
+    global_dofevolvers = []
+    field_dofevolvers = []
 
-    N=2000
-    ϕ = 1.3
+    N=1000
+    ϕ = 1.0
     poly=15e-6
     Rs = rand(Uniform(1-poly, 1+poly),N)
     display(size(Rs))
@@ -27,28 +28,26 @@ function simulation()
 
 
     display(L)
-    sizes = [L,L,2];
+    sizes = [5*L,5*L,4];
     print(sizes)
-    initial_field_state= ()
-    field_forces = ()
-    field_updaters = ()
+    initial_field_state=[]
+    field_forces = []
+    field_updaters = []
 
     #β=-1 interesting!
-    external_forces = (ABP_perpendicular_angular_noise(1,[0,0,1]),)
+    external_forces = []#(ABP_perpendicular_angular_noise(1,[0,0,1]),)
 
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,3.);
 
     #Run integrationov
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plot}ting
-    sim = Euler_integrator(system,0.05, 1e4,fps=60,Tplot=10,plot_functions=(plot_transparant_disks!,plot_nematic_directors! ),plotdim=2)#, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,0.05, 1e4,Tplot=10,plot_functions=(plot_transparant_disks!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim;
 
 end
 
 sim = simulation()  
-
-@profview simulation()
 
 
 

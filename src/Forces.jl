@@ -84,6 +84,21 @@ struct external_harmonic_force<:Force
     k::Float64
     
 end
+struct external_mexican_hat_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    a::Float64
+    b::Float64
+    
+end
+
+struct external_double_gaussian_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    a::Float64
+    b::Float64
+    xa::MVector{3,Float64}
+    xb::MVector{3,Float64}
+    
+end
 
 struct external_anisotropic_harmonic_force{T1}<:Force
     ontypes::Union{Int64,Vector{Int64}}
@@ -142,8 +157,18 @@ struct polymer_harmonic_stretch_force{T1,T2}<:Force
     farray::T2
 end
 
+struct ring_polymer_harmonic_stretch_force{T1}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+end
+
 
 struct polymer_harmonic_bend_force{T1}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+end
+
+struct ring_polymer_harmonic_bend_force{T1}<:Force
     ontypes::Union{Int64,Vector{Int64}}
     karray::T1
 end
@@ -401,6 +426,33 @@ function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::ext
     end
     return p_i
 end
+#U = a/2 x^2 - b/4 x^4 -> F = -ax -bx^3
+function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::external_mexican_hat_force)
+    if p_i.type[1] in force.ontypes
+    p_i.f.+=  force.a * p_i.x
+    p_i.f.+=  -force.b * dot(p_i.x, p_i.x) .* p_i.x
+    end
+    return p_i
+end
+
+#U = exp(-(r - r0))
+function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::external_double_gaussian_force)
+
+
+    if p_i.type[1] in force.ontypes
+
+        da = p_i.x .- force.xa
+
+        db = p_i.x .- force.xb
+
+        
+        p_i.f.+=  - force.a .* da  .* exp(-dot(da, da)/2*force.a )
+        p_i.f.+=  - force.b .* db  .* exp(-dot(db, db)/2*force.a )
+
+    end
+    return p_i
+end
+
 
 function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::external_anisotropic_harmonic_force)
     if p_i.type[1] in force.ontypes
@@ -464,6 +516,25 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
                 f_factor = force.farray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]
                 
                 p_i.f.+= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-f_factor*d2R) * dx/dxn
+            end
+        end
+    end
+    return p_i
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::ring_polymer_harmonic_stretch_force)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        #If in same polymer
+        if p_i.pol_id[1]==p_j.pol_id[1]
+
+            #If neigbouring points in the polymer
+            if abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==1 || p_i.pol_N[1]-abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==1
+
+                d2R = p_i.R[1]+p_j.R[1]
+                
+                p_i.f.+= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
             end
         end
     end
@@ -557,7 +628,28 @@ end
     end
     return p_i
 end
+@views function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::ring_polymer_harmonic_bend_force)
 
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        #If in same polymer
+        if p_i.pol_id[1]==p_j.pol_id[1]
+
+
+            if abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==2 || p_i.pol_N[1]-abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==2
+
+                p_i.f.+= -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+            elseif abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==1 || p_i.pol_N[1]-abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==1
+
+                p_i.f.+= 4 * force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+            end
+        
+        end
+    end
+    return p_i
+end
 
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::soft_disk_force)
 

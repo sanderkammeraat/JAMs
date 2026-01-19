@@ -5,6 +5,7 @@ using JLD2
 using HDF5
 using CodecZlib
 using ProgressMeter
+using ChunkSplitters
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
 include("Particles.jl")
@@ -19,7 +20,7 @@ catch LoadError
 end
 include("SaveFunctions.jl")
 
-@views function periodic!(p_i::Particle, systemsizes)
+function periodic!(p_i::Particle, systemsizes)
 
     for (i, xi) in pairs(p_i.x)
 
@@ -32,7 +33,7 @@ include("SaveFunctions.jl")
     return p_i
 end
 
-@views function periodic!(p_i::RigidBody, systemsizes)
+function periodic!(p_i::RigidBody, systemsizes)
 
     for (i, xi) in pairs(p_i.x)
 
@@ -82,9 +83,8 @@ end
 end
 #dx is assumed to be pre-allocated
 function minimal_image_difference!(dx,xi, xj, system_sizes, system_Periodic)
-
     
-    for n in eachindex(xi)
+    @inbounds for n in eachindex(xi)
         dx[n]=xj[n]-xi[n]
         if system_Periodic
             if dx[n]>system_sizes[n]/2
@@ -308,7 +308,7 @@ end
 
 
 
-function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_functions=nothing, save_folder_path=nothing, save_tag=nothing, Tplot=nothing, fps=30, plot_functions=nothing,plotdim=nothing)
+function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_functions=nothing, save_folder_path=nothing, save_tag=nothing, Tplot=nothing, fps=30, plot_functions=nothing,plotdim=nothing,record_folder_path=nothing,crf=23,res=nothing,format="mp4")
 
 
     integration_tax = collect(0:dt:t_stop)
@@ -426,12 +426,12 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
     
 
-    current_particle_state = copy(system.initial_particle_state)
-    current_field_state = copy(system.initial_field_state)
+    current_particle_state = deepcopy(system.initial_particle_state)
+    current_field_state = deepcopy(system.initial_field_state)
 
     #We do not really care that  it is a shallow copy, we will properly set it at the end. We need to prepare it as variables that exist outside the for loop over time.
-    final_particle_state = copy(system.initial_particle_state)
-    final_field_state = copy(system.initial_field_state)
+    final_particle_state = deepcopy(system.initial_particle_state)
+    final_field_state = deepcopy(system.initial_field_state)
 
     rngs_fields = [Xoshiro(master_seed+i) for i in eachindex(current_field_state)]
 
@@ -442,9 +442,11 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         cpsO = Observable(current_particle_state)
         cfsO = Observable(current_field_state)
         tO = Observable(0.)
-        f, ax = setup_system_plotting(system.sizes,plot_functions, plotdim,cpsO,cfsO,tO,fps)
-    end
+        f, ax = setup_system_plotting(system.sizes,plot_functions, plotdim,cpsO,cfsO,tO,fps,res=res)
+        
 
+    end
+    video_stream = ( !isnothing(record_folder_path) && !isnothing(Tplot) ) ? VideoStream(f, format = format, framerate = fps, visible=true,compression=crf) : nothing
     #Open the files to update over simulation run time
     raw_data_file = !isnothing(Tsave) ? h5open(joinpath(save_folder_path, raw_data_file_name),"r+") : nothing
 
@@ -456,19 +458,18 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     #Loop over time
     #Variable to keep track of the number of frames saved
     frame_counter = 1
+    #We are going to use chunksplitters to reduce the allocations necessary for the dx in a threadsafe way
+    n_chunks = Threads.nthreads()
+    dxbuffers = @MVector [ @MVector zeros(length(system.sizes)) for n = 1:Threads.nthreads()]
+    
     try # Catch mechanism to close raw data file in case of an interruption
         @showprogress dt = 1 desc="JAMming in progress..." showspeed=true for (n, t) in pairs(integration_tax)
             #Threads.@threads 
             #Loop over particles and write generalized forces to p_i in place!
-            Threads.@threads for i in eachindex(current_particle_state)
-                p_i = current_particle_state[i]
-                p_i=init_unwrap!(p_i, t)
-                p_i = particle_step!(i,p_i, current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
-                current_particle_state[i]=p_i
-            end
 
+            
+            current_particle_state = threaded_particle_step!(current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles, dxbuffers,n_chunks)
 
-            #Threadsafe field 
             if Nfield>0
                 for i in eachindex(current_particle_state)
                     p_i = current_particle_state[i]
@@ -520,13 +521,9 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
             #Only now evolve dofs of every particle
             #Local
-            Threads.@threads for i in eachindex(current_particle_state)
-                p_i = current_particle_state[i]
+            current_particle_state = threaded_dofevolver_step!(current_particle_state,t, dt, system)
 
-                p_i=local_dofevolver_iterate!(p_i, t, dt, system.local_dofevolvers)
 
-                current_particle_state[i] = p_i
-            end
             #Or global
 
             for dofevolver in system.global_dofevolvers
@@ -534,21 +531,10 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
             end
 
             #Perform checks
-            Threads.@threads for i in eachindex(current_particle_state)
-                p_i = current_particle_state[i]
 
-                #apply periodic boundary conditions
-                if system.Periodic
-                    p_i=periodic!(p_i, system.sizes)
-                    check_outside_system(p_i,system.sizes)
-                else
-                    check_outside_system(p_i,system.sizes)
-                end
-                current_particle_state[i] = p_i
-            end
+            current_particle_state = threaded_periodic_bc!(current_particle_state,system)
 
-
-            current_particle_state,cells = update_cells!(current_particle_state, cells, cell_bin_centers,system,lbins)
+            current_particle_state, cells = update_cells!(current_particle_state, cells, cell_bin_centers,system,lbins)
 
             #DOF evolver fields
             for i in eachindex(current_field_state)
@@ -570,58 +556,99 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
                         GLMakie.closeall()
                         error("Closing the program, because live plotting window is closed.")
                     end
-                    cpsO[] = current_particle_state
-                    cfsO[]= current_field_state
+                    notify(cpsO)#[] = current_particle_state
+                    notify(cfsO)#[]= current_field_state
                     tO[] = t
+                    if !isnothing(video_stream)
+                        recordframe!(video_stream)
+                    end
                 end
 
             end
 
         end
 
-        if !isnothing(Tsave)
-            close(raw_data_file)
-        end
-
-
         return SIM(deepcopy(final_particle_state), deepcopy(final_field_state), deepcopy(dt), deepcopy(t_stop), deepcopy(system));
 
     catch e
-        if !isnothing(Tsave)
-            close(raw_data_file)
-        end
+
         println("Safely aborting")
         rethrow(e)
 
+    finally 
+        if !isnothing(Tsave)
+            flush(raw_data_file)
+            close(raw_data_file)
+        end
+        if !isnothing(video_stream)
+            save( joinpath(mkpath(record_folder_path),"movie."*format), video_stream)
+        end
     end
+end
+
+function threaded_particle_step!(current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles,dxbuffers,n_chunks)
+    Threads.@threads for (chunk_id, p_indices_chunk) in enumerate( chunks(eachindex(current_particle_state); n=n_chunks))
+
+        dxbuffer = dxbuffers[chunk_id]
+        for i in p_indices_chunk
+            p_i = current_particle_state[i]
+            init_unwrap!(p_i, t)
+            particle_step!(i,p_i, current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles,dxbuffer)
+        end
+    end
+    return current_particle_state
+end
+
+function threaded_dofevolver_step!(current_particle_state,t, dt, system)
+    Threads.@threads for i in eachindex(current_particle_state)
+        p_i = current_particle_state[i]
+
+        local_dofevolver_iterate!(p_i, t, dt, system.local_dofevolvers)
+    end
+    return current_particle_state
+end
+function threaded_periodic_bc!(current_particle_state,system)
+    Threads.@threads for i in eachindex(current_particle_state)
+        p_i = current_particle_state[i]
+
+        #apply periodic boundary conditions
+        if system.Periodic
+            periodic!(p_i, system.sizes)
+            check_outside_system(p_i,system.sizes)
+        else
+            check_outside_system(p_i,system.sizes)
+        end
+    end
+    return current_particle_state
 end
 
 function local_dofevolver_iterate!(p_i, t, dt, local_dofevolvers)
 
-    map(dofevolver->evolve_locally!(p_i, t, dt, dofevolver), local_dofevolvers)
+    foreach(dofevolver->evolve_locally!(p_i, t, dt, dofevolver), local_dofevolvers)
 
     return p_i
 end
 
 function external_force_iterate!(p_i, t, dt,rngs_particles, system, external_forces)
 
-    map(force->contribute_external_force!(p_i, t, dt,rngs_particles, system, force), external_forces)
+    foreach(force->contribute_external_force!(p_i, t, dt,rngs_particles, system, force), external_forces)
 
     return p_i
 end
 
 function pair_force_iterate!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, pair_forces)
 
-    map(force->contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force),pair_forces)
+    foreach(force->contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force),pair_forces)
+
     
     return p_i
 end
 
 
 
-function particle_step!(i,p_i, current_particle_state,Next,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
+function particle_step!(i,p_i, current_particle_state,Next,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles,dxbuffer)
     if Npair>0
-        p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system,cells,stencils,rngs_particles)
+        p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system,cells,stencils,rngs_particles,dxbuffer)
     end
     if Next>0
         p_i=external_force_iterate!(p_i, t, dt,rngs_particles, system, system.external_forces)
@@ -670,16 +697,16 @@ end
 
 
 
-function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cells,stencils,rngs_particles)
+function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cells,stencils,rngs_particles,dxbuffer)
     
-    dx = @MVector zeros(Float64,length(p_i.x))
+    dx = dxbuffer
 
     candidate_cell_ind=@MVector zeros(Int64, length(p_i.ci))
     for stencil in stencils
-        for i in eachindex(candidate_cell_ind)
+        @inbounds for i in eachindex(candidate_cell_ind)
             candidate_cell_ind[i]= p_i.ci[i] + stencil[i]
         end
-        for n in cells[candidate_cell_ind...]
+        @inbounds for n in cells[candidate_cell_ind...]
             if i!=n
                 p_j = current_particle_state[n]
 
@@ -691,9 +718,6 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cel
 
                     pair_force_iterate!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, system.pair_forces)
 
-                    # for force in system.pair_forces
-                    #     p_i=contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force)
-                    # end
                 end
 
             end
@@ -713,8 +737,9 @@ function construct_cell_list_centers(L,rcut_pair_global)
     nbin = floor(Int64,L/rcut_pair_global)
 
     #In case user sets irrelevant dimension smaller than rcut_pair_global
-    if nbin==0
-        nbin=1
+
+    if nbin<1
+        nbin=2 #very important, must have at least 2 real bins besides the ghost cells 
     end
     lbin = L/nbin
 
@@ -787,42 +812,36 @@ function construct_cell_lists!(system)
 
         lbins=(x_lbin, y_lbin, z_lbin)
     end
-    @views cells = update_ghost_cells!(cells,system)
+    cells = update_ghost_cells!(cells,system)
 
     return system, cells, cell_bin_centers, stencils, lbins
 end
 
-function find_new_bin_locations(current_particle_state, cell_bin_centers,system,lbins)
+function find_new_bin_location!(new_bin_location,p_i, cell_bin_centers,system,lbins)
 
 
     #Collect old locations to preallocate for new one
-    new_bin_locations = [copy(p_i.ci) for p_i in current_particle_state]
-    Threads.@threads for i in eachindex(current_particle_state)
-
-        p_i = current_particle_state[i]
-
         for j in eachindex(p_i.ci)
 
-            new_bin_locations[i][j]+= round(Int64, (p_i.x[j] - cell_bin_centers[j][p_i.ci[j]])/lbins[j] )
+            new_bin_location[j]+= round(Int64, (p_i.x[j] - cell_bin_centers[j][p_i.ci[j]])/lbins[j] )
 
         end
 
-    end
-
-    return new_bin_locations
+    return new_bin_location
 
 end
 
 function update_cells!(current_particle_state, cells, cell_bin_centers,system,lbins)
 
-    new_bin_locations=find_new_bin_locations(current_particle_state, cell_bin_centers,system,lbins)
-
     #Updating the cell list is not threadsafe, hence put it outside the threaded loop
     #The cell list update must come *after* the DOF evolving of particles!
+
+    new_bin_location = @MVector  zeros(Int64, length(current_particle_state[1].ci))
     for i in eachindex(current_particle_state)
 
         p_i = current_particle_state[i]
-        new_bin_location = new_bin_locations[i]
+        new_bin_location.=p_i.ci
+        new_bin_location=find_new_bin_location!(new_bin_location,p_i, cell_bin_centers,system,lbins)
         if p_i.id[1] in cells[new_bin_location...]
         else
             #remove
@@ -832,7 +851,6 @@ function update_cells!(current_particle_state, cells, cell_bin_centers,system,lb
 
             push!(cells[new_bin_location...],p_i.id[1])
         end
-        current_particle_state[i] = p_i
     end
     return current_particle_state,cells
 end
@@ -860,59 +878,61 @@ function update_ghost_cells!(cells,system)
 
         if dims==3
 
-            cells[1,:,:].= cells[end-1,:,:]
-            cells[end,:,:].= cells[2,:,:]
+            #6 faces
+            #x- 
+            cells[1,2:end-1, 2:end-1] = cells[end-1,2:end-1, 2:end-1 ]
+            #x+
+            cells[end,2:end-1, 2:end-1] = cells[2,2:end-1, 2:end-1 ]
 
-            cells[:,1,:].=  cells[:,end-1,:]
-            cells[:,end,:].= cells[:,2,:]
+            #y-
+            cells[2:end-1,1, 2:end-1] = cells[2:end-1,end-1, 2:end-1 ]
+            #y+
+            cells[2:end-1,end, 2:end-1] = cells[2:end-1,2, 2:end-1 ]
 
-            cells[:,:,1].=  cells[:,:,end-1]
-            cells[:,:,end].=  cells[:,:,2]
+            #z-
+            cells[2:end-1, 2:end-1,1] = cells[2:end-1, 2:end-1, end-1]
+            #z+
+            cells[2:end-1, 2:end-1,end] = cells[2:end-1, 2:end-1,2 ]
 
-            #set the rings
-            #Write for three faces sharing a vertex, comment out duplicates, then do the remaining edges
-            ##face 1
-            cells[1,:,1].= cells[end-1,:,end-1]
-            cells[1,:,end].= cells[end-1,:,2]
+            #8 corner points
+            cells[1,1,1]=cells[end-1, end-1, end-1]
+            cells[end, 1, 1] =cells[2, end-1, end-1]
+            cells[1,1,end] =cells[end-1, end-1, 2]
+            cells[1,end,1] = cells[end-1,2,end-1]
 
-            cells[1,1,:].= cells[end-1,end-1,:]
-            cells[1,end,:].= cells[end-1,2,:]
+            cells[1, end, end] = cells[end-1, 2, 2]
+            cells[end, end, 1] = cells[2,2, end-1]
+            cells[end, 1, end] = cells[2, end-1, 2]
+            cells[end, end, end] = cells[2,2,2]
 
-            ## face 2
+            #12 edges minus corner points
 
-            cells[:,1,1].= cells[:,end-1, end-1]
-            cells[:,end,1].= cells[:,2,end-1]
+            #4 along x, constant y z
+            cells[2:end-1,1,1].= cells[2:end-1,end-1,end-1]
 
-            #cells[1,:,1] = cells[end-1,:,end-1]
-            cells[end,:,1].= cells[2,:,end-1]
+            cells[2:end-1,end,end].= cells[2:end-1,2,2]
 
-            ## face 3
+            cells[2:end-1,1,end].= cells[2:end-1,end-1,2]
 
-            #cells[1,1,:] = cells[end-1, end-1,:]
-            cells[end,1,:].= cells[2,end-1,:]
+            cells[2:end-1,end,1].= cells[2:end-1,2,end-1]
 
-            #cells[:,1,1] = cells[:,end-1,end-1]
-            cells[:,1,end].= cells[:,end-1,2]
+            #4 along y, constant x z
+            cells[1,2:end-1,1].= cells[end-1,2:end-1,end-1]
 
-            #We are now at 9 of 12 edges
-            cells[end, end,:].= cells[2,2,:]
-            cells[end,:,end].= cells[2,:,2]
-            cells[:,end, end].= cells[:,2,2]
-            #Done
+            cells[end,2:end-1,end].= cells[2,2:end-1,2]
 
-            #set the 8 corner points
+            cells[1,2:end-1,end].= cells[end-1,2:end-1,2]
 
-            cells[1,1,1].=cells[end-1, end-1, end-1]
+            cells[end,2:end-1,1].= cells[2,2:end-1,end-1]
 
-            cells[end, 1, 1] .=cells[2, end-1, end-1]
-            cells[1,1,end] .=cells[end-1, end-1, 2]
-            cells[1,end,1] .= cells[end-1,2,end-1]
+            #4 along z, constant x y
+            cells[1,1,2:end-1].= cells[end-1,end-1,2:end-1]
 
-            cells[1, end, end] .= cells[end-1, 2, 2]
-            cells[end, end, 1] .= cells[2,2, end-1]
-            cells[end, 1, end] .= cells[2, end-1, 2]
+            cells[end,end,2:end-1].= cells[2,2,2:end-1]
 
-            cells[end, end, end] .= cells[2,2,2]
+            cells[1,end,2:end-1].= cells[end-1,2,2:end-1]
+
+            cells[end,1,2:end-1].= cells[2,end-1,2:end-1]
 
         end
 
