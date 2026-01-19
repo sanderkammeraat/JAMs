@@ -46,7 +46,7 @@ function basic_MSD(x, y, numb_frames, numb_particles)
     MSD = zeros(numb_frames)
 
     for t in 1:numb_frames
-        MSD[t] += sum((x[Δt+1:numb_frames,:] - x[1:numb_frames-Δt,:]).^2 + (y[Δt+1:numb_frames,:] - y[1:numb_frames-Δt,:]).^2)/numb_particles
+        MSD[t] += sum((x[t+1:numb_frames,:] - x[1:numb_frames-t,:]).^2 + (y[t+1:numb_frames,:] - y[1:numb_frames-t,:]).^2)/numb_particles
     end
 
     return MSD
