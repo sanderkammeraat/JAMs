@@ -319,7 +319,7 @@ for e in ensemble_files
         # #scatterlines!(ax,the_eigvals,real.(B), color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])", linestyle=:dash)
 
         
-        lines!(ax,the_eigvals,theory_integral*0.9,color=ind, colorrange = (0, 13), linestyle=:solid, label="J = $(e["J"])",colormap=:jet)#, a = $(e["vrms"]/v0)")#,  label="J = $(e["J"])")
+        lines!(ax,the_eigvals,theory_integral,color=ind, colorrange = (0, 13), linestyle=:solid, label="J = $(e["J"])",colormap=:jet)#, a = $(e["vrms"]/v0)")#,  label="J = $(e["J"])")
         # #lines!(ax,the_eigvals,theory_amin, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
         ind+=1
     end

@@ -6,15 +6,15 @@ function simulation(save_path)
 
     pair_forces = [soft_disk_force(1,1.)]
     #type,  consumption, cmid, v0max, σ in Lorentzian
-    field_forces =(field_propulsion_distr_force(1,0.2, log10(1) ,10 ,30), self_align_with_∇C_force(1,5), grad_field_propulsion_force(1,0.,-2))
+    field_forces =(field_propulsion_distr_force(1,0.2, log10(1) ,1 ,30), self_align_with_∇C_force(1,5), grad_field_propulsion_force(1,0.,-4))
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers =  [overdamped_xvf_evolver(1), overdamped_pq_xyc_evolver(1)]
     global_dofevolvers =  []
     field_dofevolvers = [overdamped_CCvCf_evolver(1)]
     N=1
     ϕ = 0.1
-    L =  20.
-    initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [1], [0.3], [0.001], [0.,L/3,0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
+    L =  40.
+    initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [1], [0.3], [0.001], [i,L/3,0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
 
     Lx=L*3
     Ly=L*3
