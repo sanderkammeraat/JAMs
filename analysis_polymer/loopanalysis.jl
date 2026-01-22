@@ -17,6 +17,7 @@ Npol = [150]
 N = [1500]
 
 MSDbool = true
+basic_MSDbool = true
 average_velocitybool = true
 radius_of_gyrationbool = false
 end_to_end_distancebool = true
@@ -42,31 +43,30 @@ for N_value in N
 
     dataset = get_data(joinpath(path_data, "raw_data.h5"))
 
-    data = Any[]
-    file_name = Any[]
+    data = Dict()
 
     if MSDbool
-        MSD_data = MSD(dataset.x, dataset.y, dataset.numb_frames, dataset.N)
+        MSD_data = MSD(dataset.x, dataset.y, dataset.numb_frames, dataset.N, dataset.t_stop)
         push!(data, MSD_data)
-        push!(file_name, "MSD")
+    end
+    if basic_MSDbool
+        basic_MSD_data, time = basic_MSD(dataset.x, dataset.y, dataset.numb_frames, dataset.N, dataset.t_stop)
+        push!(data, basic_MSD_data)
     end
     if average_velocitybool
-        average_velocity_data = average_velocity(dataset.vx, dataset.vy, dataset.numb_frames, dataset.N, convert(Int64, floor(dataset.numb_frames/100))+1)
+        average_velocity_data = average_velocity(dataset.vx, dataset.vy, dataset.numb_frames, dataset.N, dataset.t_stop)
         push!(data, average_velocity_data)
-        push!(file_name, "average_velocity")
     end
     if radius_of_gyrationbool
-        radius_of_gyration_data = radius_of_gyration(dataset.x, dataset.y, dataset.pol_id, dataset.id_in_pol, dataset.numb_frames, dataset.N)
+        radius_of_gyration_data = radius_of_gyration(dataset.x, dataset.y, dataset.pol_id, dataset.id_in_pol, dataset.numb_frames, dataset.N, dataset.t_stop)
         push!(data, radius_of_gyration_data)
-        push!(file_name, "radius_of_gyration")
     end
     if end_to_end_distancebool
-        end_to_end_distance_data = end_to_end_distance(dataset.x, dataset.y, dataset.id_in_pol, dataset.numb_frames, dataset.Npol, dataset.N)
+        end_to_end_distance_data = end_to_end_distance(dataset.x, dataset.y, dataset.id_in_pol, dataset.numb_frames, dataset.Npol, dataset.N, dataset.t_stop)
         push!(data, end_to_end_distance_data)
-        push!(file_name, "end_to_end_distance")
     end
 
-    save_data(data, file_name, path_data)
+    save_data(data, path_data)
 end
 end
 end

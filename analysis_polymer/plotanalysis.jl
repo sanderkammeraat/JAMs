@@ -5,7 +5,7 @@ include("loaddata.jl")
 
 CairoMakie.activate!(type = "pdf")
 
-function plot_data!(data, scale, end_time, savebool, path, name)
+function plot_data!(data, scale, t_stop, savebool, path, name)
 
     f = Figure()
     ax = Axis(f[1, 1], xscale=scale, yscale=scale)
@@ -14,7 +14,7 @@ function plot_data!(data, scale, end_time, savebool, path, name)
         ylims!(ax, 1e-3,maximum(data)*1.5)
     end
 
-    lines!(ax, time*end_time/length(data), data)
+    lines!(ax, time*t_stop/length(data), data)
     display(f)
     if savebool
         save(joinpath(path, "plots", name), f)
@@ -22,7 +22,7 @@ function plot_data!(data, scale, end_time, savebool, path, name)
 end
 
 
-function plot_radius_of_gyration!(multiple, datas, p, end_time)
+function plot_radius_of_gyration!(multiple, datas, p, t_stop)
 
     if !multiple
 
@@ -30,7 +30,7 @@ function plot_radius_of_gyration!(multiple, datas, p, end_time)
 
         ax = Axis(f[1, 1], xscale=log10, yscale=log10)
         time = 1:length(datas)
-        lines!(time*end_time/length(data), datas)
+        lines!(time*t_stop/length(data), datas)
         display(f)
 
     
@@ -42,7 +42,7 @@ function plot_radius_of_gyration!(multiple, datas, p, end_time)
         for data in datas
             activity = p[i]
             time = 1:length(data)
-            lines!(time*end_time/length(data), data, label="p=$activity")
+            lines!(time*t_stop/length(data), data, label="p=$activity")
             i+=1
         end
     end
@@ -78,7 +78,7 @@ plotradius_of_gyration = false
 plotend_to_end_distance = true
 
 integration_info = load_file(joinpath(path_data, "p_0.01/JAMs_container.jld2"))
-end_time = integration_info["integration_info/t_stop"]
+t_stop = integration_info["integration_info/t_stop"]
 close(integration_info)
 
 for ksd_value in ksd
@@ -97,19 +97,19 @@ for N_value in N
 
     if plotMSD
         MSD_data = analysis["MSD"][1]
-        plot_data!(MSD_data, log10, end_time, dowesave, path_data, "MSD/$parameters.png")
+        plot_data!(MSD_data, log10, t_stop, dowesave, path_data, "MSD/$parameters.png")
     end
     if plotaverage_velocity
         average_velocity_data = analysis["average_velocity"][1]
-        plot_data!(average_velocity_data, identity, end_time, dowesave, path_data, "average_velocity/$parameters.png")
+        plot_data!(average_velocity_data, identity, t_stop, dowesave, path_data, "average_velocity/$parameters.png")
     end
     if plotend_to_end_distance
         end_to_end_distance_data = analysis["end_to_end_distance"][1]
-        plot_data!(end_to_end_distance_data, identity, end_time, dowesave, path_data, "end_to_end_distance/$parameters.png")
+        plot_data!(end_to_end_distance_data, identity, t_stop, dowesave, path_data, "end_to_end_distance/$parameters.png")
     end
     if plotradius_of_gyration
         radius_of_gyration_data = analysis["radius_of_gyration"][1]
-        plot_data!(radius_of_gyration_data, identity, end_time, dowesave, path_data, "radius_of_gyration/$parameters.png")
+        plot_data!(radius_of_gyration_data, identity, t_stop, dowesave, path_data, "radius_of_gyration/$parameters.png")
     end
 
     close(analysis)
