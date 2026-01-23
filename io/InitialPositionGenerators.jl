@@ -127,13 +127,15 @@ end
 # scatter!(xi, yi)
 
 #Thanks to Gabriel Martin
-function stacked_polymers_at_angle(N_in_pol, L, R,pf; tilt_angle = nothing)
+function stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force; tilt_angle = nothing)
 
     # initialization
 
     S = pi * R^2
 
-    Npols = convert(Int64, floor(pf*L*L/S/N_in_pol))
+    S_overlap = 2*(R*R*acos(f_eq_stretch_force*R) - (f_eq_stretch_force*R)^2*tan(acos(f_eq_stretch_force*R)))
+
+    L = sqrt(Npols*(S*N_in_pol-S_overlap*(N_in_pol-1))/pf)
 
     M = Npols * N_in_pol
     x = zeros(M)
@@ -144,8 +146,10 @@ function stacked_polymers_at_angle(N_in_pol, L, R,pf; tilt_angle = nothing)
 
     ids_in_pol= zeros(M)
 
+    Lpols = 2*R+(N_in_pol-1)*2*R*f_eq_stretch_force
+
     if isnothing(tilt_angle)
-        tilt_angle = atan(L/(2R*M))   # The angle along which to place the particles to maximize the spread of particles on the torque
+        tilt_angle = atan(L/Npols/Lpols)   # The angle along which to place the particles to maximize the spread of particles on the torque
     end
     
     id = 1
@@ -157,8 +161,8 @@ function stacked_polymers_at_angle(N_in_pol, L, R,pf; tilt_angle = nothing)
 
             ids_in_pol[id] = j
 
-            x[id] = 2*sum(radii[1:id])*cos(tilt_angle) % L -L/2
-            y[id] = 2*sum(radii[1:id])*sin(tilt_angle) % L -L/2
+            x[id] = ((i-1)*Lpols + (j-1)*2*R*f_eq_stretch_force)*cos(tilt_angle) % L -L/2
+            y[id] = ((i-1)*Lpols + (j-1)*2*R*f_eq_stretch_force)*sin(tilt_angle) % L -L/2
 
 
             id+=1
@@ -167,6 +171,6 @@ function stacked_polymers_at_angle(N_in_pol, L, R,pf; tilt_angle = nothing)
 
     end
 
-    return x, y, radii, pol_ids, ids_in_pol, Npols
+    return x, y, radii, pol_ids, ids_in_pol, L
 
 end

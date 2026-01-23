@@ -125,18 +125,18 @@ function save_2d_polymer_polar_p!(current_frame_group, current_particle_state, c
 
     current_frame_group["pol_N"] = [p_i.pol_N[1] for p_i in current_particle_state]
 
-    current_frame_group["type"] = [p_i.type[1] for p_i in current_particle_state]
+    #current_frame_group["type"] = [p_i.type[1] for p_i in current_particle_state]
 
-    current_frame_group["v0"] = [p_i.v0[1] for p_i in current_particle_state]
+    #current_frame_group["v0"] = [p_i.v0[1] for p_i in current_particle_state]
 
-    current_frame_group["Dr"] = [p_i.Dr[1] for p_i in current_particle_state]
+    #current_frame_group["Dr"] = [p_i.Dr[1] for p_i in current_particle_state]
 
     current_frame_group["R"] = [p_i.R[1] for p_i in current_particle_state]
 
     current_frame_group["structtype"] = [string(nameof(typeof(p_i))) for p_i in current_particle_state]
 
-    current_frame_group["x"] = [p_i.x[1] for p_i in current_particle_state]
-    current_frame_group["y"] = [p_i.x[2] for p_i in current_particle_state]
+    #current_frame_group["x"] = [p_i.x[1] for p_i in current_particle_state]
+    #current_frame_group["y"] = [p_i.x[2] for p_i in current_particle_state]
 
     current_frame_group["xuw"] = [p_i.xuw[1] for p_i in current_particle_state]
     current_frame_group["yuw"] = [p_i.xuw[2] for p_i in current_particle_state]
@@ -147,8 +147,8 @@ function save_2d_polymer_polar_p!(current_frame_group, current_particle_state, c
     current_frame_group["px"] = [p_i.p[1] for p_i in current_particle_state]
     current_frame_group["py"] = [p_i.p[2] for p_i in current_particle_state]
 
-    current_frame_group["qx"] = [p_i.q[1] for p_i in current_particle_state]
-    current_frame_group["qy"] = [p_i.q[2] for p_i in current_particle_state]
+    #current_frame_group["qx"] = [p_i.q[1] for p_i in current_particle_state]
+    #current_frame_group["qy"] = [p_i.q[2] for p_i in current_particle_state]
 
     return current_frame_group
 
