@@ -2,18 +2,18 @@
 using PDFmerger
 include("../analysis/AnalysisPipeline.jl")
 
-base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
+
 base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 
 
 
 
-figure_save_folder = joinpath(base_folder, "figures_07_01")
+figure_save_folder = joinpath(base_folder, "figures_23_01")
 mkpath(figure_save_folder)
 
 
 
-ef  = findfile(base_folder, "ensemble.h5")
+ef  = findfile(joinpath(base_folder,"ensembles"), "ensemble.h5")
 
 
 ensemble_files = [ load_file(ef[i]) for i in eachindex(ef)]
@@ -73,7 +73,7 @@ for e in ensemble_files
 
 
 
-    if Dr==0.1 && J<=0.1
+    if Dr==0.1 && J==0.1
 
         eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]
 
@@ -97,7 +97,7 @@ for e in ensemble_files
 
     scatter!(ax,det , e["auto_p"]["Cavg"], colorrange = (0, Jmax ) , color=e["J"], label="J = $(e["J"])",alpha=0.3)
 
-    lines!(ax,det , the_auto, colorrange = (0, Jmax ) , color=e["J"])#, label="J = $(e["J"])")
+    #lines!(ax,det , the_auto, colorrange = (0, Jmax ) , color=e["J"])#, label="J = $(e["J"])")
     end
 
 end
@@ -634,7 +634,7 @@ for e in ensemble_files
     J = e["J"]
 
     Jmax=0.1
-    if Dr==0.1 && J<=0.1
+    if Dr==0.1 && J==0.1
 
     eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]
     tau=1/Dr

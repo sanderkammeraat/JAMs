@@ -7,7 +7,7 @@ include(joinpath("../src","Engine.jl"))
 
 include(joinpath("../io","InitialPositionGenerators.jl"))
 
-function relaxation_step(save_folder_path; Tsave=nothing, Tplot=nothing, Nlin=20)
+function relaxation_step(save_folder_path; Tsave=nothing, Tplot=nothing, Nlin=200)""
 
     external_forces = []#[thermal_translational_noise(1, 0 .*[1.,1.,0])]
 
@@ -68,6 +68,7 @@ function relaxation_step(save_folder_path; Tsave=nothing, Tplot=nothing, Nlin=20
     Nb = 6*(Nlin-1)
 
     N = Nint+Nb
+    display(N)
 
     poly=0.15
     Rs = rand(Uniform((1-poly)*r, (1+poly)*r),N)
@@ -113,7 +114,7 @@ end
 
 function self_aligning_step(rx_step,J,v0, Dr, seed,save_folder_path; Tsave=nothing, Tplot=nothing)
 
-    external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
+    external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
     pair_forces = [soft_disk_force([1, 2],[1 2; 2 1])]
 
@@ -140,7 +141,7 @@ function self_aligning_step(rx_step,J,v0, Dr, seed,save_folder_path; Tsave=nothi
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,false,rx_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,0.05, 1e4,Tsave=Tsave,seed=seed, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="sa", fps=60, plot_functions=(plot_disks_v_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=Tplot); 
+    sim = Euler_integrator(system,0.05, 1e5,Tsave=Tsave,seed=seed, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="sa", fps=60, plot_functions=(plot_disks_v_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=Tplot); 
     return sim
 end
 
@@ -188,6 +189,6 @@ rx_result= relaxation_step("", Tsave=nothing, Tplot=10)
 
 # rx_step,J,v0, Dr, seed, save_folder_path
 
-sa_result=self_aligning_step(rx_result, 0.1 , 0.01, 0.01,100, "", Tplot=1,  Tsave=nothing);
+sa_result=self_aligning_step(rx_result, 100 , 0.01, 0.00,100, "", Tplot=10,  Tsave=nothing);
 
 # ra_result=relax_again_step(sa_result, save_folder_path);

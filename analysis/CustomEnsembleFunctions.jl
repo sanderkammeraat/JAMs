@@ -225,15 +225,17 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
 
             deltat =loaded_seed_files[i]["auto_p"]["deltat"]
 
-            Cavg = loaded_seed_files[i]["auto_p"]["Cavg"]
+            Cavg =reshape( loaded_seed_files[i]["auto_p"]["Cavg"], 1, length(deltat)) 
         else
 
-            Cavg = vcat(Cavg, loaded_seed_files[i]["auto_p"]["Cavg"])
+            Cavg = vcat(Cavg, reshape( loaded_seed_files[i]["auto_p"]["Cavg"], 1, length(deltat)) )
         end
     end
     create_group(ensemble_file, "auto_p")
     ensemble_file["auto_p"]["Cavg"] = mean(Cavg, dims=1)[1,:] 
     ensemble_file["auto_p"]["deltat"] = deltat
+
+    sa_ensemble_add_FT_px!(ensemble_file, loaded_seed_files, seed_names)
 
 
     return ensemble_file
