@@ -254,7 +254,7 @@ end
 
 function run_sa_analysis_add_spatial_cor!(analysis_file, raw_data_file; support_raw_data_file = nothing)
 
-    if !haskey(analysis_file,"auto_p")
+    if !haskey(analysis_file,"spatial_vcor") || !haskey(analysis_file,"spatial_pcor") 
         frames = raw_data_file["frames"]
 
         system = raw_data_file["system"]
@@ -283,6 +283,10 @@ function run_sa_analysis_add_spatial_cor!(analysis_file, raw_data_file; support_
         min_t_ind = 500
 
         dt = t[2] - t[1]
+
+        x = zeros(Nint, Nt)
+        y = zeros(Nint, Nt)
+
         vx = zeros(Nint, Nt)
         vy = zeros(Nint, Nt)
 
@@ -290,6 +294,10 @@ function run_sa_analysis_add_spatial_cor!(analysis_file, raw_data_file; support_
         py = zeros(Nint, Nt)
 
         @views for i in 1:Nt
+
+            x[:,i] .= extract_frame_data_for_type("x", 1, frames[string(i)])
+            y[:,i] .= extract_frame_data_for_type("y", 1, frames[string(i)])
+
             px[:,i] .= extract_frame_data_for_type("px", 1, frames[string(i)])
             py[:,i] .= extract_frame_data_for_type("py", 1, frames[string(i)])
 
