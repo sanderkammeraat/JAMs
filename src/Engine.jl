@@ -67,6 +67,18 @@ function init_unwrap!(p_i, t)
 
     return p_i
 end
+#Initialize forces and torques to zero, for easy chaining of sims
+function init_f_q!(p_i, t)
+
+    if t==0
+        p_i.f.*=0.
+
+        if :q in fieldnames(typeof(p_i))
+            p_i.q.*=0
+        end
+    end
+    return p_i
+end
 
 
 @views function minimal_image_closest_bin_center!(field_indices,x, bin_centers,system_sizes,system_Periodic)
@@ -593,6 +605,7 @@ function threaded_particle_step!(current_particle_state,Next, Npair,t, dt, syste
         for i in p_indices_chunk
             p_i = current_particle_state[i]
             init_unwrap!(p_i, t)
+            init_f_q!(p_i, t)
             particle_step!(i,p_i, current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles,dxbuffer)
         end
     end

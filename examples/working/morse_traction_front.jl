@@ -1,3 +1,5 @@
+
+
 include(joinpath("..","..","src","Engine.jl"))
 
 
@@ -8,27 +10,28 @@ function relaxation()
     
 
     #dofevolvers = [inertial_evolver!]
-    local_dofevolvers = (overdamped_xvf_evolver([1,2]),overdamped_pq_xyc_evolver([1,2]))
+    local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1))
     global_dofevolvers = []
     field_dofevolvers = []
 
-    Nconf=2000
-    Nact = 10
-    N = Nconf+Nact
-    ϕ = 0.7
+    N = 1000
+    ϕ = 0.8
     poly=15e-2
-    Rs = vcat( rand(Uniform(1-poly, 1+poly),Nconf),rand(Uniform(1-poly, 1+poly),Nact) )
+    Rs =  rand(Uniform(1-poly, 1+poly),N)
     display(size(Rs))
 
     L =  sqrt(pi *sum(Rs.^2) / ϕ)
 
-    types = vcat(ones(Int64,Nconf), ones(Int64,Nact) .*2)
+    Ly = L/2
+    Lx = Ly*2
 
-    initial_state = PolarParticle3d[ PolarParticle3d([i],[types[i]], [1], [1], [Rs[i]], [0.5], [0.01], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
+    types = ones(Int64,N)
+
+    initial_state = PolarParticle3d[ PolarParticle3d([i],[types[i]], [1], [1], [Rs[i]], [0.5], [0.01], [rand(Uniform(-Lx/2, Lx/2)) , rand(Uniform(-Ly/4,Ly/4)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
 
     external_forces = []
     display(L)
-    sizes = [L,L,4];
+    sizes = [Lx*3,Ly*4,4];
     print(sizes)
     initial_field_state=[]
     field_forces = []
@@ -43,14 +46,16 @@ function relaxation()
 
 end
 rx = relaxation()
+
+
 function simulation(relaxation)
 
     
 
     #pair_forces = (soft_disk_force([1,2],[0.01 1. ; 1. 1.]),)
-    pair_forces = (soft_disk_force([1,2],[0. 1 ; 1 1.]),morse_force(1,0.05,2.5))  
+    pair_forces = (morse_force(1,0.05,2.5))  
     #dofevolvers = [inertial_evolver!]
-    local_dofevolvers = (overdamped_xvf_evolver([1,2]),overdamped_pq_xyc_evolver([1,2]))
+    local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1))
     global_dofevolvers = []
     field_dofevolvers = []
 
@@ -73,8 +78,4 @@ function simulation(relaxation)
 
 end
 
-
-sim = simulation(rx)  
-
-
- 
+simulation(rx)
