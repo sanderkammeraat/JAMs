@@ -9,12 +9,12 @@ end
 
 
 struct simulation_data
-    x
-    y
-    vx
-    vy
-    px
-    py
+    x::Matrix{Float64}
+    y::Matrix{Float64}
+    vx::Matrix{Float64}
+    vy::Matrix{Float64}
+    px::Matrix{Float64}
+    py::Matrix{Float64}
     id::Vector{Int64}
     pol_id::Vector{Int64}
     id_in_pol::Vector{Int64}
@@ -31,8 +31,8 @@ struct simulation_data
     #kpar::Float64
     Npol::Int64
     N::Int64
-    sizes
-    t_stop::Float64
+    sizes::Vector{Float64}
+    t_stop::Int64
 end
 
 
@@ -87,5 +87,5 @@ function get_data(file_location)
 
     close(file)
 
-    return simulation_data(x, y, v_x, v_y, p_x, p_y, id, pol_id, id_in_pol, R, numb_frames, dt, Tsave, ksd, kbend, kstretch, fstretch, Npol, N, t_stop, sizes)
+    return simulation_data(x, y, v_x, v_y, p_x, p_y, id, pol_id, id_in_pol, R, numb_frames, dt, Tsave, ksd, kbend, kstretch, fstretch, Npol, N, sizes, t_stop)
 end
