@@ -223,7 +223,7 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
 
         if i==1
 
-            deltat =loaded_seed_files[i]["auto_p"]["deltat"]
+            deltat =loaded_seed_files[i]["auto_p"]["deltat"][1:length(loaded_seed_files[i]["auto_p"]["Cavg"])]
 
             Cavg =reshape( loaded_seed_files[i]["auto_p"]["Cavg"], 1, length(deltat)) 
         else
