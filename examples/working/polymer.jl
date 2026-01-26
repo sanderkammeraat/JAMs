@@ -9,10 +9,10 @@ function simulation()
     #type, torque, rfact, kpar, kper
     #1.3 -1 0 0.3
     #pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,1.3, 1, 0., 0.3), pair_nematic_alignment_force(1,2.5,0.15))
-    kpar = 1.
-    kper=0.
-    pair_forces = (soft_disk_force(1,1.),polymer_harmonic_bend_force(1,0.5), polymer_harmonic_stretch_force(1,1.),polymer_align_director_tangent_force(1,10), polymer_pairAN_force(1,true, true,1.5, kpar, kper, 0.4))
-    external_forces =(thermal_translational_noise(1, 0.0*[0.001, 0.0001,0]),)#, ABP_3d_propulsion_force(1))
+    kpar = 0
+    kper= -1.
+    pair_forces = (soft_disk_force(1,1.),polymer_harmonic_bend_force(1,0.5), polymer_harmonic_stretch_force(1,3.),polymer_align_director_tangent_force(1,100), polymer_pairAN_force(1,true, true,1.3, kpar, kper, 0.6))
+    external_forces =(thermal_translational_noise(1, 0.01*[0.01, 0.01,0]), ABP_perpendicular_angular_noise(2,[0,0,1]),ABP_3d_propulsion_force(2))
 
     
 
@@ -20,8 +20,7 @@ function simulation()
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1))
     global_dofevolvers = ()
     field_dofevolvers = ()
-
-    pf = 0.8
+    pf = 0.1
     R = 1
     N_in_pol = 10
 
@@ -43,7 +42,7 @@ function simulation()
     #β=-1 interesting!
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,6.);
 
-    sim = Euler_integrator(system,0.025, 100, Tplot=20,plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=nothing, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = joinpath(homedir(),"ANP","demos","N_in_pol_$(N_in_pol)","k_par_$(kpar)","k_per_$(kper)")); 
+    sim = Euler_integrator(system,0.0025, 1e6, Tplot=10,plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=nothing, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = joinpath(homedir(),"ANP","demos","N_in_pol_$(N_in_pol)","k_par_$(kpar)","k_per_$(kper)"),res=(1000,1000)); 
     return sim;
 
 end 

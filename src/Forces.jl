@@ -182,6 +182,11 @@ struct polymer_align_director_tangent_force<:Force
     J::Float64
 end
 
+struct polymer_nematic_align_director_tangent_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    J::Float64
+end
+
 
 struct soft_atre_type_force{T1, T2}
     ontypes::Union{Int64,Vector{Int64}}
@@ -769,7 +774,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
         a = force.aarray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]
         De = force.Dearray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]
 
-        f.= 2 * De*a*( exp(-2a*(dxn-re)) - exp(-a*(dxn-re)) ) * dx/dxn
+        f.= -2 * De*a*( exp(-2a*(dxn-re)) - exp(-a*(dxn-re)) ) * dx/dxn
         p_i.f.+= f
 
     end
@@ -1017,7 +1022,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
     
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
 
-        if p_j.pol_id[1]!=p_i.pol_id[1]
+        if  true#p_j.pol_id[1]!=p_i.pol_id[1]
 
             d2a = p_i.R[1]+p_j.R[1]
             
@@ -1133,6 +1138,28 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system
 
 end
 
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system, force::polymer_nematic_align_director_tangent_force)
+    
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        #d2a = p_i.R[1]+p_j.R[1]
+
+        if p_i.pol_id[1]==p_j.pol_id[1]
+
+            if p_j.id_in_pol[1]==p_i.id_in_pol[1]+1
+
+                #add torque
+                p_i.q.+=force.J*cross(p_i.p, dx/dxn)* (dot(p_i.p,dx/dxn))
+
+            elseif  p_j.id_in_pol[1]==p_i.id_in_pol[1]-1
+
+                #add torque (note the tangent vector points the other way)
+                p_i.q.+=force.J*cross(p_i.p, -dx/dxn)* (dot(p_i.p,-dx/dxn))
+            end
+        end
+    end
+    return p_i
+
+end
 
 
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::fluid_dipole_2d_force)

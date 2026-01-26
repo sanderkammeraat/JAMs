@@ -81,7 +81,7 @@ function secondary_temporal_Fourier_transform(dt, C)
 end
 
 
-function spatial_p_correlation(binsize, maxbin_center, x,y, px, py; min_t_ind=1, max_t_ind=nothing, every_n=nothing)
+function spatial_p_correlation(binsize, maxbin_center, x,y, px, py)
 
 
     rbin_edges = prepend!(collect(range(start=0, step=binsize, stop=maxbin_center)),[0])
@@ -94,15 +94,12 @@ function spatial_p_correlation(binsize, maxbin_center, x,y, px, py; min_t_ind=1,
 
     Nt = size(px)[2]
 
-    max_t_ind_set = isnothing(max_t_ind) ? Nt : max_t_ind
-
-    every_n_set = isnothing(every_n) ? 1 : every_n
-
     C = ones(Nt, Nbin)*NaN
 
     counts = zeros(Nt, Nbin)
 
-    @showprogress dt = 1 desc="spatial correlation" showspeed=true for i in min_t_ind:every_n_set:max_t_ind_set
+     @showprogress dt = 1 desc="spatial correlation" showspeed=true Threads.@threads for i in 1:Nt
+
         for p1 in 1:size(px)[1]
 
             for p2 in p1:size(px)[1]
@@ -110,8 +107,9 @@ function spatial_p_correlation(binsize, maxbin_center, x,y, px, py; min_t_ind=1,
                 Δr2 = (x[p1, i]- x[p2,i])^2 +   (y[p1, i]- y[p2,i])^2
 
                 for bin in eachindex(rbin_centers)
+                    #inbounds, compiler may not know that rbin_centers is shorter than edges
 
-                    if (Δr2<= rbin_edges2[bin+1] && Δr2> rbin_edges2[bin]) || (p1==p2 && bin==1)
+                    @inbounds if (Δr2<= rbin_edges2[bin+1] && Δr2> rbin_edges2[bin]) || (p1==p2 && bin==1)
 
                         if isnan(C[i, bin])
                             C[i, bin]=0
@@ -129,7 +127,59 @@ function spatial_p_correlation(binsize, maxbin_center, x,y, px, py; min_t_ind=1,
     end
 
     C.=C./counts
-    return Dict("rbc"=>rbin_centers,"rbe"=>rbin_edges,"C"=> C)
+    Cavg = mean(C, dims=1)[1,:]
+    return Dict("rbc"=>rbin_centers,"rbe"=>rbin_edges,"Cavg"=> Cavg)
+
+end
+function spatial_v_correlation(binsize, maxbin_center, x,y, vx, vy)
+
+
+    rbin_edges = prepend!(collect(range(start=0, step=binsize, stop=maxbin_center)),[0])
+
+    rbin_edges2 = rbin_edges.^2
+
+    rbin_centers = (rbin_edges[2:end] + rbin_edges[1:end-1])/2
+
+    Nbin = length(rbin_centers)
+
+    Nt = size(vx)[2]
+
+    C = ones(Nt, Nbin)*NaN
+
+    counts = zeros(Nt, Nbin)
+
+     @showprogress dt = 1 desc="spatial correlation" showspeed=true Threads.@threads for i in 1:Nt
+
+        vrms_2_i= mean( vx[:, i].^2 .+ vy[:, i].^2 )
+        for v1 in 1:size(vx)[1]
+
+            for v2 in v1:size(vx)[1]
+
+                Δr2 = (x[v1, i]- x[v2,i])^2 +   (y[v1, i]- y[v2,i])^2
+
+                for bin in eachindex(rbin_centers)
+                    #inbounds, compiler may not know that rbin_centers is shorter than edges
+
+                    @inbounds if (Δr2<= rbin_edges2[bin+1] && Δr2> rbin_edges2[bin]) || (v1==v2 && bin==1)
+
+                        if isnan(C[i, bin])
+                            C[i, bin]=0
+                            counts[i, bin]=0
+                        end
+
+                        C[i, bin] +=( vx[v1, i]* vx[v2, i] + vy[v1, i] * vy[v2, i])/vrms_2_i
+                        counts[i,bin] += 1
+                    end
+
+                end
+
+            end
+        end
+    end
+
+    C.=C./counts
+    Cavg = mean(C, dims=1)[1,:]
+    return Dict("rbc"=>rbin_centers,"rbe"=>rbin_edges,"Cavg"=> Cavg)
 
 end
 

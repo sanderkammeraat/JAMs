@@ -207,23 +207,15 @@ function run_sa_analysis_add_auto_p!(analysis_file, raw_data_file; support_raw_d
 
         v0 = frames["1"]["v0"][1]
 
-
         Dr = frames["1"]["Dr"][1]
 
-
         J = system["forces"]["external"]["self_align_with_v_unit_force"]["β"]
-
-
 
         k = system["forces"]["pair"]["soft_disk_force"]["karray"]
 
         R = frames["1"]["R"]
 
-
-
         type = frames["1"]["type"]
-
-
 
         Nt = length(t)
 
@@ -255,6 +247,70 @@ function run_sa_analysis_add_auto_p!(analysis_file, raw_data_file; support_raw_d
         auto_p = auto_correlation(t,px, py, minrow=min_t_ind)
 
         save_dict2h5!(analysis_file, auto_p, "auto_p")
+    end
+    return analysis_file
+    GC.gc()
+end
+
+function run_sa_analysis_add_spatial_cor!(analysis_file, raw_data_file; support_raw_data_file = nothing)
+
+    if !haskey(analysis_file,"auto_p")
+        frames = raw_data_file["frames"]
+
+        system = raw_data_file["system"]
+
+        frames_support = support_raw_data_file["frames"]
+
+        t =  raw_data_file["integration_info"]["save_tax"]
+
+        v0 = frames["1"]["v0"][1]
+
+        Dr = frames["1"]["Dr"][1]
+
+        J = system["forces"]["external"]["self_align_with_v_unit_force"]["β"]
+
+        k = system["forces"]["pair"]["soft_disk_force"]["karray"]
+
+        R = frames["1"]["R"]
+
+        type = frames["1"]["type"]
+
+        Nt = length(t)
+
+        #Ignore boundary particles
+        Nint = length(extract_frame_data_for_type("id",1,frames["1"]))
+
+        min_t_ind = 500
+
+        dt = t[2] - t[1]
+        vx = zeros(Nint, Nt)
+        vy = zeros(Nint, Nt)
+
+        px = zeros(Nint, Nt)
+        py = zeros(Nint, Nt)
+
+        @views for i in 1:Nt
+            px[:,i] .= extract_frame_data_for_type("px", 1, frames[string(i)])
+            py[:,i] .= extract_frame_data_for_type("py", 1, frames[string(i)])
+
+            vx[:,i] .= extract_frame_data_for_type("vx", 1, frames[string(i)])
+            vy[:,i] .= extract_frame_data_for_type("vy", 1, frames[string(i)])
+
+        end
+
+        x0 = frames_support[string(length(frames_support))]["x"]
+        y0 = frames_support[string(length(frames_support))]["y"]
+
+
+        spatial_vcor = spatial_v_correlation(3, 100, x[:,min_t_ind:end], y[:,min_t_ind:end], vx[:,min_t_ind:end], vy[:,min_t_ind:end])
+
+        save_dict2h5!(analysis_file, spatial_vcor, "spatial_vcor")
+
+        spatial_pcor = spatial_p_correlation(3, 100, x[:,min_t_ind:end], y[:,min_t_ind:end], px[:,min_t_ind:end], py[:,min_t_ind:end])
+
+        save_dict2h5!(analysis_file, spatial_pcor, "spatial_pcor")
+
+
     end
     return analysis_file
     GC.gc()
