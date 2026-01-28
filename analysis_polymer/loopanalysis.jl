@@ -46,26 +46,26 @@ for N_value in N
     if MSDbool
         MSD_data = MSD(dataset.x, dataset.y, dataset.numb_frames, dataset.N, dataset.t_stop)
         merge!(data, MSD_data)
-    end
+    
     if basic_MSDbool
         basic_MSD_data = basic_MSD(dataset.x, dataset.y, dataset.numb_frames, dataset.N, dataset.t_stop)
         merge!(data, basic_MSD_data)
-    end
+    
     if average_velocitybool
         average_velocity_data = average_velocity(dataset.vx, dataset.vy, dataset.numb_frames, dataset.N, dataset.t_stop)
         merge!(data, average_velocity_data)
-    end
+    
     if radius_of_gyrationbool
         radius_of_gyration_data = radius_of_gyration(dataset.x, dataset.y, dataset.pol_id, dataset.id_in_pol, dataset.numb_frames, dataset.N, dataset.t_stop)
         merge!(data, radius_of_gyration_data)
-    end
+    
     if end_to_end_distancebool
         end_to_end_distance_data = end_to_end_distance(dataset.x, dataset.y, dataset.id_in_pol, dataset.numb_frames, dataset.Npol, dataset.N, dataset.t_stop)
         merge!(data, end_to_end_distance_data)
     end
 
     save_data(data, path_data)
-end
+    
 end
 end
 end
