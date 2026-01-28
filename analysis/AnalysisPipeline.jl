@@ -13,12 +13,12 @@ function load_file(file_location)
 end
 
 #Helper function
-function initialize_file(save_path; overwrite = false, append=false)
+function initialize_file(save_path; overwrite = false, append=false, modify=false)
 
     save_folder_path = mkpath(dirname(save_path))
 
-    if append && overwrite
-        error("Set only append or error to true, not both!")
+    if (append && overwrite) || (append && modify) || (overwrite && modify)
+        error("Set only append, modify or error to true, not both!")
     else
         if !isfile(save_path)
 
@@ -36,6 +36,11 @@ function initialize_file(save_path; overwrite = false, append=false)
 
             return file
 
+        elseif isfile(save_path) && modify
+            file = h5open(save_path,"r+")
+
+            return file
+
         else
             error("Initialized file already existing, aborting to prevent overwriting.")
         end
@@ -48,7 +53,7 @@ end
 #The idea is to first expose the necessary data from the simulation file to the datadict, and then let the add_analysis files use this to calculate something.
 
 #General analysis
-function analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=nothing,  overwrite = false, append = false)
+function analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=nothing,  overwrite = false, append = false, modify=false)
 
 
     #Preparing files
@@ -56,8 +61,8 @@ function analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_
 
     loaded_support_raw_data_file = !isnothing(support_raw_data_file_path) ?  load_file(support_raw_data_file_path) : nothing
 
-    try 
-        initialized_analysis_file = initialize_file(analysis_save_path; overwrite = overwrite, append=append)
+    try  
+        initialized_analysis_file = initialize_file(analysis_save_path; overwrite = overwrite, append=append, modify = modify)
 
         try 
             
@@ -104,7 +109,7 @@ function analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_
 
 end
 
-function ensemble_single(seed_file_paths, ensemble_save_path,custom_ensemble_function; overwrite = false, append = false)
+function ensemble_single(seed_file_paths, ensemble_save_path,custom_ensemble_function; overwrite = false, append = false, modify=false)
 
 
     #Preparing files
@@ -114,7 +119,7 @@ function ensemble_single(seed_file_paths, ensemble_save_path,custom_ensemble_fun
     seed_names = [ splitpath(seed_file_path)[end] for seed_file_path in seed_file_paths ]
 
     try 
-        initialized_ensemble_file = initialize_file(ensemble_save_path; overwrite = overwrite, append=append)
+        initialized_ensemble_file = initialize_file(ensemble_save_path; overwrite = overwrite, append=append, modify = modify)
 
         try 
             
@@ -147,7 +152,7 @@ function ensemble_single(seed_file_paths, ensemble_save_path,custom_ensemble_fun
 
 end
 
-function run_sequential_ensemble(ensemble_save_paths, seed_file_paths_per_ensemble_folder, custom_ensemble_function; overwrite = false, append = false)
+function run_sequential_ensemble(ensemble_save_paths, seed_file_paths_per_ensemble_folder, custom_ensemble_function; overwrite = false, append = false, modify=false)
 
     for i in eachindex(ensemble_save_paths)
 
@@ -157,7 +162,7 @@ function run_sequential_ensemble(ensemble_save_paths, seed_file_paths_per_ensemb
         println(ensemble_save_path)
 
 
-        ensemble_single(seed_file_paths, ensemble_save_path, custom_ensemble_function,  overwrite = overwrite, append = append)
+        ensemble_single(seed_file_paths, ensemble_save_path, custom_ensemble_function,  overwrite = overwrite, append = append, modify=modify)
 
     end
 
@@ -307,7 +312,7 @@ function auto_movie_dir(base_folder, raw_data_file_name_pattern, mimic_source_di
 end
 
 
-function run_distributed_analysis(raw_data_file_paths, analysis_save_paths,custom_analysis_function; support_raw_data_file_paths=nothing,  overwrite = false, append = false)
+function run_distributed_analysis(raw_data_file_paths, analysis_save_paths,custom_analysis_function; support_raw_data_file_paths=nothing,  overwrite = false, append = false, modify=false)
 
     @sync @distributed for i in eachindex(raw_data_file_paths)
         
@@ -316,13 +321,13 @@ function run_distributed_analysis(raw_data_file_paths, analysis_save_paths,custo
         analysis_save_path = analysis_save_paths[i]
         support_raw_data_file_path = !isnothing(support_raw_data_file_paths) ? support_raw_data_file_paths[i] : nothing
 
-        analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=support_raw_data_file_path,  overwrite = overwrite, append = append)
+        analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=support_raw_data_file_path,  overwrite = overwrite, append = append, modify=modify)
 
     end
 
 end
 
-function run_multithreaded_analysis(raw_data_file_paths, analysis_save_paths,custom_analysis_function; support_raw_data_file_paths=nothing,  overwrite = false, append = false)
+function run_multithreaded_analysis(raw_data_file_paths, analysis_save_paths,custom_analysis_function; support_raw_data_file_paths=nothing,  overwrite = false, append = false, modify=false)
 
     Threads.@threads for i in eachindex(raw_data_file_paths)
         raw_data_file_path = raw_data_file_paths[i]
@@ -330,13 +335,13 @@ function run_multithreaded_analysis(raw_data_file_paths, analysis_save_paths,cus
         analysis_save_path = analysis_save_paths[i]
         support_raw_data_file_path = !isnothing(support_raw_data_file_paths) ? support_raw_data_file_paths[i] : nothing
 
-        analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=support_raw_data_file_path,  overwrite = overwrite, append = append)
+        analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=support_raw_data_file_path,  overwrite = overwrite, append = append, modify=modify)
 
     end
 
 end
 
-function run_sequential_analysis(raw_data_file_paths, analysis_save_paths,custom_analysis_function; support_raw_data_file_paths=nothing,  overwrite = false, append = false)
+function run_sequential_analysis(raw_data_file_paths, analysis_save_paths,custom_analysis_function; support_raw_data_file_paths=nothing,  overwrite = false, append = false, modify=false)
 
     for i in eachindex(raw_data_file_paths)
 
@@ -346,7 +351,7 @@ function run_sequential_analysis(raw_data_file_paths, analysis_save_paths,custom
         analysis_save_path = analysis_save_paths[i]
         support_raw_data_file_path = !isnothing(support_raw_data_file_paths) ? support_raw_data_file_paths[i] : nothing
 
-        analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=support_raw_data_file_path,  overwrite = overwrite, append = append)
+        analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=support_raw_data_file_path,  overwrite = overwrite, append = append, modify=modify)
 
             
 
