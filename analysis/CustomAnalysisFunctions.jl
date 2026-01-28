@@ -309,12 +309,13 @@ function run_sa_analysis_add_spatial_cor!(analysis_file, raw_data_file; support_
         x0 = frames_support[string(length(frames_support))]["x"]
         y0 = frames_support[string(length(frames_support))]["y"]
 
+        nc = 10
 
-        spatial_vcor = spatial_v_correlation(3, 100, x[:,min_t_ind:end], y[:,min_t_ind:end], vx[:,min_t_ind:end], vy[:,min_t_ind:end])
+        spatial_vcor = spatial_v_correlation(3, 100, x[:,min_t_ind:nc:end], y[:,min_t_ind:nc:end], vx[:,min_t_ind:nc:end], vy[:,min_t_ind:nc:end])
 
         save_dict2h5!(analysis_file, spatial_vcor, "spatial_vcor")
 
-        spatial_pcor = spatial_p_correlation(3, 100, x[:,min_t_ind:end], y[:,min_t_ind:end], px[:,min_t_ind:end], py[:,min_t_ind:end])
+        spatial_pcor = spatial_p_correlation(3, 100, x[:,min_t_ind:nc:end], y[:,min_t_ind:nc:end], px[:,min_t_ind:nc:end], py[:,min_t_ind:nc:end])
 
         save_dict2h5!(analysis_file, spatial_pcor, "spatial_pcor")
 
