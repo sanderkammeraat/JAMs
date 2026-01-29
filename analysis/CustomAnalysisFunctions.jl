@@ -190,6 +190,12 @@ function run_sa_analysis!(analysis_file, raw_data_file; support_raw_data_file = 
 
 
     run_sa_analysis_add_auto_p!(analysis_file, raw_data_file, support_raw_data_file = support_raw_data_file)
+    run_sa_analysis_add_auto_v!(analysis_file, raw_data_file, support_raw_data_file = support_raw_data_file)
+
+    run_sa_analysis_add_spatial_cor!(analysis_file, raw_data_file, support_raw_data_file = support_raw_data_file)
+
+
+
     
     return analysis_file
 end
@@ -360,11 +366,11 @@ function run_sa_analysis_add_spatial_cor!(analysis_file, raw_data_file; support_
 
         nc = 10
 
-        spatial_vcor = spatial_v_correlation(3, 100, x[:,min_t_ind:nc:end], y[:,min_t_ind:nc:end], vx[:,min_t_ind:nc:end], vy[:,min_t_ind:nc:end])
+        spatial_vcor = spatial_v_correlation(3, 200, x[:,min_t_ind:nc:end], y[:,min_t_ind:nc:end], vx[:,min_t_ind:nc:end], vy[:,min_t_ind:nc:end])
 
         save_dict2h5!(analysis_file, spatial_vcor, "spatial_vcor")
 
-        spatial_pcor = spatial_p_correlation(3, 100, x[:,min_t_ind:nc:end], y[:,min_t_ind:nc:end], px[:,min_t_ind:nc:end], py[:,min_t_ind:nc:end])
+        spatial_pcor = spatial_p_correlation(3, 200, x[:,min_t_ind:nc:end], y[:,min_t_ind:nc:end], px[:,min_t_ind:nc:end], py[:,min_t_ind:nc:end])
 
         save_dict2h5!(analysis_file, spatial_pcor, "spatial_pcor")
 
@@ -676,9 +682,6 @@ function run_free_BP_analysis!(analysis_file, raw_data_file; support_raw_data_fi
 
     v_projs = project_on_eigvecs(eigenmodes["eigvecs"], vx , vy)
     analysis_file["projs"]["v_projs"] = v_projs
-
-
-
 
 
     return analysis_file
