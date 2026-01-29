@@ -3,12 +3,12 @@ using PDFmerger
 include("../analysis/AnalysisPipeline.jl")
 
 
-base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
+#base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
+base_folder = "/Volumes/T7_Shield/sa/statistics/hex_disordered/phi_1.3/phi_1.3/Nlin_20/"
 
 
 
-
-figure_save_folder = joinpath(base_folder, "figures_23_01")
+figure_save_folder = joinpath(base_folder, "figures_29_01")
 mkpath(figure_save_folder)
 
 
@@ -58,14 +58,15 @@ end
 
 
 begin
+ind=1
 using CairoMakie
 CairoMakie.activate!()
 
 GLMakie.activate!()
 f = Figure()
+Drplot = 0.01
+ax = Axis(f[1,1], xlabel=L"$\Delta t$", ylabel=L"$\langle \hat{n}(t+\Delta t)\cdot \hat{n}(t) \rangle$", title="Dr = $Drplot")
 
-ax = Axis(f[1,1], xlabel=L"$\Delta t$", ylabel=L"$\langle \hat{n}(t+\Delta t)\cdot \hat{n}(t) \rangle$", title="Dr = 0.1")
-Jmax = 0.1
 for e in ensemble_files
 
     Dr = e["Dr"]
@@ -73,7 +74,7 @@ for e in ensemble_files
 
 
 
-    if Dr==0.1 && J==0.1
+    if Dr==Drplot #&& J==0.1
 
         eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]
 
@@ -95,49 +96,51 @@ for e in ensemble_files
         end
     
 
-    scatter!(ax,det , e["auto_p"]["Cavg"], colorrange = (0, Jmax ) , color=e["J"], label="J = $(e["J"])",alpha=0.3)
+    scatterlines!(ax,det , e["auto_p"]["Cavg"], colorrange = (1, 13 ) , color=ind, label="J = $(e["J"])",alpha=1,colormap=:jet)
+    ind+=1
 
     #lines!(ax,det , the_auto, colorrange = (0, Jmax ) , color=e["J"])#, label="J = $(e["J"])")
     end
 
 end
+if Drplot==0.01
+    xlims!(ax, 0,800)
+elseif Drplot == 0.1
+    xlims!(ax, 0,150)
+end
 
-xlims!(ax, 0,100)
+lines!(ax, ensemble_files[1]["auto_p"]["deltat"],exp.(-ensemble_files[1]["auto_p"]["deltat"].*Drplot), color="red", label="ABP_theory")
 
-lines!(ax, ensemble_files[1]["auto_p"]["deltat"],exp.(-ensemble_files[1]["auto_p"]["deltat"].*0.1), color="red", label="ABP_theory")
-
-ylims!(ax, -0.015,0.2)
+#ylims!(ax, -0.015,0.2)
 f[1,2]=Legend(f,ax)
 display(f)
-save(joinpath(figure_save_folder,"auto_n_zoom.pdf"), f, backend=CairoMakie)
+save(joinpath(figure_save_folder,"auto_n_Dr_$Drplot.pdf"), f, backend=CairoMakie)
 
 end
-using Roots
-function f_a(a,p)
 
-        eigvals =p[1]
-        J = p[2]
-        tau = p[3] 
 
-        Nint= length(eigvals)/2
-        the_eigvals =eigvals[1:end]
 
-        A = Complex.( sqrt.( (1/tau + J * a) .* the_eigvals))
 
-        B = Complex.(@. the_eigvals .+  .-J /a  .+ 1/tau  .+ J*a) 
-    
-        T1 =@. -(B^2 - 2*A^2)/2
-        T2 =@. 1/2*sqrt(B^2 * (B^2 - 4 * A^2)) 
-        #theory_integral = @. 2* pi* tauJ * (J*tauJ + a * (1+tauJ*eigvals)^2)/(a*tau*(1+tauJ*eigvals)^3)/4/pi
 
-        theory_integral = @. real( @. 1im * pi* ( 1/ (sqrt(T1+T2)-sqrt(T1-T2)) ) ) *4*pi/tau/(2*pi)^2/2
 
-    return 1/Nint*sum(theory_integral) - a^2
-end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 using Roots
 function f_a_2(a,p)
 
-        eigval =p[1][1]
+        eigval =p[1][2]
         J = p[2]
         tau = p[3] 
         num_v = p[4]
@@ -161,7 +164,6 @@ function f_a_2(a,p)
 
     return theory_integral - num_v
 end
-
 
 
 
@@ -621,25 +623,28 @@ end
 
 using CairoMakie
 GLMakie.activate!()
-CairoMakie.activate!()
+
 begin
 
 f = Figure()
 
-ax = Axis(f[1,1], title="Dr = 0.1", xlabel=L"$ω$", ylabel=L"$\langle |\tilde{p}_x(\omega)|^2\rangle$", xscale=log10, yscale=log10)
 
-for e in ensemble_files
+Drplot = 0.1
+
+ax = Axis(f[1,1], title="Dr = $Drplot", xlabel=L"$ω$", ylabel=L"$\langle |\tilde{p}_x(\omega)|^2\rangle$", xscale=log10, yscale=log10)
+ind=1
+for e in reverse(ensemble_files)
 
     Dr = e["Dr"]
     J = e["J"]
 
     Jmax=0.1
-    if Dr==0.1 && J==0.1
+    if Dr==Drplot# && J==0.1
 
     eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]
     tau=1/Dr
     a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) 
-    w = e["FT_px"]["w"]
+    w = e["FT_px_w"]["w"]
     t = e["t"]
     min_t_ind = e["min_t_ind"]
 
@@ -650,13 +655,16 @@ for e in ensemble_files
     a = a_ABP
     tauJ = 1/(a*J+1/tau)
     for i in eachindex(the_px)
-        the_px[i] =  1/(length(eigvals)) *sum(  @.  tauJ^2 /tau /(1+tauJ^2 * w[i]^2) * ( 1 +1* tauJ*J * 2*w[i]^2/a /( (1+tauJ^2 * w[i]^2)*(eigvals^2 + w[i]^2) ) ) )* (t[end] - t[min_t_ind])/4
+        #the_px[i] =  1/(length(eigvals)) *sum(  @.  tauJ^2 /tau /(1+tauJ^2 * w[i]^2) * ( 1 +1* tauJ*J * 2*w[i]^2/a /( (1+tauJ^2 * w[i]^2)*(eigvals^2 + w[i]^2) ) ) )* (t[end] - t[min_t_ind])/4
+
+
         the_px_full[i] = 1/(length(eigvals)) *sum(  @.         tauJ^2/tau *  (eigvals^2 + w[i]^2)/( (eigvals^2 + w[i]^2)*(1+tauJ^2 * w[i]^2)+w[i]^2*tauJ^2 *J^2/a^2*(1 - 2*(eigvals+1/tauJ)*a/J))         )* (t[end] - t[min_t_ind])/4
     end
 
-    scatter!(ax, e["FT_px"]["w"],e["FT_px"]["X2"], colorrange = (0, Jmax ) , color=(e["J"]), label="J = $(e["J"])",alpha=0.3)
+    scatterlines!(ax, e["FT_px_w"]["w"],e["FT_px_w"]["X2"], colorrange = (1, 13 ) , color=13-ind+1, label="J = $(e["J"])",alpha=1, colormap=:jet)
+    ind+=1
 
-    lines!(ax,w,the_px, colorrange = (0, Jmax ) , color=(e["J"]))#, label="J = $(e["J"])")
+    #lines!(ax,w,the_px, colorrange = (0, Jmax ) , color=(e["J"]))#, label="J = $(e["J"])")
     #lines!(ax,w,the_px_full, colorrange = (0, Jmax ) , color=(e["J"]))#, label="J = $(e["J"])")
     end
 
@@ -669,8 +677,129 @@ xlims!(10^(-3.5), 10^(0.3))
 ylims!(10^(4), 10^(4.4))
 
 display(f)
-save(joinpath(figure_save_folder,"FT_px_zoom.pdf"), f,backend=CairoMakie)#
+save(joinpath(figure_save_folder,"FT_px_Dr_$(Drplot)_zoom.pdf"), f,backend=CairoMakie)#
 end
+
+
+#Analytically try to predict spectrum
+using CairoMakie
+GLMakie.activate!()
+
+begin
+
+f = Figure()
+
+
+Drplot = 0.1
+
+ax = Axis(f[1,1], title="Dr = $Drplot", xlabel=L"$ω$", ylabel=L"$\langle |\tilde{p}_x(\omega)|^2\rangle$", xscale=log10, yscale=log10)
+ind=1
+for e in reverse(ensemble_files)
+
+    Dr = e["Dr"]
+    J = e["J"]
+
+    Jmax=0.1
+    if Dr==Drplot && J>0
+
+    eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]
+    tau=1/Dr
+    a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) 
+    eigval_ind=1
+    a_min= @.sqrt(1 +  ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))^2 ) - ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))
+
+    #display(a_num)
+    #display(e["vrms"]/v0)
+    #a based on loweest mode selection
+    #a =copy( e["vrms"]/v0)
+    #display(a)
+    #a = e["vrms_r"]["vrms_r"][2]/v0
+    #a = a_num
+
+    #a = a_alt
+    #a=1
+    #a = a_num
+    #a = a_min
+
+    if a_min<=a_ABP
+
+        a=a_ABP
+
+    else
+        a=a_min
+    end
+
+
+
+    w = e["FT_px_w"]["w"]
+    t = e["t"]
+    min_t_ind = e["min_t_ind"]
+
+    
+    the_px = zeros(length(w))
+    the_px_full = zeros(length(w))
+    #a = e["vrms"]/e["v0"]
+    
+    eigval_bin_centers = e["FT_v_projs"]["eigval_bin_centers"]
+
+    p= [eigval_bin_centers, J, tau,e["v_projs_time_avg"]["v_projs_time_avg"][1]/e["v0"]^2]
+        
+    a_num = find_zero(f_a_2, a, p)
+
+    a = a_num
+    tauJ = 1/(a*J+1/tau)
+    for i in eachindex(the_px)
+        #the_px[i] =  1/(length(eigvals)) *sum(  @.  tauJ^2 /tau /(1+tauJ^2 * w[i]^2) * ( 1 +1* tauJ*J * 2*w[i]^2/a /( (1+tauJ^2 * w[i]^2)*(eigvals^2 + w[i]^2) ) ) )* (t[end] - t[min_t_ind])/4
+
+        
+        the_px_full[i] = 1/(length(eigvals)/2) *sum(  @.  4*pi *      tauJ^2/tau *  (eigvals^2 + w[i]^2)/( (eigvals^2 + w[i]^2)*(1+tauJ^2 * w[i]^2)+w[i]^2*tauJ^2 *J^2/a^2*(1 - 2*(eigvals+1/tauJ)*a/J))         )*(t[end] - t[min_t_ind])/(2*pi)/(2*pi)/2
+    end
+
+    scatter!(ax, e["FT_px_w"]["w"],e["FT_px_w"]["X2"], colorrange = (1, 13 ) , color=13-ind+1, label="J = $(e["J"])",alpha=1, colormap=:jet)
+    
+
+    #lines!(ax,w,the_px, colorrange = (0, Jmax ) , color=(e["J"]))#, label="J = $(e["J"])")
+    lines!(ax,w,the_px_full,  colorrange = (1, 13 ) , color=13-ind+1,alpha=1, colormap=:jet)#, label="J = $(e["J"])")
+    ind+=1
+    end
+
+end
+f[1,2]=Legend(f,ax)
+
+
+xlims!(10^(-3.5), 10^(0.3))
+
+#ylims!(10^(4), 10^(4.4))
+
+display(f)
+save(joinpath(figure_save_folder,"FT_px_Dr_$(Drplot)_theory.pdf"), f,backend=CairoMakie)#
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -702,8 +831,6 @@ for e in ensemble_files
     tau = 1/Dr
     J = e["J"]
     display(J)
-
-
 
 
 
@@ -744,3 +871,78 @@ close.(ensemble_files)
 
 prob = IntegralProblem(theory_spectrum_n, domain, pars)
 
+
+
+
+
+begin
+using CairoMakie
+CairoMakie.activate!()
+
+GLMakie.activate!()
+f = Figure()
+
+ax = Axis(f[1,1], xlabel="r", ylabel="C_{vv}(r)", title="Dr = 0.1")
+Jmax = 0.1
+ind=1
+Drplot = 0.1
+for e in ensemble_files
+
+    Dr = e["Dr"]
+    J = e["J"]
+    
+
+
+    if Dr==Drplot
+    
+
+        scatterlines!(ax,e["spatial_vcor"]["r_bin_centers"] ,e["spatial_vcor"]["Cavg"], colorrange = (1, 13), linestyle=:solid, label= "$(e["J"])",colormap=:jet,color=ind)
+        ind+=1
+    #lines!(ax,det , the_auto, colorrange = (0, Jmax ) , color=e["J"])#, label="J = $(e["J"])")
+    end
+
+end
+
+#xlims!(ax, 0,100)
+
+f[1,2]=Legend(f,ax,"J")
+display(f)
+save(joinpath(figure_save_folder,"spatial_vcor_Dr_$Drplot.pdf"), f, backend=CairoMakie)
+
+end
+
+begin
+using CairoMakie
+CairoMakie.activate!()
+
+GLMakie.activate!()
+f = Figure()
+
+ax = Axis(f[1,1], xlabel="r", ylabel="C_{nn}(r)", title="Dr = 0.1")
+Jmax = 0.1
+ind=1
+Drplot=0.1
+for e in ensemble_files
+
+    Dr = e["Dr"]
+    J = e["J"]
+    
+
+
+    if Dr==Drplot
+    
+
+        scatterlines!(ax,e["spatial_pcor"]["r_bin_centers"] ,e["spatial_pcor"]["Cavg"], colorrange = (1, 13), linestyle=:solid, label= "$(e["J"])",colormap=:jet,color=ind)
+        ind+=1
+    #lines!(ax,det , the_auto, colorrange = (0, Jmax ) , color=e["J"])#, label="J = $(e["J"])")
+    end
+
+end
+
+#xlims!(ax, 0,100)
+
+f[1,2]=Legend(f,ax,"J")
+display(f)
+save(joinpath(figure_save_folder,"spatial_pcor_Dr_$Drplot.pdf"), f, backend=CairoMakie)
+
+end

@@ -12,7 +12,11 @@ include("AnalysisPipeline.jl")
 
 
 #base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/free/phi_1.0/N_2000/analysis/"
-base_folder = "/Volumes/T7_Shield/sa/statistics/free/phi_1.3/N_2000/analysis/"
+#base_folder = "/Volumes/T7_Shield/sa/statistics/free/phi_1.3/N_2000/analysis/"
+
+
+base_folder = "/Volumes/T7_Shield/sa/statistics/hex_disordered/phi_1.3/phi_1.3/Nlin_20/analysis/"
+
 
 ef, sf = auto_ensemble_dir(base_folder,"seed_")
 
@@ -20,7 +24,7 @@ ef, sf = auto_ensemble_dir(base_folder,"seed_")
 #base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 
 
-run_sequential_ensemble(ef, sf, sa_ensemble!, overwrite=true)
+run_sequential_ensemble(ef, sf, sa_ensemble_add_spatial_cors!, append=true)
 
 
 

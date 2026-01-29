@@ -35,7 +35,9 @@ function analysis()
 
     # custom_analysis_function = run_sa_analysis_add_auto_p!
 
-    custom_analysis_function =run_sa_analysis_add_spatial_cor!
+    #custom_analysis_function =run_sa_analysis_add_spatial_cor!
+
+    custom_analysis_function = run_sa_analysis_add_auto_v!
 
     run_sequential_analysis(rp, ap,custom_analysis_function, support_raw_data_file_paths=sp,append=true)
 end

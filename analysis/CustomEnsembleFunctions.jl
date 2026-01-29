@@ -267,3 +267,47 @@ function sa_ensemble_add_FT_px!(ensemble_file, loaded_seed_files, seed_names)
 
 end
 
+function sa_ensemble_add_spatial_cors!(ensemble_file, loaded_seed_files, seed_names)
+
+    #spatial vcor
+    Cavg = []
+    r_bin_centers =  loaded_seed_files[1]["spatial_vcor"]["rbc"]
+
+    for i in eachindex(loaded_seed_files)
+
+        if i==1
+            Cavg = reshape(loaded_seed_files[i]["spatial_vcor"]["Cavg"], 1, length(loaded_seed_files[i]["spatial_vcor"]["Cavg"]))
+        end
+
+        Cavg=vcat(Cavg, reshape(loaded_seed_files[i]["spatial_vcor"]["Cavg"], 1, length(loaded_seed_files[i]["spatial_vcor"]["Cavg"])))
+    end
+
+    create_group(ensemble_file, "spatial_vcor")
+
+    ensemble_file["spatial_vcor"]["r_bin_centers"]= r_bin_centers
+    ensemble_file["spatial_vcor"]["Cavg"]= mean(Cavg, dims=1)[1,:]
+
+
+    #spatial pcor
+    Cavg = []
+    r_bin_centers =  loaded_seed_files[1]["spatial_pcor"]["rbc"]
+
+    for i in eachindex(loaded_seed_files)
+
+        if i==1
+            Cavg = reshape(loaded_seed_files[i]["spatial_pcor"]["Cavg"], 1, length(loaded_seed_files[i]["spatial_pcor"]["Cavg"]))
+        end
+
+        Cavg=vcat(Cavg, reshape(loaded_seed_files[i]["spatial_pcor"]["Cavg"], 1, length(loaded_seed_files[i]["spatial_pcor"]["Cavg"])))
+    end
+
+    create_group(ensemble_file, "spatial_pcor")
+
+    ensemble_file["spatial_pcor"]["r_bin_centers"]= r_bin_centers
+    ensemble_file["spatial_pcor"]["Cavg"]= mean(Cavg, dims=1)[1,:]
+
+
+    return ensemble_file
+
+end
+

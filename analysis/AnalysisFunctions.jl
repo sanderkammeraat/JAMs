@@ -268,8 +268,13 @@ function auto_correlation(t, px, py; normalized=false, minrow=1, maxrow=nothing)
 
     @showprogress desc="Autocorrelation" dt=1 showspeed=true for i in 1:Nt-1
 
-         @Threads.threads for j in i:Nt
-            @views C[i,j-i+1] = mean(px[:,j].* px[:,i] .+ py[:,j].* py[:,i])
+        for j in i:Nt
+
+            if normalized
+                @views C[i,j-i+1] = mean(px[:,j].* px[:,i] .+ py[:,j].* py[:,i])/sqrt( mean(px[:,i].^2 .+ py[:,i].^2) )/sqrt( mean(px[:,j].^2 .+ py[:,j].^2) )
+            else
+                @views C[i,j-i+1] = mean(px[:,j].* px[:,i] .+ py[:,j].* py[:,i])
+            end
             Δt[j-i+1] =  t[j] - t[i]
         end
         
@@ -289,24 +294,9 @@ function auto_correlation(t, px, py; normalized=false, minrow=1, maxrow=nothing)
 end
 
 
-function auto_correlation_v2(t, px, py; minrow=1)
-
-    Cp = zeros(size(px[:,minrow:end]))
-    delta_t = zeros(length(t[minrow:end]))
-
-    for i in 1:size(Cp)[1]
-        for j in 1:size(Cp)[2]
-
-            Cp[i,j] = px[i,minrow - 1 +j ] * px[i, minrow] + py[i,minrow - 1 +j ] * py[i, minrow]
-            delta_t[j] = t[minrow-1+j] - t[minrow]
-        end
-    end
-    Cavg = mean(Cp, dims=1)[1,:]
-
-    return Dict("Cavg"=>Cavg, "t"=>t, "deltat"=>delta_t)
 
 
-end
+
 ## Dynamical matrix analysis
 # Helper functions
 function construct_n_ij_projector!(n_ij_projector, i,j,x,y, periodic_system_sizes)
