@@ -174,7 +174,7 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
     ensemble_file["vrms"]= mean(vrms)
 
 
-    rbins = create_bins(0, 50,2.5)
+    rbins = create_bins(0, 200,2.5)
     ensemble_file["r_bin_centers"] = rbins.centers
 
     vrms_r = []
@@ -235,7 +235,28 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
     ensemble_file["auto_p"]["Cavg"] = mean(Cavg, dims=1)[1,:] 
     ensemble_file["auto_p"]["deltat"] = deltat
 
+    #auto_v
+    Cavg = []
+    deltat = []
+    for i in eachindex(loaded_seed_files)
+
+        if i==1
+
+            deltat =loaded_seed_files[i]["auto_v"]["deltat"][1:length(loaded_seed_files[i]["auto_v"]["Cavg"])]
+
+            Cavg =reshape( loaded_seed_files[i]["auto_v"]["Cavg"], 1, length(deltat)) 
+        else
+
+            Cavg = vcat(Cavg, reshape( loaded_seed_files[i]["auto_v"]["Cavg"], 1, length(deltat)) )
+        end
+    end
+    create_group(ensemble_file, "auto_v")
+    ensemble_file["auto_v"]["Cavg"] = mean(Cavg, dims=1)[1,:] 
+    ensemble_file["auto_v"]["deltat"] = deltat
+
     sa_ensemble_add_FT_px!(ensemble_file, loaded_seed_files, seed_names)
+
+    sa_ensemble_add_spatial_cors!(ensemble_file, loaded_seed_files, seed_names)
 
 
     return ensemble_file
@@ -261,6 +282,12 @@ function sa_ensemble_add_FT_px!(ensemble_file, loaded_seed_files, seed_names)
     create_group(ensemble_file,"FT_px_w")
     ensemble_file["FT_px_w"]["X2"] = mean(X, dims=1)[1,:]
     ensemble_file["FT_px_w"]["w"] = w
+
+    
+
+
+
+
 
 
     return ensemble_file
