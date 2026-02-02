@@ -79,40 +79,45 @@ N = [1500]
 dowesave = true
 doweplot = false
 
-plotMSD = true
+plotMSD = false
 plotbasic_MSD = false
 plotaverage_velocity = false
 plotradius_of_gyration = false
-plotend_to_end_distance = false
+plotend_to_end_distance = true
 
 
 for ksd_value in ksd
 for kbend_value in kbend
 for kstretch_value in kstretch
 for fstretch_value in fstretch
-for p_value in p
-for (kpar_value, kperp_value) in kactive
+for (i, p_value) in enumerate(p)
+for (j, (kpar_value, kperp_value)) in enumerate(kactive)
 for Npol_value in Npol
 for N_value in N
 
-    param = "p_$p_value,kpar_$kpar_value,kperp_$kperp_value"  #"ksd_$ksd_value_kbend_$kbend_value_kstretch_$kstretch_value_fstretch_$f_stretch_value_p_$p_value_kperp_$kperp_value_kpar_$kpar_value_Npol_$Npol_value_N_$N_value"
+    local parameters = "p_$p_value,kpar_$kpar_value,kperp_$kperp_value"  #"ksd_$ksd_value_kbend_$kbend_value_kstretch_$kstretch_value_fstretch_$f_stretch_value_p_$p_value_kperp_$kperp_value_kpar_$kpar_value_Npol_$Npol_value_N_$N_value"
 
-    analysis = load_file(joinpath(path_data, param, "analysis.jld2"))
+    
+    max = length(p)*length(kactive)
+    progress = convert(Int64, floor(100*((i-1)*length(kactive) + j-1)/max))
+    println("$parameters\n\n$progress% done\n\n")
+    
+    analysis = load_file(joinpath(path_data, parameters, "analysis.jld2"))
 
     if plotbasic_MSD
-        plot_data!(analysis["basic_MSD"], analysis["basic_MSD_time"], log10, doweplot, dowesave, joinpath(path_data, "plots"), "basic_MSD", "$param.pdf", ["p", "kpar", "kperp"], [p_value, kpar_value, kperp_value], "MSD", "log(time)", "log(MSD)")
+        plot_data!(analysis["basic_MSD"], analysis["basic_MSD_time"], log10, doweplot, dowesave, joinpath(path_data, "plots"), "basic_MSD", "$parameters.pdf", ["p", "kpar", "kperp"], [p_value, kpar_value, kperp_value], "MSD", "log(time)", "log(MSD)")
     end
     if plotMSD
-        plot_data!(analysis["MSD"], analysis["MSD_time"], log10, doweplot, dowesave, joinpath(path_data, "plots"), "MSD", "$param.pdf", ["p", "kpar", "kperp"], [p_value, kpar_value, kperp_value],"MSD", "log(time)", "log(MSD)")
+        plot_data!(analysis["MSD"], analysis["MSD_time"], log10, doweplot, dowesave, joinpath(path_data, "plots"), "MSD", "$parameters.pdf", ["p", "kpar", "kperp"], [p_value, kpar_value, kperp_value],"MSD", "log(time)", "log(MSD)")
     end
     if plotaverage_velocity
-        plot_data!(analysis["average_velocity"], analysis["average_velocity_time"], identity, doweplot, dowesave, joinpath(path_data, "plots"), "average_velocity", "$param.pdf", ["p", "kpar", "kperp"], [p_value, kpar_value, kperp_value],"Average velocity over time", "time", "<v>")
+        plot_data!(analysis["average_velocity"], analysis["average_velocity_time"], identity, doweplot, dowesave, joinpath(path_data, "plots"), "average_velocity", "$parameters.pdf", ["p", "kpar", "kperp"], [p_value, kpar_value, kperp_value],"Average velocity over time", "time", "<v>")
     end
     if plotend_to_end_distance
-        plot_data!(analysis["e_to_e_dist"], analysis["e_to_e_dist_time"], identity, doweplot, dowesave, joinpath(path_data, "plots"), "end_to_end_distance", "$param.pdf", ["p", "kpar", "kperp"], [p_value, kpar_value, kperp_value],"Mean end to end distance", "time", "end to end distance")
+        plot_data!(analysis["e_to_e_dist"], analysis["e_to_e_dist_time"], identity, doweplot, dowesave, joinpath(path_data, "plots"), "end_to_end_distance", "$parameters.pdf", ["p", "kpar", "kperp"], [p_value, kpar_value, kperp_value],"Mean end to end distance", "time", "end to end distance")
     end
     if plotradius_of_gyration
-        plot_data!(analysis["radius_of_gyration"], analysis["radius_of_gyration_time"], identity, doweplot, dowesave, joinpath(path_data, "plots"), "radius_of_gyration", "$param.pdf", ["p", "kpar", "kperp"], [p_value, kpar_value, kperp_value],"Mean radius of gyration", "time", "<R^2>")
+        plot_data!(analysis["R_2"], analysis["R_2_time"], identity, doweplot, dowesave, joinpath(path_data, "plots"), "radius_of_gyration", "$parameters.pdf", ["p", "kpar", "kperp"], [p_value, kpar_value, kperp_value],"Mean radius of gyration", "time", "<R^2>")
     end
 
     close(analysis)

@@ -29,9 +29,9 @@ function simulation(p, kpar, kperp)
 
     pf = 1.
     R = 1
-    N_in_pol = 10
+    N_in_pol = 3
 
-    Npols = 150
+    Npols = 150*5
     x, y, radii, pol_ids, ids_in_pol, L = stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force)
 
     #PolarPolymerParticle3d id type pol_id id_in_pol pol_N
@@ -50,7 +50,7 @@ function simulation(p, kpar, kperp)
 
     save_folder = "/run/media/martin/HENKESGRFAT/martin/sim_data/p_$p,kpar_$kpar,kperp_$kperp/"
     display(save_folder)
-    sim = Euler_integrator(system,0.05, 5000, fps=30, Tplot=nothing, plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=20, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = save_folder); 
+    sim = Euler_integrator(system,0.05, 4000, fps=30, Tplot=nothing, plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=40, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = save_folder); 
     return sim;
 
 end 
@@ -59,8 +59,8 @@ end
 #@sync @distributed
 
 for p in [0.04, 0.06, 0.08, 0.1, 0.13, 0.15, 0.2, 0.4]
-    display(p)
     for (kpar, kperp) in [(-1., 0.), (1., 0.), (0., 1.), (0., -1.), (1/sqrt(2), 1/sqrt(2)),(-1/sqrt(2), 1/sqrt(2)),(1/sqrt(2), -1/sqrt(2)),(-1/sqrt(2), -1/sqrt(2))]
+        display(p)
         display((kpar, kperp))
         sim = simulation(p, kpar, kperp)
     end

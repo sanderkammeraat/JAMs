@@ -87,18 +87,14 @@ function end_to_end_distance(x, y, pol_id, id_in_pol, numb_frames, Npol, N, t_st
         for j in 1:Npol
 
             pol_indices = findall(index -> index == j, pol_id)
+
             begin_parts = findall(index -> index == 1, id_in_pol)
             end_parts = findall(index -> index == polymer_size, id_in_pol)
-            
-            
 
-            begin_part_id = convert(Int64, )
-            end_part_id = convert(Int64, )
-            
-            
-            x_pol = x[part_id]
+            begin_part_id = intersect(pol_indices, begin_parts)[1]
+            end_part_id = intersect(pol_indices, end_parts)[1]
 
-            end_to_end_distance[i] += sqrt((x[(j-1)*length_polymer+1] - x[j*length_polymer])^2 + (y[(j-1)*length_polymer+1] - y[j*length_polymer])^2)/Npol
+            end_to_end_distance[i] += sqrt((x[begin_part_id] - x[end_part_id])^2 + (y[begin_part_id] - y[end_part_id])^2)/polymer_size
         end
     end
 
@@ -114,7 +110,7 @@ function end_to_end_distance(x, y, pol_id, id_in_pol, numb_frames, Npol, N, t_st
 end
 
 
-function radius_of_gyration(x, y, pol_id, id_in_pol, numb_frames, Npol, N, t_stop)
+function radius_of_gyration(x, y, pol_id, numb_frames, Npol, N, t_stop)
 
     dt = t_stop/numb_frames
     time = convert(Vector{Float64}, 0:dt:t_stop)
@@ -124,11 +120,12 @@ function radius_of_gyration(x, y, pol_id, id_in_pol, numb_frames, Npol, N, t_sto
 
     for frame in 1:numb_frames
 
-        for i in 0:Npol-1
-            for j in 1:polymer_size
-                for k in 1:polymer_size
-                    if j != k
-                        R_2[frame] += 1/(2 * polymer_size ^ 2) * ((x[frame, i*polymer_size + k] - x[frame, i*polymer_size + k])^2 + (y[frame, i*polymer_size + k] - y[frame, i*polymer_size + k])^2)
+        for i in 1:Npol
+            pol_indices = findall(index -> index == i, pol_id)
+            for index_1 in pol_indices
+                for index_2 in pol_indices
+                    if index_1 != index_2
+                        R_2[frame] += 1/(2*polymer_size^2) * ((x[index_1] - x[index_2]) .^2 .+ (y[index_1] - y[index_2]) .^2) / Npol
                     end
                 end
             end
