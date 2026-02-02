@@ -26,9 +26,9 @@ struct simulation_data
     kbend::Float64
     kstretch::Float64
     fstretch::Float64
-    #p::Float64
-    #kperp::Float64
-    #kpar::Float64
+    p::Float64
+    kperp::Float64
+    kpar::Float64
     Npol::Int64
     N::Int64
     sizes::Vector{Float64}
@@ -78,14 +78,14 @@ function get_data(file_location)
     kbend = file["system/forces/pair/polymer_harmonic_bend_force/karray"]
     kstretch = file["system/forces/pair/polymer_harmonic_stretch_force/karray"]
     fstretch = file["system/forces/pair/polymer_harmonic_stretch_force/farray"]
-    #p = file["system/forces/pair/polymer_pairAN_force/parray"]
-    #kperp = file["system/forces/pair/polymer_pairAN_force/k_perp"]
-    #kpar = file["system/forces/pair/polymer_pairAN_force/k_par"]
+    p = file["system/forces/pair/polymer_pairAN_force/parray"]
+    kperp = file["system/forces/pair/polymer_pairAN_force/k_perp"]
+    kpar = file["system/forces/pair/polymer_pairAN_force/k_par"]
     Npol = maximum(pol_id)
     t_stop = file["integration_info/t_stop"]
     sizes = file["system/sizes"]
 
     close(file)
 
-    return simulation_data(x, y, v_x, v_y, p_x, p_y, id, pol_id, id_in_pol, R, numb_frames, dt, Tsave, ksd, kbend, kstretch, fstretch, Npol, N, sizes, t_stop)
+    return simulation_data(x, y, v_x, v_y, p_x, p_y, id, pol_id, id_in_pol, R, numb_frames, dt, Tsave, ksd, kbend, kstretch, fstretch, p, kpar, kperp, Npol, N, sizes, t_stop)
 end

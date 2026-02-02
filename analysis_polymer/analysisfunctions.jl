@@ -80,14 +80,23 @@ function end_to_end_distance(x, y, pol_id, id_in_pol, numb_frames, Npol, N, t_st
 
     dt = t_stop/numb_frames
     time = convert(Vector{Float64}, 0:dt:t_stop)
-    length_polymer = maximum(id_in_pol)
+    polymer_size = convert(Int64, N/Npol)
     end_to_end_distance = zeros(numb_frames)
 
     for i in 1:numb_frames
         for j in 1:Npol
-            indices = findall(pol_id[pol_id=j])
-            part_id = eachindex(id_in_pol[indices])
-            x_begin = x[part_id]
+
+            pol_indices = findall(index -> index == j, pol_id)
+            begin_parts = findall(index -> index == 1, id_in_pol)
+            end_parts = findall(index -> index == polymer_size, id_in_pol)
+            
+            
+
+            begin_part_id = convert(Int64, )
+            end_part_id = convert(Int64, )
+            
+            
+            x_pol = x[part_id]
 
             end_to_end_distance[i] += sqrt((x[(j-1)*length_polymer+1] - x[j*length_polymer])^2 + (y[(j-1)*length_polymer+1] - y[j*length_polymer])^2)/Npol
         end
@@ -105,26 +114,36 @@ function end_to_end_distance(x, y, pol_id, id_in_pol, numb_frames, Npol, N, t_st
 end
 
 
-function radius_of_gyration(x, y, pol_id, id_in_pol, numb_frames, numb_particles)
+function radius_of_gyration(x, y, pol_id, id_in_pol, numb_frames, Npol, N, t_stop)
 
-    length_polymer = maximum(id_in_pol)
-    polymer_size = convert(Int64, length_polymer)
-    numb_polymers = numb_particles/length_polymer
+    dt = t_stop/numb_frames
+    time = convert(Vector{Float64}, 0:dt:t_stop)
+    polymer_size = convert(Int64, N/Npol)
     R_2 = zeros(numb_frames)
 
-    center_x = zeros(numb_frames, numb_particles)
-    center_y = zeros(numb_frames, numb_particles)
 
-    for i in 1:numb_frames
+    for frame in 1:numb_frames
 
-        for j in 1:numb_polymers
-            center_x[i, convert(Int64, (j-1)*polymer_size+1):convert(Int64, j*polymer_size)] .+= sum(x[i, convert(Int64, (j-1)*polymer_size+1):convert(Int64, j*polymer_size)],dims=2)/length_polymer
-            center_y[i, convert(Int64, (j-1)*polymer_size+1):convert(Int64, j*polymer_size)] .+= sum(x[i, convert(Int64, (j-1)*polymer_size+1):convert(Int64, j*polymer_size)],dims=2)/length_polymer
+        for i in 0:Npol-1
+            for j in 1:polymer_size
+                for k in 1:polymer_size
+                    if j != k
+                        R_2[frame] += 1/(2 * polymer_size ^ 2) * ((x[frame, i*polymer_size + k] - x[frame, i*polymer_size + k])^2 + (y[frame, i*polymer_size + k] - y[frame, i*polymer_size + k])^2)
+                    end
+                end
+            end
         end
-        
-    R_2 += sum((x .- center_x).^2 + (y .- center_y).^2, dims=2)/numb_particles
     end
-    return R_2
+    
+    while length(R_2) != length(time)
+        if length(R_2) > length(time)
+            pop!(R_2)
+        else
+            pop!(time)
+        end
+    end
+
+    return Dict("R_2" => R_2, "R_2_time" => time)
 end
 
 
