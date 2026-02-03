@@ -6,15 +6,11 @@ end
 
 
 function average_velocity(v_x, v_y, numb_frames, numb_particles, t_stop)
-  
-    v = zeros(numb_frames)
+
     dt = t_stop/numb_frames
     time = convert(Vector{Float64}, 0:dt:t_stop)
 
-
-    for i in 1:numb_frames
-        v[i] += sum(sqrt.(v_x[i].^2 + v_y[i].^2))/numb_particles
-    end
+    v = vec(sum(sqrt.(v_x.^2 .+ v_y.^2), dims=2) ./ numb_particles)
 
     while length(v) != length(time)
         if length(v) > length(time)
@@ -35,8 +31,12 @@ function MSD(x, y, numb_frames, numb_particles, t_stop)
     MSD = zeros(numb_frames-1)
     time = convert(Vector{Float64}, 0:dt:t_stop-dt)
 
-    for i in eachindex(MSD)
-        MSD[i] += sum((x[i+1:numb_frames,:] - x[1:numb_frames-i,:]).^2 + (y[i+1:numb_frames,:] - y[1:numb_frames-i,:]).^2)/numb_particles/(numb_frames-i)
+    for Δt in eachindex(MSD)
+        for t in 1:20:numb_frames-Δt
+
+            MSD[Δt] += sum((x[t+Δt:numb_frames] - x[t:numb_frames-Δt]).^2 .+ (y[t+Δt:numb_frames] - y[t:numb_frames-Δt]).^2)/numb_particles/length(1:10:numb_frames-Δt)
+       
+        end
     end
 
 
@@ -52,17 +52,54 @@ function MSD(x, y, numb_frames, numb_particles, t_stop)
 end
 
 
+function polymer_MSD(x, y, pol_id, numb_frames, Npol, numb_particles, t_stop)
+
+    dt = t_stop/numb_frames
+    polymer_MSD = zeros(numb_frames-1)
+    time = convert(Vector{Float64}, 0:dt:t_stop-dt)
+    polymer_size = convert(Int64, numb_particles/Npol)
+
+
+    polymer_x = zeros(numb_frames, Npol)
+    polymer_y = zeros(numb_frames, Npol)
+
+    for i in 1:Npol
+        indices = findall(index -> index == i, pol_id)
+
+        polymer_x[:, i] = sum(x[:, indices], dims=2) ./ polymer_size
+        polymer_y[:, i] = sum(y[:, indices], dims=2) ./ polymer_size
+
+    end
+
+    for Δt in eachindex(MSD)
+        for t in 1:20:numb_frames-Δt
+
+            polymer_MSD[Δt] += sum((polymer_x[t+Δt:numb_frames, :] - polymer_x[t:numb_frames-Δt]).^2 .+ (polymer_y[t+Δt:numb_frames] - polymer_y[t:numb_frames-Δt]).^2)/Npol/length(1:10:numb_frames-Δt)
+       
+        end
+    end
+
+
+    while length(polymer_MSD) != length(time)
+        if length(polymer_MSD) > length(time)
+            pop!(polymer_MSD)
+        else
+            pop!(time)
+        end
+    end
+
+    return Dict("polymer_MSD" => polymer_MSD, "polymer_MSD_time" => time)
+end
+
+
 
 function basic_MSD(x, y, numb_frames, numb_particles, t_stop)
     
     dt = t_stop/numb_frames
-    MSD = zeros(numb_frames)
     time = convert(Vector{Float64}, 0:dt:t_stop)
     x_0, y_0 = x[1,:], y[1,:]
 
-    for i in eachindex(MSD)
-        MSD[i] += sum((x[i,:] .- x_0).^2 + (y[i,:] .- y_0).^2)/numb_particles
-    end
+    MSD = vec(sum((x .- x_0).^2 + (y .- y_0).^2, dims=2) ./ numb_particles)
 
     while length(MSD) != length(time)
         if length(MSD) > length(time)
@@ -83,20 +120,19 @@ function end_to_end_distance(x, y, pol_id, id_in_pol, numb_frames, Npol, N, t_st
     polymer_size = convert(Int64, N/Npol)
     end_to_end_distance = zeros(numb_frames)
 
-    for i in 1:numb_frames
-        for j in 1:Npol
+    for j in 1:Npol
 
-            pol_indices = findall(index -> index == j, pol_id)
+        pol_indices = findall(index -> index == j, pol_id)
 
-            begin_parts = findall(index -> index == 1, id_in_pol)
-            end_parts = findall(index -> index == polymer_size, id_in_pol)
+        begin_parts = findall(index -> index == 1, id_in_pol)
+        end_parts = findall(index -> index == polymer_size, id_in_pol)
 
-            begin_part_id = intersect(pol_indices, begin_parts)[1]
-            end_part_id = intersect(pol_indices, end_parts)[1]
+        begin_part_id = intersect(pol_indices, begin_parts)[1]
+        end_part_id = intersect(pol_indices, end_parts)[1]
 
-            end_to_end_distance[i] += sqrt((x[begin_part_id] - x[end_part_id])^2 + (y[begin_part_id] - y[end_part_id])^2)/polymer_size
-        end
+        end_to_end_distance += vec(sqrt.((x[:, begin_part_id] .- x[:, end_part_id]).^2 .+ (y[:, begin_part_id] .- y[:, end_part_id]).^2) ./ polymer_size)
     end
+
 
     while length(end_to_end_distance) != length(time)
         if length(end_to_end_distance) > length(time)
@@ -117,21 +153,24 @@ function radius_of_gyration(x, y, pol_id, numb_frames, Npol, N, t_stop)
     polymer_size = convert(Int64, N/Npol)
     R_2 = zeros(numb_frames)
 
+    polymer_x = zeros(numb_frames, Npol)
+    polymer_y = zeros(numb_frames, Npol)
 
-    for frame in 1:numb_frames
+    for i in 1:Npol
+        indices = findall(index -> index == i, pol_id)
 
-        for i in 1:Npol
-            pol_indices = findall(index -> index == i, pol_id)
-            for index_1 in pol_indices
-                for index_2 in pol_indices
-                    if index_1 != index_2
-                        R_2[frame] += 1/(2*polymer_size^2) * ((x[index_1] - x[index_2]) .^2 .+ (y[index_1] - y[index_2]) .^2) / Npol
-                    end
-                end
-            end
-        end
+        polymer_x[:, i] = sum(x[:, indices], dims=2) ./ polymer_size
+        polymer_y[:, i] = sum(y[:, indices], dims=2) ./ polymer_size
+
+    end
+
+
+    for i in 1:Npol
+        pol_indices = findall(index -> index == i, pol_id)
+        R_2 += vec(sum(((x[:, pol_indices] .- polymer_x[:, i]) .^2 .+ (y[:, pol_indices] .- polymer_y[:, i]) .^2), dims=2) ./ N)
     end
     
+
     while length(R_2) != length(time)
         if length(R_2) > length(time)
             pop!(R_2)

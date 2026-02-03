@@ -1,7 +1,9 @@
 using Observables
 using GLMakie
 
-include("loaddata.jl")
+if false
+    include("loaddata.jl")
+end
 
 GLMakie.activate!()
 
@@ -93,33 +95,40 @@ GLMakie.activate!()
     close(raw_data_file)
 end
 
-sim_folder_name = "sim_data"
+if false
+
+    sim_folder_name = "sim_data"
 
 
-p = [0.04, 0.06, 0.08, 0.1, 0.13, 0.15, 0.2, 0.4]
-kactive = [(-1., 0.), (1., 0.), (0., 1.), (0., -1.), (1/sqrt(2), 1/sqrt(2)),(-1/sqrt(2), 1/sqrt(2)),(1/sqrt(2), -1/sqrt(2)),(-1/sqrt(2), -1/sqrt(2))]
+    p = [0.04, 0.06, 0.08, 0.1, 0.13, 0.15, 0.2, 0.4]
+    kactive = [(-1., 0.), (1., 0.), (0., 1.), (0., -1.), (1/sqrt(2), 1/sqrt(2)),(-1/sqrt(2), 1/sqrt(2)),(1/sqrt(2), -1/sqrt(2)),(-1/sqrt(2), -1/sqrt(2))]
 
 
 
-for p_value in p
-for (kpar_value, kperp_value) in kactive
+    for p_value in p
+    for (kpar_value, kperp_value) in kactive
 
-    parameters = "p_$p_value,kpar_$kpar_value,kperp_$kperp_value"
+        parameters = "p_$p_value,kpar_$kpar_value,kperp_$kperp_value"
 
-    #for windows
-    base_folder = joinpath("E:", "martin", sim_folder_name, parameters)
+        #for windows
+        base_folder = joinpath("E:", "martin", sim_folder_name, parameters)
 
-    #for linux
-    #base_folder = joinpath("/run/media/martin/HENKESGRFAT/martin", sim_folder_name, parameters)
+        #for linux
+        #base_folder = joinpath("/run/media/martin/HENKESGRFAT/martin", sim_folder_name, parameters)
 
-    if !isfile(joinpath(base_folder, "movie", "sim_movie.mp4"))
+        if !isfile(joinpath(base_folder, "movie", "sim_movie.mp4"))
 
-        raw_data_file = load_file(joinpath(base_folder, "raw_data.h5"))
-        make_movie(raw_data_file,joinpath(base_folder,"movie"))
-        close(raw_data_file)
-        GLMakie.closeall()
+            raw_data_file = load_file(joinpath(base_folder, "raw_data.h5"))
+
+            make_movie(raw_data_file,joinpath(base_folder,"movie"))
+
+            close(raw_data_file)
+            
+            GLMakie.closeall()
+            
+        end
         
     end
-    
-end
+    end
+
 end
