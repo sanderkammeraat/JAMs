@@ -4,15 +4,15 @@ include("../analysis/AnalysisPipeline.jl")
 
 #base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 
-base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
+#base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 
 
-#base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/free/phi_1.0/N_2000"
+base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/free/phi_1.0/N_2000"
 
 #base_folder = "/Volumes/T7_Shield/sa/statistics/free/phi_1.3/N_2000"
 
 
-figure_save_folder = joinpath(base_folder, "figures_14_01")
+figure_save_folder = joinpath(base_folder, "figures_30_01")
 mkpath(figure_save_folder)
 
 
@@ -303,16 +303,16 @@ for e in ensemble_files
 
         
 
-        scatter!(ax,e["v_projs_time_avg"]["eigval_bin_centers"],e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2,color=ind, colorrange = (0, 13),colormap=:jet,label="J=$J")# ,  label="J = $(e["J"])",alpha=0.3)
+        scatter!(ax,e["v_projs_time_avg"]["eigval_bin_centers"],e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2,color=ind, colorrange = (1, 13),colormap=:jet,label="J=$J")# ,  label="J = $(e["J"])",alpha=0.3)
 
         #lines!(ax, range(1,length(e["v_projs_time_avg"]["eigval_bin_centers"])),e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2,color=log10(e["J"]), colorrange = (-3, 0), label="J = $(e["J"])")# ,  label="J = $(e["J"])",alpha=0.3)
 
-        for (si, seed) in pairs(keys(e["v_projs_time_avg"]["runs"]))
-            display(seed)
+        # for (si, seed) in pairs(keys(e["v_projs_time_avg"]["runs"]))
+        #     display(seed)
 
-            #scatter!(ax, e["v_projs_time_avg"]["runs"][seed]["eigvals"],e["v_projs_time_avg"]["runs"][seed]["v_projs"]/e["v0"]^2,color=log10(e["J"]), colorrange = (-3, 0),marker=markers_labels[si][1])# ,  label="J = $(e["J"])",alpha=0.3)
-            #scatter!(ax,range(1,length(e["v_projs_time_avg"]["runs"][seed]["v_projs"])),e["v_projs_time_avg"]["runs"][seed]["v_projs"]/e["v0"]^2,color=log10(e["J"]), colorrange = (-3, 0),marker=markers_labels[si][1],label="J = $(e["J"])")
-        end
+        #     #scatter!(ax, e["v_projs_time_avg"]["runs"][seed]["eigvals"],e["v_projs_time_avg"]["runs"][seed]["v_projs"]/e["v0"]^2,color=log10(e["J"]), colorrange = (-3, 0),marker=markers_labels[si][1])# ,  label="J = $(e["J"])",alpha=0.3)
+        #     #scatter!(ax,range(1,length(e["v_projs_time_avg"]["runs"][seed]["v_projs"])),e["v_projs_time_avg"]["runs"][seed]["v_projs"]/e["v0"]^2,color=log10(e["J"]), colorrange = (-3, 0),marker=markers_labels[si][1],label="J = $(e["J"])")
+        # end
         # if J==0
         #     lines!(ax,the_eigvals,theory_ABP, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) ABP theory ")
         # end

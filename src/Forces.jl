@@ -1022,7 +1022,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
     
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
 
-        if  true#p_j.pol_id[1]!=p_i.pol_id[1]
+        if  p_j.pol_id[1]!=p_i.pol_id[1]
 
             d2a = p_i.R[1]+p_j.R[1]
             

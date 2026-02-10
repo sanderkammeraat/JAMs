@@ -11,14 +11,14 @@ function simulation()
     #pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,1.3, 1, 0., 0.3), pair_nematic_alignment_force(1,2.5,0.15))
     kpar = -1
     kper= 0.
-    pair_forces = (soft_disk_force(1,1.),polymer_harmonic_bend_force(1,0.3), polymer_harmonic_stretch_force(1,3.),polymer_align_director_tangent_force(1,1), polymer_pairAN_force(1,true, false,1.3, kpar, kper,1))
+    pair_forces = (soft_disk_force(1,1.),polymer_harmonic_bend_force(1,0.3), polymer_harmonic_stretch_force(1,3.), polymer_pairAN_force(1,true, false,1.3, kpar, kper,1))
     external_forces =(thermal_translational_noise(1, 0.01*[0.01, 0.01,0]),)
 
     
 
     #dofevolvers = [inertial_evolver!]
-    local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1))
-    global_dofevolvers = ()
+    local_dofevolvers = (overdamped_xvf_evolver(1),)
+    global_dofevolvers = (polymer_p_set_evolver(1),)
     field_dofevolvers = ()
     pf = 0.8
     R = 1

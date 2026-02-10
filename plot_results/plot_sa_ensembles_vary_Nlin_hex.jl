@@ -4,7 +4,9 @@ include("../analysis/AnalysisPipeline.jl")
 
 
 #base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
-base_folder = "/Volumes/T7_Shield/sa/statistics/hex_disordered/phi_1.3/Nlin_20/"
+#base_folder = "/Volumes/T7_Shield/sa/statistics/hex_disordered/phi_1.3/Nlin_20/"
+
+base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/hex_disordered/phi_1.3/vary_Nlin/"
 
 
 
@@ -13,7 +15,7 @@ mkpath(figure_save_folder)
 
 
 
-ef  = findfile(joinpath(base_folder,"ensembles"), "ensemble.h5")
+ef  = findfile(joinpath(base_folder), "ensemble.h5")
 
 
 ensemble_files = [ load_file(ef[i]) for i in eachindex(ef)]
@@ -25,11 +27,21 @@ Js = [e["J"] for e in ensemble_files]
 
 v0s = [e["v0"] for e in ensemble_files] #by color
 
+Nints = [e["Nint"] for e in ensemble_files]
 
-
+marker_labels = [:circle, :rect, :diamond, :hexagon, :cross, :xcross]
 
 
 ensemble_files[1]["eigenmodes"]["eigvals"]["seed_1.h5"]
+marker_dict=Dict()
+for (i, Nint) in pairs(sort(unique(Nints)))
+    marker_dict[Nint] = marker_labels[i]
+end
+
+color_dict=Dict()
+for (i, J) in pairs(sort(unique(Js)))
+    color_dict[J] = i
+end
 
 
 GLMakie.activate!()
@@ -46,7 +58,7 @@ for e in ensemble_files
     if Dre==0.1
     Je = e["J"]
 
-    scatterlines!(ax, e["vrms_r"]["r_bin_centers"], e["vrms_r"]["vrms_r"]/e["v0"], colorrange = (0, 1 ) , color=e["J"], label="J = $(e["J"])")
+    scatterlines!(ax, e["vrms_r"]["r_bin_centers"], e["vrms_r"]["vrms_r"]/e["v0"], colorrange = (0, 3 ) , color=color_dict[e["J"]], label="J = $(e["J"])",marker=marker_dict[e["Nint"]], markersize=10)
     end
 
 end
@@ -64,7 +76,7 @@ CairoMakie.activate!()
 
 GLMakie.activate!()
 f = Figure()
-Drplot = 0.01
+Drplot = 0.1
 ax = Axis(f[1,1], xlabel=L"$\Delta t$", ylabel=L"$\langle \hat{n}(t+\Delta t)\cdot \hat{n}(t) \rangle$", title="Dr = $Drplot")
 
 for e in ensemble_files
@@ -96,7 +108,7 @@ for e in ensemble_files
         end
     
 
-    scatterlines!(ax,det , e["auto_p"]["Cavg"], colorrange = (1, 13 ) , color=ind, label="J = $(e["J"])",alpha=1,colormap=:jet)
+    scatterlines!(ax,det , e["auto_p"]["Cavg"], colorrange = (1, 3 ) , color=color_dict[e["J"]], label="J = $(e["J"])",marker=marker_dict[e["Nint"]], markersize=10)
     ind+=1
 
     #lines!(ax,det , the_auto, colorrange = (0, Jmax ) , color=e["J"])#, label="J = $(e["J"])")
@@ -735,7 +747,7 @@ end
 f[1,2]=Legend(f,ax)
 
 
-xlims!(10^(-3.5), 10^(0.3))
+#xlims!(10^(-3.5), 10^(0.3))
 
 ylims!(10^(4), 10^(4.4))
 
@@ -940,7 +952,6 @@ prob = IntegralProblem(theory_spectrum_n, domain, pars)
 
 begin
 using CairoMakie
-
 CairoMakie.activate!()
 
 GLMakie.activate!()
@@ -960,7 +971,7 @@ for e in ensemble_files
     if Dr==Drplot
     
 
-        scatterlines!(ax,e["spatial_vcor"]["r_bin_centers"] ,e["spatial_vcor"]["Cavg"], colorrange = (1, 13), linestyle=:solid, label= "$(e["J"])",colormap=:turbo,color=ind)
+        scatterlines!(ax,e["spatial_vcor"]["r_bin_centers"] ,e["spatial_vcor"]["Cavg"], colorrange = (1, 13), linestyle=:solid, label= "$(e["J"])",colormap=:jet,color=ind)
         ind+=1
     #lines!(ax,det , the_auto, colorrange = (0, Jmax ) , color=e["J"])#, label="J = $(e["J"])")
     end
@@ -996,7 +1007,7 @@ for e in ensemble_files
     if Dr==Drplot
     
 
-        scatterlines!(ax,e["spatial_pcor"]["r_bin_centers"] ,e["spatial_pcor"]["Cavg"], colorrange = (1, 13), linestyle=:solid, label= "$(e["J"])",colormap=:turbo,color=ind)
+        scatterlines!(ax,e["spatial_pcor"]["r_bin_centers"] ,e["spatial_pcor"]["Cavg"], colorrange = (1, 13), linestyle=:solid, label= "$(e["J"])",colormap=:jet,color=ind)
         ind+=1
     #lines!(ax,det , the_auto, colorrange = (0, Jmax ) , color=e["J"])#, label="J = $(e["J"])")
     end
