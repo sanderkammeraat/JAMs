@@ -128,3 +128,12 @@ base_folder_path = "/Volumes/T7_Shield/sa/survey/hex_disordered/phi_1/Nlin_20/t5
 raw_data_file_name = "sa_raw_data.h5"
 
 write_generic_xdmf_2d(joinpath(base_folder_path,raw_data_file_name), joinpath(base_folder_path,"particles.xdmf"))
+
+
+#
+base_folder_path = "/Users/kammeraat/mounting/pi-henkes/kammeraat/pairAN/sim_for_hdf5reader/simdata/"
+
+raw_data_file_name = "raw_data.h5"
+
+write_generic_xdmf_2d(joinpath(base_folder_path,raw_data_file_name), joinpath(base_folder_path,"particles.xdmf"))
+

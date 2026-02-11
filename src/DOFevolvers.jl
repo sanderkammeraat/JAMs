@@ -31,6 +31,12 @@ struct overdamped_θω_evolver
     ontypes::Union{Int64,Vector{Int64}}
 end
 
+struct overdamped_deformable_ellipse_evolver
+    ontypes::Union{Int64,Vector{Int64}}
+end
+
+
+
 #new, focus on dof but individual
 function evolve_locally!(p_i, t, dt, dofevolver::overdamped_xvf_evolver)
 
@@ -109,6 +115,59 @@ function evolve_locally!(p_i, t, dt, dofevolver::overdamped_θω_evolver)
     p_i.ω.*= 0.
     end
 
+    return p_i
+end
+
+function evolve_locally!(p_i, t, dt, dofevolver::overdamped_deformable_ellipse_evolver)
+    if p_i.type[1] in dofevolver.ontypes
+
+        stress = p_i.stress
+        R_0 = p_i.sigma_0[1]
+        Lmda_0 = p_i.Lambda0
+        Lmda = p_i.Lambda
+        tau = p_i.tau[1]
+        mu = p_i.mu[1]
+        K = p_i.K[1]
+
+        dLmda_dt = @MMatrix [0.0 0.0; 0.0 0.0]
+        
+        dLmda_dt[1,1] = -1/tau*(Lmda[1,1]-Lmda_0[1,1]) + R_0/(4*tau*mu*K)*((mu+K)*stress[1,1] + (mu-K)*stress[2,2])
+        dLmda_dt[2,2] = -1/tau*(Lmda[2,2]-Lmda_0[2,2]) + R_0/(4*tau*mu*K)*((mu+K)*stress[2,2] + (mu-K)*stress[1,1])
+        dLmda_dt[1,2] = -1/tau*(Lmda[1,2]-Lmda_0[1,2]) + R_0/(2*tau*mu)*stress[1,2]
+        dLmda_dt[2,1] = -1/tau*(Lmda[2,1]-Lmda_0[2,1]) + R_0/(2*tau*mu)*stress[2,1]
+
+        p_i.Lambda.+= dLmda_dt .*dt
+
+        lmda_major = 0.5*(Lmda[1,1]+Lmda[2,2]) + sqrt(0.25*(Lmda[1,1]-Lmda[2,2])^2 + Lmda[1,2]^2)
+        lmda_minor = 0.5*(Lmda[1,1]+Lmda[2,2]) - sqrt(0.25*(Lmda[1,1]-Lmda[2,2])^2 + Lmda[1,2]^2)
+
+        theta_def = 0.5*atan(2*Lmda[1,2],(Lmda[1,1]-Lmda[2,2])) 
+        #theta_def = theta_def - np.pi*round((theta_def-p_i.θ)/pi) 
+
+        #Put in minimal angle 
+        theta_current = angle.(p_i.p[1] + 1im * p_i.p[2])
+
+        dθ = p_i.q[3] * dt + (theta_def - theta_current)
+        #evolve
+        pxc = copy(p_i.p[1])
+        pyc = copy(p_i.p[2])
+        p_i.p[1] = cos(dθ) * pxc  - sin(dθ) *  pyc
+        p_i.p[2]= sin(dθ) * pxc  + cos(dθ) *  pyc
+        p_i.p .=normalize(p_i.p)
+
+        #reinitialize
+        p_i.q.*= 0.
+        
+        sn = p_i.p[2]
+        cs = p_i.p[1]
+
+        p_i.Lambda[1,1] = cs^2*lmda_major+sn^2*lmda_minor
+        p_i.Lambda[2,2] = sn^2*lmda_major+cs^2*lmda_minor
+        p_i.Lambda[1,2] = sn*cs*(lmda_major-lmda_minor)
+        p_i.Lambda[2,1] = p_i.Lambda[1,2]
+    
+        p_i.stress.*=0
+    end
     return p_i
 end
 

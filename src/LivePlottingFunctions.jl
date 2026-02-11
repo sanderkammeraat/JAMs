@@ -263,6 +263,46 @@ function plot_disks!(f,ax, cpsO, cfsO)
     return ax
 end
 
+
+
+function ellipse(p_i)
+
+    lmda_major = 0.5*(p_i.Lambda[1,1]+p_i.Lambda[2,2]) + sqrt(0.25*(p_i.Lambda[1,1]-p_i.Lambda[2,2])^2 + p_i.Lambda[1,2]^2)
+
+    lmda_minor =0.5*(p_i.Lambda[1,1]+p_i.Lambda[2,2]) -sqrt(0.25*(p_i.Lambda[1,1]-p_i.Lambda[2,2])^2 + p_i.Lambda[1,2]^2)
+
+    s = range(0, 2pi, length=40)
+
+    x_e = lmda_major .* cos.(s)
+
+    y_e = lmda_minor .* sin.(s)
+
+   x_e_rot = p_i.p[1] * x_e  - p_i.p[2] * y_e
+   y_e_rot= p_i.p[2] * x_e  + p_i.p[1] *  y_e
+
+   return p_i.x[1] .+ x_e_rot, p_i.x[2] .+ y_e_rot
+
+end
+
+
+
+function plot_ellipses!(f,ax, cpsO, cfsO)
+
+    xs = @lift([ ellipse( p_i )[1] for p_i in $cpsO])
+    ys = @lift([ ellipse( p_i )[2] for p_i in $cpsO])
+
+
+    for i=1:length(cpsO[])
+
+        xsi = @lift( $xs[i])
+        ysi = @lift($ys[i])
+
+        poly!(ax, xsi, ysi, color=i, colorrange=(1,length(cpsO[])),alpha=0.7, strokecolor=:black, strokewidth=2)
+    end
+
+    return ax
+end
+
 function plot_transparant_disks!(f,ax, cpsO, cfsO)
 
 

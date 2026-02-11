@@ -536,7 +536,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
             current_particle_state = threaded_dofevolver_step!(current_particle_state,t, dt, system)
 
 
-            #Or global
+            #Or global. The order will first be
 
             for dofevolver in system.global_dofevolvers
                 current_particle_state,current_field_state =evolve_globally!(current_particle_state, current_field_state, system, cells, stencils, dt, dofevolver)
@@ -716,8 +716,8 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cel
 
     candidate_cell_ind=@MVector zeros(Int64, length(p_i.ci))
     for stencil in stencils
-        @inbounds for i in eachindex(candidate_cell_ind)
-            candidate_cell_ind[i]= p_i.ci[i] + stencil[i]
+        @inbounds for cell_ind in eachindex(candidate_cell_ind)
+            candidate_cell_ind[cell_ind]= p_i.ci[cell_ind] + stencil[cell_ind]
         end
         @inbounds for n in cells[candidate_cell_ind...]
             if i!=n

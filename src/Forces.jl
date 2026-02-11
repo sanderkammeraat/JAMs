@@ -219,6 +219,7 @@ struct morse_force{T1, T2}<:Force
     ontypes::Union{Int64,Vector{Int64}}
     Dearray::T1
     aarray::T2
+    
 end
 
 
@@ -324,6 +325,19 @@ struct fluid_dipole_3d_force<:Force
     α::Float64
     l::Float64
 
+end
+
+struct Ellipse_2d_morse{T1,T2}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    Dearray::T1
+    aarray::T2
+    epsilon::Float64
+end
+
+struct Ellipse_2d_harmonic<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    epsilon_0::Float64
+    expont::Int32
 end
 
 
@@ -1340,4 +1354,67 @@ end
 
 function get_param_ind(force_types, particle_type)
     return findfirst(isequal(particle_type),force_types)
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system, force::Ellipse_2d_morse)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        sigma_e = p_i.Lambda0[1,1] + p_j.Lambda0[1,1]
+        sigma_s = p_i.Lambda0[2,2] + p_j.Lambda0[2,2] 
+        chi = ( (sigma_e/sigma_s)^2 - 1)/( (sigma_e/sigma_s)^2 +1)
+
+        u1 = p_i.p
+        u2 = p_j.p
+
+        r_dot_u1 = dot(dx,u1)
+        r_dot_u2 = dot(dx,u2)
+
+        u1_dot_u2 = dot(u1,u2)
+
+        dots_add = r_dot_u1 + r_dot_u2
+        dots_sub = r_dot_u1 - r_dot_u2
+
+        chi_add = 1 + chi*u1_dot_u2
+        chi_sub = 1 - chi*u1_dot_u2
+
+        sigma_0 = p_i.sigma_0[1]
+
+        sigma = sigma_0*(1 - chi/2/dxn^2 * (dots_add^2/chi_add + dots_sub^2/chi_sub))^(-1/2)
+        if dxn< 2*sigma
+            f = @MVector zeros(length(dx))
+
+
+            ii = get_param_ind(force.ontypes, p_i.type[1])
+            jj = get_param_ind(force.ontypes, p_j.type[1])
+            a  = force.aarray[ii, jj]
+            De = force.Dearray[ii, jj]
+            epsilon = force.epsilon
+
+            f .= 2*a*De*epsilon*exp(-a*(dxn-sigma))*(1- exp(-a*(dxn-sigma))) *(dx/dxn - (chi*sigma^3)/(2*sigma_0^2) * (-dx/dxn^4 * (dots_add^2/chi_add + dots_sub^2/chi_sub) + 1/dxn^2 * (dots_add/chi_add*(u1+ u2) + dots_sub/chi_sub*(u1 - u2)))) 
+
+            torque = 1/2*a*De*epsilon*chi*sigma_0*exp(-a*(dxn-sigma))*(1- exp(-a*(dxn-sigma)))* (1 - 0.5*chi/dxn^2 * (dots_add^2/chi_add + dots_sub^2/chi_sub))^(-3/2) * (2*dots_add*dx/dxn/chi_add + dots_add^2*chi*u2/chi_add^2 + 2*dots_sub*dx/dxn/chi_sub + dots_sub^2*chi*u2/chi_sub^2)
+
+            T = cross(u1,torque)
+
+            rcrossF = dx[1:2] * f[1:2]' # outer product defined like this as r cross transpose of f
+
+            #f.= -2 * De*a*( exp(-2a*(dxn-re)) - exp(-a*(dxn-re)) ) * dx/dxn
+
+            p_i.f.+= f
+            p_i.q.+= T
+
+            #p_i.stress.+= 1/(2*pi*p_i.sigma_0[1]^2).*rcrossF
+
+            p_i.stress[1,1] +=1/(2*pi*p_i.sigma_0[1]^2) * rcrossF[1,1]
+            p_i.stress[1,2] +=1/(2*pi*p_i.sigma_0[1]^2) * rcrossF[1,2]
+            p_i.stress[2,1] +=1/(2*pi*p_i.sigma_0[1]^2) * rcrossF[2,1]
+            p_i.stress[2,2] +=1/(2*pi*p_i.sigma_0[1]^2) * rcrossF[2,2]
+
+            
+        end
+
+    end
+    return p_i
+
 end

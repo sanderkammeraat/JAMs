@@ -11,7 +11,7 @@ function simulation()
     #pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,1.3, 1, 0., 0.3), pair_nematic_alignment_force(1,2.5,0.15))
     kpar = -1
     kper= 0.
-    pair_forces = (soft_disk_force(1,1.),polymer_harmonic_bend_force(1,0.3), polymer_harmonic_stretch_force(1,3.), polymer_pairAN_force(1,true, false,1.3, kpar, kper,1))
+    pair_forces = (soft_disk_force(1,1.),polymer_harmonic_bend_force(1,0.5), polymer_harmonic_stretch_force(1,3.), polymer_pairAN_force(1,true, false,1.3, kpar, kper,0.3))
     external_forces =(thermal_translational_noise(1, 0.01*[0.01, 0.01,0]),)
 
     

@@ -305,3 +305,42 @@ struct VicsekParticle<:Particle
     fpas::MVector{2,Float64}
     ci::MVector{2,Int64}
 end
+
+
+#Thanks to Nina Cankilic, Chinmay Pabshettiwar and Silke Henkes
+#[Reference to MSc thesis to be inserted]
+struct GBEllipses<:Particle
+    id::MVector{1,Int64}
+    type::MVector{1,Int64}
+
+    # Shape of ellipse
+    # first element represents major axis part
+    Lambda::MMatrix{2,2,Float64}
+    Lambda0::MMatrix{2,2,Float64}
+    sigma_0::MVector{1,Float64}
+
+    K::MVector{1,Float64}
+    mu::MVector{1,Float64}
+    tau::MVector{1,Float64}
+
+    v0::MVector{1,Float64}
+    Dr::MVector{1,Float64}
+    
+    D::MVector{1,Float64}
+
+    deformable::MVector{1,Bool}
+
+    x::MVector{3,Float64}
+    xuw::MVector{3,Float64}
+    v::MVector{3,Float64}
+    f::MVector{3,Float64} 
+    stress::MMatrix{2,2,Float64}
+
+    p::MVector{3,Float64}
+    q::MVector{3,Float64}
+
+    zeta::MVector{1,Float64} 
+    fact::MVector{3,Float64}
+    fpas::MVector{3,Float64}
+    ci::MVector{3,Int64}
+end
