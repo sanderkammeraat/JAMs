@@ -55,7 +55,7 @@ end
 
 #=
 for p in [0.04, 0.06, 0.08, 0.1, 0.13, 0.15, 0.2, 0.4]
-    for (kpar, kperp) in [(-1., 0.), (1., 0.)#=, (0., 1.), (0., -1.), (1/sqrt(2), 1/sqrt(2)),(-1/sqrt(2), 1/sqrt(2)),(1/sqrt(2), -1/sqrt(2)),(-1/sqrt(2), -1/sqrt(2))=#]
+    for (kpar, kperp) in [(-1., 0.), (1., 0.), (0., 1.), (0., -1.), (1/sqrt(2), 1/sqrt(2)),(-1/sqrt(2), 1/sqrt(2)),(1/sqrt(2), -1/sqrt(2)),(-1/sqrt(2), -1/sqrt(2))]
         display(p)
         display((kpar, kperp))
         sim = simulation(p, kpar, kperp)
