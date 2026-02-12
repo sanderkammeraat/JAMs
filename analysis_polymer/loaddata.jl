@@ -7,8 +7,21 @@ function load_file(file_location)
 
 end
 
+function create_directory(path_to_folder, folder_name)
 
-struct simulation_data
+    if !isdir(joinpath(path_to_folder, folder_name))
+        mkdir(joinpath(path_to_folder, folder_name))
+    end
+
+end
+
+function save_data(data, path)
+
+    save(joinpath(path,"analysis.jld2"), data)
+
+end
+
+struct simulation_data{}
     x::Matrix{Float64}
     y::Matrix{Float64}
     vx::Matrix{Float64}

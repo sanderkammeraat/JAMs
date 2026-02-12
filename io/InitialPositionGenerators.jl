@@ -138,6 +138,7 @@ function stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force; t
     L = sqrt(Npols*(S*N_in_pol-S_overlap*(N_in_pol-1))/pf)
 
     M = Npols * N_in_pol
+
     x = zeros(M)
     y = zeros(M)
     radii = R * ones(M)
@@ -146,7 +147,7 @@ function stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force; t
 
     ids_in_pol= zeros(M)
 
-    Lpols = 2*R+(N_in_pol-1)*2*R*f_eq_stretch_force
+    Lpols = 2*R + (N_in_pol - 1) * 2*R * f_eq_stretch_force
 
     if isnothing(tilt_angle)
         tilt_angle = atan(L/Npols/Lpols)   # The angle along which to place the particles to maximize the spread of particles on the torque
@@ -161,8 +162,8 @@ function stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force; t
 
             ids_in_pol[id] = j
 
-            x[id] = ((i-1)*Lpols + (j-1)*2*R*f_eq_stretch_force)*cos(tilt_angle) % L -L/2
-            y[id] = ((i-1)*Lpols + (j-1)*2*R*f_eq_stretch_force)*sin(tilt_angle) % L -L/2
+            x[id] = ((i-1)*Lpols + (j-1)*2*R*f_eq_stretch_force)*cos(tilt_angle) % L - L/2
+            y[id] = ((i-1)*Lpols + (j-1)*2*R*f_eq_stretch_force)*sin(tilt_angle) % L - L/2
 
 
             id+=1

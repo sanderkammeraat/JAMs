@@ -416,7 +416,6 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
     system, cells,cell_bin_centers,stencils, lbins = construct_cell_lists!(system)
 
-
     Next = length(system.external_forces)
     Npair = length(system.pair_forces)
 
@@ -466,6 +465,12 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         @showprogress dt = 1 desc="JAMming in progress..." showspeed=true for (n, t) in pairs(integration_tax)
             #Threads.@threads 
             #Loop over particles and write generalized forces to p_i in place!
+
+        for i in eachindex(current_particle_state)
+            p_i = current_particle_state[i]
+
+            check_outside_system(p_i,system.sizes)
+        end
 
             
             current_particle_state = threaded_particle_step!(current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles, dxbuffers,n_chunks)
@@ -703,10 +708,12 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cel
 
     candidate_cell_ind=@MVector zeros(Int64, length(p_i.ci))
     for stencil in stencils
-        @inbounds for i in eachindex(candidate_cell_ind)
-            candidate_cell_ind[i]= p_i.ci[i] + stencil[i]
+        for j in eachindex(candidate_cell_ind)
+            candidate_cell_ind[j]= p_i.ci[j] + stencil[j]
+            
         end
-        @inbounds for n in cells[candidate_cell_ind...]
+        
+        for n in cells[candidate_cell_ind...]
             if i!=n
                 p_j = current_particle_state[n]
 
@@ -725,7 +732,6 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cel
     end
     return p_i
 end
-
 
 
 
@@ -750,6 +756,7 @@ function construct_cell_list_centers(L,rcut_pair_global)
     bin_centers = append!(bin_centers,L+rcut_pair_global)
 
     return bin_centers, lbin
+    display(bin_centers)
 
 end
 
@@ -823,7 +830,7 @@ function find_new_bin_location!(new_bin_location,p_i, cell_bin_centers,system,lb
     #Collect old locations to preallocate for new one
         for j in eachindex(p_i.ci)
 
-            new_bin_location[j]+= round(Int64, (p_i.x[j] - cell_bin_centers[j][p_i.ci[j]])/lbins[j] )
+            new_bin_location[j] += round(Int64, (p_i.x[j] - cell_bin_centers[j][p_i.ci[j]])/lbins[j] )
 
         end
 

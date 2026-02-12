@@ -6,6 +6,11 @@ struct overdamped_pairdis_evolver
     rfact::Float64 #should be smaller than the cut off radius
 end
 
+struct polymer_p_set_evolver
+    ontypes::Union{Int64,Vector{Int64}}
+end
+
+
 struct overdamped_xvf_evolver
     ontypes::Union{Int64,Vector{Int64}}
 end
@@ -209,6 +214,51 @@ function evolve_globally!(current_particle_state, current_field_state, system, c
 end
 
 
+
+function evolve_globally!(current_particle_state, current_field_state, system, cells, stencils, dt, dofevolver::polymer_p_set_evolver)
+
+    Threads.@threads for i in eachindex(current_particle_state)
+
+        p_i = current_particle_state[i]
+
+        #discard current polarity vector
+        p_i.p.*=0
+
+        dx = @MVector zeros(Float64,length(p_i.x))
+        neighbours= get_neighbours(p_i,cells,stencils)
+        if !isnothing(neighbours)
+    
+            for n in neighbours
+    
+                if i!=n
+                    p_j = current_particle_state[n]
+    
+                    dx = minimal_image_difference!(dx, p_i.x, p_j.x, system.sizes, system.Periodic)
+    
+                    dxn = norm(dx)
+                    
+                    if p_i.type[1] in dofevolver.ontypes && p_j.type[1] in dofevolver.ontypes
+
+                            if p_i.pol_id[1]==p_j.pol_id[1]
+
+                                if p_j.id_in_pol[1]==p_i.id_in_pol[1]+1
+
+                                    p_i.p.+=dx/dxn
+
+                                elseif  p_j.id_in_pol[1]==p_i.id_in_pol[1]-1
+
+                                    p_i.p.+= -dx/dxn
+                                end
+                            end
+                        end
+                end
+            end    
+        end
+        p_i.p.= normalize(p_i.p)
+    end
+
+    return current_particle_state, current_field_state
+end
 
 
 
