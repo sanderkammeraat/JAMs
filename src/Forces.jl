@@ -268,6 +268,13 @@ struct polymer_pairAN_force{T1,T2, T3}<:Force
     parray::T3
 end
 
+struct polymer_pair_polar_nematic_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    bundles::Bool
+    rfact::Float64
+    v0::Float64
+end
+
 
 struct pair_polar_alignment_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
@@ -1118,6 +1125,27 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
                 end
             end
         end
+    end
+    return p_i
+
+end
+
+
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::polymer_pair_polar_nematic_force)
+    
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        d2a = p_i.R[1]+p_j.R[1]
+        r = force.rfact*d2a::Float64
+
+        if dxn < r
+
+            β = 1 - dxn/r
+
+            p_i.f .+= force.v0[p_i.type[1]] * (p_i.p .- p_j.p)
+        end
+
     end
     return p_i
 

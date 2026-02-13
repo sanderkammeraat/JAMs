@@ -9,12 +9,24 @@ include(joinpath("..","..","src","Engine.jl"))
 
 include(joinpath("..","..","io","InitialPositionGenerators.jl"))
 
+
+sim_folder_name = "sim_data"
+
+#for windows
+#path_data = joinpath("E:", "martin", sim_folder_name)
+
+#for linux
+path_data = joinpath("/run/media/martin/HENKESGRFAT/martin", sim_folder_name)
+
 function simulation(p, kpar, kbend)
 
 
     f_eq_stretch_force = .75
     krep = 1.
-    pair_forces = (soft_disk_force(1,krep), polymer_harmonic_bend_force(1, kbend), polymer_harmonic_stretch_force(1,krep, f_eq_stretch_force), polymer_pairAN_force(1,true, true, false, 1.5, kpar, 0., p))
+
+    #pair_forces = (soft_disk_force(1,krep), polymer_harmonic_bend_force(1, kbend), polymer_harmonic_stretch_force(1,krep, f_eq_stretch_force), polymer_pairAN_force(1,true, true, false, 1.5, kpar, 0., p))
+    pair_forces = (soft_disk_force(1,krep), polymer_harmonic_bend_force(1, kbend), polymer_harmonic_stretch_force(1,krep, f_eq_stretch_force), polymer_pair_polar_nematic_force(1, true, 1.5, .15))
+
     external_forces = (thermal_translational_noise(2, [0.001, 0.001, 0]),)#, ABP_3d_propulsion_force(1))
 
 
@@ -27,8 +39,8 @@ function simulation(p, kpar, kbend)
     R = 1
     N_in_pol = 10
 
-    Npols = 151
-    x, y, radii, pol_ids, ids_in_pol, L = stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force)
+    Npols = 401
+    x, y, radii, pol_ids, ids_in_pol, L = stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force, random_polarity = true)
 
     #PolarPolymerParticle3d id type pol_id id_in_pol pol_N #####,overdamped_pq_xyc_evolver(1)
     initial_state = PolarPolymerParticle3d[PolarPolymerParticle3d([id],[1],[pol_ids[id]],[ids_in_pol[id]],[N_in_pol], [1], [1], [radii[id]], [0.3], [0.01], [x[id] , y[id],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for id=1:Npols*N_in_pol];
@@ -44,7 +56,7 @@ function simulation(p, kpar, kbend)
     
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,6.);
 
-    save_folder = joinpath(raw"C:\Users\gabri\Documents\Travail-Etude\Master's Theoretical Physics Leiden\Research Project\Data", "sim_data", "p_$p,kpar_$kpar/")
+    save_folder = joinpath(path_data, "p_$p,kpar_$kpar/")
     sim = Euler_integrator(system, 0.05, 1000, fps=30, Tplot=20, plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=nothing, save_functions=(save_2d_polymer_polar_p!,), save_folder_path = save_folder); 
     return sim;
 
@@ -65,7 +77,7 @@ end
 
 
 
-sim = simulation(.2, -1., .5) 
+sim = simulation(.2, -1., 1.) 
 
 # @profview sim = simulation() 
 

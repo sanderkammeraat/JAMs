@@ -127,7 +127,7 @@ end
 # scatter!(xi, yi)
 
 #Thanks to Gabriel Martin
-function stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force; tilt_angle = nothing)
+function stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force; tilt_angle = nothing, random_polarity = false)
 
     # initialization
 
@@ -169,6 +169,34 @@ function stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force; t
             id+=1
 
         end
+
+    end
+
+    if random_polarity
+        toggle = zeros(M, M)
+
+        nochange = zeros(N_in_pol, N_in_pol) + I
+
+        change = zeros(N_in_pol, N_in_pol)
+
+        for i in 1:N_in_pol
+            change[i, :] += nochange[N_in_pol - i + 1]
+        end
+
+        for i in 1:Npols
+            flip = rand((true, false))
+
+            if flip
+                toggle[(i-1)*N_in_pol+1:i*N_in_pol,(i-1)*N_in_pol+1:i*N_in_pol] += change
+            
+            else
+                toggle[(i-1)*N_in_pol+1:i*N_in_pol,(i-1)*N_in_pol+1:i*N_in_pol] += nochange
+            end
+        end
+
+        old_id_in_pol = copy(id_in_pol)
+
+        mul!(id_in_pol, toggle, old_id_in_pol)
 
     end
 
