@@ -180,7 +180,7 @@ function stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force; t
         change = zeros(N_in_pol, N_in_pol)
 
         for i in 1:N_in_pol
-            change[i, :] += nochange[N_in_pol - i + 1]
+            change[i, :] .+= nochange[N_in_pol - i + 1]
         end
 
         for i in 1:Npols
@@ -194,9 +194,9 @@ function stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force; t
             end
         end
 
-        old_id_in_pol = copy(id_in_pol)
+        old_ids_in_pol = copy(ids_in_pol)
 
-        mul!(id_in_pol, toggle, old_id_in_pol)
+        mul!(ids_in_pol, toggle, old_ids_in_pol)
 
     end
 
