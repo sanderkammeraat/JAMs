@@ -52,14 +52,13 @@ function evolve_locally!(p_i, t, dt, dofevolver::overdamped_xvf_evolver)
     end
     return p_i
 end
-
+#Note that a potential Itô relaxation term is taken care of by renormalizing p_i.p
 function evolve_locally!(p_i, t, dt, dofevolver::overdamped_pq_evolver)
 
     if p_i.type[1] in dofevolver.ontypes
 
-
         #evolve
-        p_i.p .+= p_i.q * dt
+        p_i.p .+= cross(p_i.q,p_i.p) * dt
         p_i.p .=normalize(p_i.p)
 
         #reinitialize
@@ -67,7 +66,7 @@ function evolve_locally!(p_i, t, dt, dofevolver::overdamped_pq_evolver)
     end
     return p_i
 end
-#constraint to be in xy
+#constrained to be in xy
 function evolve_locally!(p_i, t, dt, dofevolver::overdamped_pq_xyc_evolver)
 
     if p_i.type[1] in dofevolver.ontypes

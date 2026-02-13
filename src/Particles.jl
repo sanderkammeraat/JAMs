@@ -50,27 +50,27 @@ struct ChargedParticle3d<:Particle
     ci::MVector{3,Int64}
 
 end
-struct PolarParticle3d<:Particle
+@kwdef struct PolarParticle3d<:Particle
 
     id::MVector{1,Int64}
     type::MVector{1,Int64}
-    m::MVector{1,Float64}
-    zeta::MVector{1,Float64}
-    R::MVector{1,Float64}
+    m::MVector{1,Float64}   = @MVector [1.0]
+    zeta::MVector{1,Float64} = @MVector [1.0]
+    R::MVector{1,Float64}   = @MVector [1.0]
     
     v0::MVector{1,Float64}
     Dr::MVector{1,Float64}
 
     x::MVector{3,Float64}
-    xuw::MVector{3,Float64}
-    v::MVector{3,Float64}
-    a::MVector{3,Float64}
+    xuw::MVector{3,Float64} = @MVector [0.0,0.0,0.0]
+    v::MVector{3,Float64}   = @MVector [0.0,0.0,0.0]
+    a::MVector{3,Float64}   = @MVector [0.0,0.0,0.0]
 
-    f::MVector{3,Float64} #f->a->v->r
+    f::MVector{3,Float64} = @MVector [0.0,0.0,0.0]#f->a->v->r
 
     p::MVector{3,Float64}
-    q::MVector{3,Float64}
-    ci::MVector{3,Int64}
+    q::MVector{3,Float64} = @MVector [0.0,0.0,0.0]
+    ci::MVector{3,Int64} = @MVector [0,0,0]
 
 
 end

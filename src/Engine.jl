@@ -830,17 +830,31 @@ function construct_cell_lists!(system)
     return system, cells, cell_bin_centers, stencils, lbins
 end
 
-function find_new_bin_location!(new_bin_location,p_i, cell_bin_centers,system,lbins)
+@inbounds function find_new_bin_location!(new_bin_location,p_i, cell_bin_centers,system,lbins)
 
-
+    moved=false
     #Collect old locations to preallocate for new one
         for j in eachindex(p_i.ci)
 
-            new_bin_location[j]+= round(Int64, (p_i.x[j] - cell_bin_centers[j][p_i.ci[j]])/lbins[j] )
+            #Calculate the shift in cell index due to the new particle position.
+            shift = round(Int64, (p_i.x[j] - cell_bin_centers[j][p_i.ci[j]])/lbins[j] )
+            new_bin_location[j]+= shift
+            movedj = (shift!=0)
+
+            #If due to limited numerical accuracy, the particle gets shifted to one of the ghost cells, shift it back.
+            if new_bin_location[j]==1
+                new_bin_location[j]+=1
+                movedj=false
+            elseif  new_bin_location[j] == length(cell_bin_centers[j])
+                new_bin_location[j]-=1
+                movedj=false
+            end
+            moved = moved || movedj
+
 
         end
 
-    return new_bin_location
+    return new_bin_location, moved
 
 end
 
@@ -853,10 +867,10 @@ function update_cells!(current_particle_state, cells, cell_bin_centers,system,lb
     for i in eachindex(current_particle_state)
 
         p_i = current_particle_state[i]
-        new_bin_location.=p_i.ci
-        new_bin_location=find_new_bin_location!(new_bin_location,p_i, cell_bin_centers,system,lbins)
-        if p_i.id[1] in cells[new_bin_location...]
-        else
+        #initialize with the old bin location
+        new_bin_location.= p_i.ci
+        new_bin_location,moved=find_new_bin_location!(new_bin_location,p_i, cell_bin_centers,system,lbins)
+        if moved
             #remove
             filter!(e->e≠p_i.id[1],cells[p_i.ci...])
             #add to correct lists
@@ -870,7 +884,7 @@ end
 
 
 
-function update_ghost_cells!(cells,system)
+@views function update_ghost_cells!(cells,system)
     
     if system.Periodic
         dims = length(system.sizes)

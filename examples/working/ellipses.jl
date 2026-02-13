@@ -135,7 +135,7 @@ function simulation()
     #Run integrationov
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plot}ting
-    sim = Euler_integrator(system,dt, 10 ,fps=25,Tplot=1000,plot_functions=(plot_ellipses!,),plotdim=2, res=(1000,1000),record_folder_path="/Users/kammeraat/test_ellipses_tstop10/")#, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,dt, 1 ,fps=60,Tplot=nothing,plot_functions=(plot_ellipses!,),plotdim=2)#, res=(1000,1000),record_folder_path="/Users/kammeraat/test_ellipses_tstop10/")#, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim;
 
 end
