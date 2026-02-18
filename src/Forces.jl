@@ -1136,14 +1136,36 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
     
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
 
-        d2a = p_i.R[1]+p_j.R[1]
-        r = force.rfact*d2a::Float64
+        if p_j.pol_id[1]!=p_i.pol_id[1]
 
-        if dxn < r
+            d2a = p_i.R[1]+p_j.R[1]
+            r = force.rfact*d2a::Float64
 
-            β = 1 - dxn/r
+            if dxn < r
 
-            p_i.f .+= force.v0[p_i.type[1]] * (p_i.p .- p_j.p)
+                β = 1 - dxn/r
+
+                if force.bundles
+
+                    p_i.f .+= β*force.v0[p_i.type[1]] * (p_i.p .- p_j.p)
+
+                else
+
+                    if dot(p_i.p, p_j.p) > 0
+
+                        sign_ij = sign(p_i.pol_id[1] - p_j.pol_id[1])
+
+                        p_i.f .+= β*sign_ij*force.v0[p_i.type[1]] * (p_i.p .+ p_j.p)
+
+                    else
+
+                        p_i.f .+= β*force.v0[p_i.type[1]] * (p_i.p .- p_j.p)
+
+                    end
+
+                end
+            end
+
         end
 
     end

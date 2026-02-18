@@ -155,16 +155,24 @@ function stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force; t
     
     id = 1
 
-    for i in 1:Npols
+    for (i, pol_index) in enumerate(shuffle!(collect(1:Npols)))
+
+        flip = random_polarity ? rand((true,false)) : false   #based on the random_polarity bool, if true choose random, if false use false
 
         for j in 1:N_in_pol
-            pol_ids[id] = i
+            
+            pol_ids[id] = pol_index
 
             ids_in_pol[id] = j
 
-            x[id] = ((i-1)*Lpols + (j-1)*2*R*f_eq_stretch_force)*cos(tilt_angle) % L - L/2
-            y[id] = ((i-1)*Lpols + (j-1)*2*R*f_eq_stretch_force)*sin(tilt_angle) % L - L/2
+            index = j - 1
 
+            if flip
+                index = N_in_pol - j
+            end
+
+            x[id] = ((i-1)*Lpols + index*2*R*f_eq_stretch_force)*cos(tilt_angle) % L - L/2
+            y[id] = ((i-1)*Lpols + index*2*R*f_eq_stretch_force)*sin(tilt_angle) % L - L/2
 
             id+=1
 
@@ -172,33 +180,8 @@ function stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force; t
 
     end
 
-    if random_polarity
-        toggle = zeros(M, M)
-
-        nochange = zeros(N_in_pol, N_in_pol) + I
-
-        change = zeros(N_in_pol, N_in_pol)
-
-        for i in 1:N_in_pol
-            change[i, :] .+= nochange[N_in_pol - i + 1]
-        end
-
-        for i in 1:Npols
-            flip = rand((true, false))
-
-            if flip
-                toggle[(i-1)*N_in_pol+1:i*N_in_pol,(i-1)*N_in_pol+1:i*N_in_pol] += change
-            
-            else
-                toggle[(i-1)*N_in_pol+1:i*N_in_pol,(i-1)*N_in_pol+1:i*N_in_pol] += nochange
-            end
-        end
-
-        old_ids_in_pol = copy(ids_in_pol)
-
-        mul!(ids_in_pol, toggle, old_ids_in_pol)
-
-    end
+    x[1,1] *= 0.99
+    y[1,1] *= 0.99
 
     return x, y, radii, pol_ids, ids_in_pol, L
 

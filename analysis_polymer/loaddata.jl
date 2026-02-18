@@ -15,6 +15,18 @@ function create_directory(path_to_folder, folder_name)
 
 end
 
+function clear_analysis(path, file)
+    println("Are you sure you want to remove $file from $path ?")
+    answer = readline()
+    if answer == "yes"
+        rm(joinpath(path, file))
+    end
+end
+
+function distance(a, b, L)
+    return (abs.(a .- b) .+ L/2) .% L .- L/2
+end
+
 function save_data(data, path)
 
     save(joinpath(path,"analysis.jld2"), data)
@@ -87,7 +99,7 @@ function get_data(file_location)
     R = file["frames/5/R"]
     dt = file["integration_info/dt"]
     Tsave = file["integration_info/Tsave"]
-    ksd = file["system/forces/pair/polymer_exterior_soft_disk_force/karray"]
+    ksd = file["system/forces/pair/soft_disk_force/karray"]
     kbend = file["system/forces/pair/polymer_harmonic_bend_force/karray"]
     kstretch = file["system/forces/pair/polymer_harmonic_stretch_force/karray"]
     fstretch = file["system/forces/pair/polymer_harmonic_stretch_force/farray"]

@@ -55,20 +55,20 @@ ksd = [1.]
 kbend = [.3]
 kstretch = [1.]
 fstretch = [.7]
-p = [0.04, #=0.06, 0.08, 0.1, =#0.13#=, 0.15, 0.2, 0.4=#]
-kactive = [(-1., 0.)#=, (1., 0.), (0., 1.), (0., -1.), (1/sqrt(2), 1/sqrt(2)),(-1/sqrt(2), 1/sqrt(2)),(1/sqrt(2), -1/sqrt(2)),(-1/sqrt(2), -1/sqrt(2))=#]
+p = [0., 0.04,#= 0.06, 0.08, =#0.1, #=0.13, 0.15, 0.2, =#0.4]
+kpar = [-1]
 Npol = [750]
-N = [2250]
+N_in_pol = [2, 10, 20]
 
 dowesave = true
 doweplot = false
 
-plotMSD = true
-plotpolymer_MSD = true
-plotbasic_MSD = true
+plotMSD = false
+plotpolymer_MSD = false
+plotbasic_MSD = false
 plotaverage_velocity = false
 plotradius_of_gyration = false
-plotend_to_end_distance = false
+plotend_to_end_distance = true
 
 
 create_directory(path_data, "plots")
@@ -79,15 +79,15 @@ for kbend_value in kbend
 for kstretch_value in kstretch
 for fstretch_value in fstretch
 for (i, p_value) in enumerate(p)
-for (j, (kpar_value, kperp_value)) in enumerate(kactive)
+for kpar_value in kpar
 for Npol_value in Npol
-for N_value in N
+for (j, N_in_pol_value) in enumerate(N_in_pol)
 
-    parameters = "p_$p_value,kpar_$kpar_value,kperp_$kperp_value"  #"ksd_$ksd_value_kbend_$kbend_value_kstretch_$kstretch_value_fstretch_$f_stretch_value_p_$p_value_kperp_$kperp_value_kpar_$kpar_value_Npol_$Npol_value_N_$N_value"
+    parameters = "p_$p_value,N_$N_in_pol_value"  #"ksd_$ksd_value_kbend_$kbend_value_kstretch_$kstretch_value_fstretch_$f_stretch_value_p_$p_value_kperp_$kperp_value_kpar_$kpar_value_Npol_$Npol_value_N_$N_value"
 
     
-    max = length(p)*length(kactive)
-    progress = convert(Int64, floor(100*((i-1)*length(kactive) + j-1)/max))
+    max = length(p)*length(N_in_pol)
+    progress = convert(Int64, floor(100*((i-1)*length(N_in_pol) + j-1)/max))
     println("$parameters\n\n$progress% done\n\n")
 
     
@@ -95,37 +95,37 @@ for N_value in N
 
     if plotbasic_MSD
         create_directory(joinpath(path_data, "plots"), "basic_MSD")
-        plot_data!(analysis["basic_MSD"], analysis["basic_MSD_time"], log10, doweplot, dowesave, joinpath(path_data, "plots"), "basic_MSD", "$parameters.pdf", ["p", "kpar", "kperp"], [p_value, kpar_value, kperp_value], "MSD", "log(time)", "log(MSD)")
+        plot_data!(analysis["basic_MSD"], analysis["basic_MSD_time"], log10, doweplot, dowesave, joinpath(path_data, "plots"), "basic_MSD", "$parameters.pdf", ["p", "N"], [p_value, N_in_pol_value], "MSD", "log(time)", "log(MSD)")
     end
 
 
     if plotMSD
         create_directory(joinpath(path_data, "plots"), "MSD")
-        plot_data!(analysis["MSD"], analysis["MSD_time"], log10, doweplot, dowesave, joinpath(path_data, "plots"), "MSD", "$parameters.pdf", ["p", "kpar", "kperp"], [p_value, kpar_value, kperp_value],"MSD", "log(time)", "log(MSD)")
+        plot_data!(analysis["MSD"], analysis["MSD_time"], log10, doweplot, dowesave, joinpath(path_data, "plots"), "MSD", "$parameters.pdf", ["p", "N"], [p_value, N_in_pol_value],"MSD", "log(time)", "log(MSD)")
     end
 
 
     if plotpolymer_MSD
         create_directory(joinpath(path_data, "plots"), "polymer_MSD")
-        plot_data!(analysis["polymer_MSD"], analysis["polymer_MSD_time"], log10, doweplot, dowesave, joinpath(path_data, "plots"), "polymer_MSD", "$parameters.pdf", ["p", "kpar", "kperp"], [p_value, kpar_value, kperp_value],"MSD of the center of mass of the polymers", "log(time)", "log(MSD)")
+        plot_data!(analysis["polymer_MSD"], analysis["polymer_MSD_time"], log10, doweplot, dowesave, joinpath(path_data, "plots"), "polymer_MSD", "$parameters.pdf", ["p", "N"], [p_value, N_in_pol_value],"MSD of the center of mass of the polymers", "log(time)", "log(MSD)")
     end
 
 
     if plotaverage_velocity
         create_directory(joinpath(path_data, "plots"), "average_velocity")
-        plot_data!(analysis["average_velocity"], analysis["average_velocity_time"], identity, doweplot, dowesave, joinpath(path_data, "plots"), "average_velocity", "$parameters.pdf", ["p", "kpar", "kperp"], [p_value, kpar_value, kperp_value],"Average velocity over time", "time", "<v>")
+        plot_data!(analysis["average_velocity"], analysis["average_velocity_time"], identity, doweplot, dowesave, joinpath(path_data, "plots"), "average_velocity", "$parameters.pdf", ["p", "N"], [p_value, N_in_pol_value],"Average velocity over time", "time", "<v>")
     end
 
 
     if plotend_to_end_distance
         create_directory(joinpath(path_data, "plots"), "e_to_e_dist")
-        plot_data!(analysis["e_to_e_dist"], analysis["e_to_e_dist_time"], identity, doweplot, dowesave, joinpath(path_data, "plots"), "end_to_end_distance", "$parameters.pdf", ["p", "kpar", "kperp"], [p_value, kpar_value, kperp_value],"Mean end to end distance", "time", "end to end distance")
+        plot_data!(analysis["e_to_e_dist"], analysis["e_to_e_dist_time"], identity, doweplot, dowesave, joinpath(path_data, "plots"), "e_to_e_dist", "$parameters.pdf", ["p", "N"], [p_value, N_in_pol_value],"Mean end to end distance", "time", "end to end distance")
     end
 
 
     if plotradius_of_gyration
         create_directory(joinpath(path_data, "plots"), "R_2")
-        plot_data!(analysis["R_2"], analysis["R_2_time"], identity, doweplot, dowesave, joinpath(path_data, "plots"), "radius_of_gyration", "$parameters.pdf", ["p", "kpar", "kperp"], [p_value, kpar_value, kperp_value],"Mean radius of gyration", "time", "<R^2>")
+        plot_data!(analysis["R_2"], analysis["R_2_time"], identity, doweplot, dowesave, joinpath(path_data, "plots"), "R_2", "$parameters.pdf", ["p", "N"], [p_value, N_in_pol_value],"Mean radius of gyration", "time", "<R^2>")
     end
 
     close(analysis)

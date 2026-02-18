@@ -66,13 +66,13 @@ function basic_MSD(x, y, numb_frames, numb_particles, t_stop)
     time = convert(Vector{Float64}, 0:dt:t_stop)
     x_0, y_0 = x[1,:], y[1,:]
 
-    MSD = vec(sum((transpose(transpose(x) .- x_0).^2 .+ (transpose(y) .- y_0).^2), dims=2) ./ numb_particles)
+    MSD = vec(sum((transpose(transpose(x) .- x_0).^2 .+ transpose((transpose(y) .- y_0)).^2), dims=2) ./ numb_particles)
 
     return Dict("basic_MSD" => MSD, "basic_MSD_time" => time)
 end
 
 
-function end_to_end_distance(x, y, pol_id, id_in_pol, numb_frames, Npol, N, t_stop)
+function end_to_end_distance(x, y, pol_id, id_in_pol, numb_frames, Npol, N, t_stop, sizes)
 
     dt = t_stop/(numb_frames-1)
     time = convert(Vector{Float64}, 0:dt:t_stop)
@@ -89,10 +89,10 @@ function end_to_end_distance(x, y, pol_id, id_in_pol, numb_frames, Npol, N, t_st
         begin_part_id = intersect(pol_indices, begin_parts)[1]
         end_part_id = intersect(pol_indices, end_parts)[1]
 
-        end_to_end_distance += vec(sqrt.((x[:, begin_part_id] .- x[:, end_part_id]).^2 .+ (y[:, begin_part_id] .- y[:, end_part_id]).^2) ./ polymer_size)
+        end_to_end_distance += vec(sqrt.((distance(x[:, begin_part_id], x[:, end_part_id], sizes[1])).^2 .+ (distance(y[:, begin_part_id], y[:, end_part_id], sizes[2])).^2))
     end
 
-    return Dict("e_to_e_dist" => end_to_end_distance, "e_to_e_dist_time" => time)
+    return Dict("e_to_e_dist" => end_to_end_distance ./ Npol, "e_to_e_dist_time" => time)
 end
 
 
@@ -117,7 +117,7 @@ function radius_of_gyration(x, y, pol_id, numb_frames, Npol, N, t_stop)
 
     for i in 1:Npol
         pol_indices = findall(index -> index == i, pol_id)
-        R_2 += vec(sum(((x[:, pol_indices] .- polymer_x[:, i]) .^2 .+ (y[:, pol_indices] .- polymer_y[:, i]) .^2), dims=2) ./ N)
+        R_2 += vec(sum(((distance(x[:, pol_indices], polymer_x[:, i], sizes[1])) .^2 .+ (distance(y[:, pol_indices], polymer_y[:, i], sizes[2])) .^2), dims=2) ./ N)
     end
 
     return Dict("R_2" => R_2, "R_2_time" => time)
