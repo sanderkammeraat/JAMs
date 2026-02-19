@@ -21,11 +21,16 @@ path_data = joinpath("E:", "martin", sim_folder_name)
 function simulation(p, N_in_pol, kpar, kbend)
 
 
-    f_eq_stretch_force = .75
+    f_eq_stretch_force = 1.
     krep = 1.
 
+<<<<<<< HEAD
     pair_forces = (soft_disk_force(1,krep), polymer_harmonic_bend_force(1, kbend), polymer_pairAN_force(1,false, false, false, 1.5, kpar, 0., p), polymer_harmonic_stretch_force(1,krep, f_eq_stretch_force))
     #pair_forces = (soft_disk_force(1,krep), polymer_harmonic_stretch_force(1,krep, f_eq_stretch_force), polymer_harmonic_bend_force(1, kbend), polymer_pair_polar_nematic_force(1, false, 1.5, p))
+=======
+    #pair_forces = (soft_disk_force(1,krep), polymer_harmonic_bend_force(1, kbend), polymer_pairAN_force(1,true, true, false, 1.5, kpar, 0., p)), polymer_harmonic_stretch_force(1,krep, f_eq_stretch_force)
+    pair_forces = (soft_disk_force(1,krep), polymer_harmonic_bend_force(1, kbend), polymer_harmonic_stretch_force(1,krep, f_eq_stretch_force))#, polymer_pair_polar_nematic_force(1, false, 1.5, .1))
+>>>>>>> 35d3280 (updates)
 
     external_forces = (thermal_translational_noise(1, [0.001, 0.001, 0]),)#, ABP_3d_propulsion_force(1))
 
