@@ -55,7 +55,7 @@ for (j, N_in_pol_value) in enumerate(N_in_pol)
 
         if MSDbool
 
-            MSD_data = MSD(dataset.x, dataset.y, dataset.numb_frames, dataset.N, dataset.t_stop)
+            MSD_data = MSD(dataset.xuw, dataset.yuw, dataset.numb_frames, dataset.N, dataset.t_stop)
             data["MSD"] = MSD_data["MSD"]
             data["MSD_time"] = MSD_data["MSD_time"]
 
@@ -64,7 +64,7 @@ for (j, N_in_pol_value) in enumerate(N_in_pol)
 
         if polymer_MSDbool
 
-            polymer_MSD_data = polymer_MSD(dataset.x, dataset.y, dataset.pol_id, dataset.numb_frames, dataset.Npol, dataset.N, dataset.t_stop)
+            polymer_MSD_data = polymer_MSD(dataset.xuw, dataset.yuw, dataset.pol_id, dataset.numb_frames, dataset.Npol, dataset.N, dataset.t_stop)
             data["polymer_MSD"] = polymer_MSD_data["polymer_MSD"]
             data["polymer_MSD_time"] = polymer_MSD_data["polymer_MSD_time"]
 
@@ -73,7 +73,7 @@ for (j, N_in_pol_value) in enumerate(N_in_pol)
 
         if basic_MSDbool
 
-            basic_MSD_data = basic_MSD(dataset.x, dataset.y, dataset.numb_frames, dataset.N, dataset.t_stop)
+            basic_MSD_data = basic_MSD(dataset.xuw, dataset.yuw, dataset.numb_frames, dataset.N, dataset.t_stop)
             data["basic_MSD"] = basic_MSD_data["basic_MSD"]
             data["basic_MSD_time"] = basic_MSD_data["basic_MSD_time"]
 
@@ -90,7 +90,7 @@ for (j, N_in_pol_value) in enumerate(N_in_pol)
 
 
         if radius_of_gyrationbool
-            radius_of_gyration_data = radius_of_gyration(dataset.x, dataset.y, dataset.pol_id, dataset.numb_frames, dataset.Npol, dataset.N, dataset.t_stop)
+            radius_of_gyration_data = radius_of_gyration(dataset.xuw, dataset.yuw, dataset.pol_id, dataset.numb_frames, dataset.Npol, dataset.N, dataset.t_stop)
             data["R_2"] = radius_of_gyration_data["R_2"]
             data["R_2_time"] = radius_of_gyration_data["R_2_time"]
 
@@ -99,7 +99,7 @@ for (j, N_in_pol_value) in enumerate(N_in_pol)
 
         if end_to_end_distancebool
 
-            end_to_end_distance_data = end_to_end_distance(dataset.x, dataset.y, dataset.pol_id, dataset.id_in_pol, dataset.numb_frames, dataset.Npol, dataset.N, dataset.t_stop, dataset.sizes)
+            end_to_end_distance_data = end_to_end_distance(dataset.xuw, dataset.yuw, dataset.pol_id, dataset.id_in_pol, dataset.numb_frames, dataset.Npol, dataset.N, dataset.t_stop, dataset.sizes)
             data["e_to_e_dist"] = end_to_end_distance_data["e_to_e_dist"]
             data["e_to_e_dist_time"] = end_to_end_distance_data["e_to_e_dist_time"]
 
@@ -113,7 +113,7 @@ for (j, N_in_pol_value) in enumerate(N_in_pol)
 
         if MSDbool
 
-            MSD_data = MSD(dataset.x, dataset.y, dataset.numb_frames, dataset.N, dataset.t_stop)
+            MSD_data = MSD(dataset.xuw, dataset.yuw, dataset.numb_frames, dataset.N, dataset.t_stop)
             merge!(data, MSD_data)
 
         end
@@ -121,7 +121,7 @@ for (j, N_in_pol_value) in enumerate(N_in_pol)
 
         if polymer_MSDbool
 
-            polymer_MSD_data = polymer_MSD(dataset.x, dataset.y, dataset.pol_id, dataset.numb_frames, dataset.Npol, dataset.N, dataset.t_stop)
+            polymer_MSD_data = polymer_MSD(dataset.xuw, dataset.yuw, dataset.pol_id, dataset.numb_frames, dataset.Npol, dataset.N, dataset.t_stop)
             data["polymer_MSD"] = MSD_data["polymer_MSD"]
             data["polymer_MSD_time"] = MSD_data["polymer_MSD_time"]
 
@@ -130,7 +130,7 @@ for (j, N_in_pol_value) in enumerate(N_in_pol)
 
         if basic_MSDbool
 
-            basic_MSD_data = basic_MSD(dataset.x, dataset.y, dataset.numb_frames, dataset.N, dataset.t_stop)
+            basic_MSD_data = basic_MSD(dataset.xuw, dataset.yuw, dataset.numb_frames, dataset.N, dataset.t_stop)
             merge!(data, basic_MSD_data)
 
         end
@@ -146,7 +146,7 @@ for (j, N_in_pol_value) in enumerate(N_in_pol)
 
         if radius_of_gyrationbool
 
-            radius_of_gyration_data = radius_of_gyration(dataset.x, dataset.y, dataset.pol_id, dataset.numb_frames, dataset.Npol, dataset.N, dataset.t_stop)
+            radius_of_gyration_data = radius_of_gyration(dataset.xuw, dataset.yuw, dataset.pol_id, dataset.numb_frames, dataset.Npol, dataset.N, dataset.t_stop)
             merge!(data, radius_of_gyration_data)
 
         end
@@ -154,7 +154,7 @@ for (j, N_in_pol_value) in enumerate(N_in_pol)
 
         if end_to_end_distancebool
 
-            end_to_end_distance_data = end_to_end_distance(dataset.x, dataset.y, dataset.pol_id, dataset.id_in_pol, dataset.numb_frames, dataset.Npol, dataset.N, dataset.t_stop, dataset.sizes)
+            end_to_end_distance_data = end_to_end_distance(dataset.xuw, dataset.yuw, dataset.pol_id, dataset.id_in_pol, dataset.numb_frames, dataset.Npol, dataset.N, dataset.t_stop, dataset.sizes)
             merge!(data, end_to_end_distance_data)
 
         end

@@ -36,6 +36,8 @@ end
 struct simulation_data{}
     x::Matrix{Float64}
     y::Matrix{Float64}
+    xuw::Matrix{Float64}
+    yuw::Matrix{Float64}
     vx::Matrix{Float64}
     vy::Matrix{Float64}
     px::Matrix{Float64}
@@ -79,13 +81,18 @@ function get_data(file_location)
     x = zeros(numb_frames, N)
     y = zeros(numb_frames, N)
 
+    xuw = zeros(numb_frames, N)
+    yuw = zeros(numb_frames, N)
+
     p_x = zeros(numb_frames, N)
     p_y = zeros(numb_frames, N)
 
     for i in 1:numb_frames
 
-        x[i,:] = file["frames/$i/xuw"]
-        y[i,:] = file["frames/$i/yuw"]
+        x[i,:] = file["frames/$i/x"]
+        y[i,:] = file["frames/$i/y"]
+        xuw[i,:] = file["frames/$i/xuw"]
+        yuw[i,:] = file["frames/$i/yuw"]
         v_x[i,:] = file["frames/$i/vx"]
         v_y[i,:] = file["frames/$i/vy"]
         p_x[i,:] = file["frames/$i/px"]
@@ -112,5 +119,5 @@ function get_data(file_location)
 
     close(file)
 
-    return simulation_data(x, y, v_x, v_y, p_x, p_y, id, pol_id, id_in_pol, R, numb_frames, dt, Tsave, ksd, kbend, kstretch, fstretch, #=p, kpar, kperp,=# Npol, N, sizes, t_stop)
+    return simulation_data(x, y, xuw, yuw, v_x, v_y, p_x, p_y, id, pol_id, id_in_pol, R, numb_frames, dt, Tsave, ksd, kbend, kstretch, fstretch, #=p, kpar, kperp,=# Npol, N, sizes, t_stop)
 end

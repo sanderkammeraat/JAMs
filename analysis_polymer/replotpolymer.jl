@@ -21,16 +21,8 @@ GLMakie.activate!()
 
     t = Observable(0.)
 
-    x_wrapped = zeros(length(frames), length(frames["1/xuw"]))
-    y_wrapped = zeros(length(frames), length(frames["1/yuw"]))
-
-    for i in 1:length(frames)
-        x_wrapped[i,:] += (frames["$i/xuw"] .+ sizes[1]/2) .% sizes[1] .- sizes[1]/2
-        y_wrapped[i,:] += (frames["$i/yuw"] .+ sizes[2]/2) .% sizes[2] .- sizes[2]/2
-    end
-
-    x = Observable(x_wrapped[1,:])
-    y = Observable(y_wrapped[1,:]) 
+    x = Observable(frames["1"]["x"])
+    y = Observable(frames["1"]["y"]) 
 
     vx = Observable(frames["1"]["vx"])
     vy = Observable(frames["1"]["vy"]) 
@@ -81,8 +73,8 @@ GLMakie.activate!()
         t[] = frames[stri]["t"]
         #tplot[]=push!(tplot[], frames[stri]["t"] )
 
-        x[] = x_wrapped[i,:]
-        y[] = y_wrapped[i,:]
+        x[] = x[stri]["x"]
+        y[] = y[stri]["y"]
 
         vx[] = frames[stri]["vx"]
         vy[] = frames[stri]["vy"]

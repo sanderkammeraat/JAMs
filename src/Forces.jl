@@ -564,7 +564,7 @@ end
 
                 if p_j.id_in_pol[1]==p_i.id_in_pol[1]+2 || p_j.id_in_pol[1]==p_i.id_in_pol[1]-2
 
-                    p_i.f.+= -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+                    p_i.f.+= - force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
                 elseif p_j.id_in_pol[1]==p_i.id_in_pol[1]+1 || p_j.id_in_pol[1]==p_i.id_in_pol[1]-1
 
@@ -577,24 +577,24 @@ end
 
                 if p_j.id_in_pol[1]==3
 
-                    p_i.f.+=  -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+                    p_i.f.+= - force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
                 elseif p_j.id_in_pol[1]==2
 
-                    p_i.f.+= 2 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+                    p_i.f.+= 2 * force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
                 end
         
             #If i is the right most particle
-            elseif p_i.id_in_pol[1]== p_i.pol_N[1]
+            elseif p_i.id_in_pol[1]==p_i.pol_N[1]
 
                 if p_j.id_in_pol[1]==p_i.pol_N[1]-2
 
-                    p_i.f.+=  -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+                    p_i.f.+= - force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
                 elseif p_j.id_in_pol[1]==p_i.pol_N[1]-1
 
-                    p_i.f.+= 2 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+                    p_i.f.+= 2 * force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
                 end
 
@@ -617,17 +617,17 @@ end
                 end
 
             #If i is the second right most particle
-            elseif p_i.id_in_pol[1]==p_i.pol_N[1]-1
+            elseif p_i.id_in_pol[1]==p_i.pol_N[1]-1 #2   2
 
-                if p_j.id_in_pol[1]==p_i.pol_N[1]-3
+                if p_j.id_in_pol[1]==p_i.pol_N[1]-3 #0   4
 
-                    p_i.f.+=  -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+                    p_i.f.+= - force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
-                elseif p_j.id_in_pol[1]==p_i.pol_N[1]-2
+                elseif p_j.id_in_pol[1]==p_i.pol_N[1]-2 #1  3
 
                     p_i.f.+= 4 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
-                elseif p_j.id_in_pol[1]==p_i.pol_N[1]
+                elseif p_j.id_in_pol[1]==p_i.pol_N[1] #3   1
 
                     p_i.f.+= 2 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
@@ -1118,6 +1118,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
                     f.= β .*  ( force.k_par .* (sigma_i_dot_dx .+ sigma_j_dot_dx )  .+ force.k_per .* (sigma_i_dot_dx_perp .+ sigma_j_dot_dx_perp ))
 
                     p_i.f.+= f
+                    
                     #add torque
                     if force.torque
                         p_i.q.+= cross(dx/2, f)
