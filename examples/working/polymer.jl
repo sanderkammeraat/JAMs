@@ -43,8 +43,14 @@ function simulation(p, N_in_pol, kpar, kbend)
     x, y, radii, pol_ids, ids_in_pol, L = stacked_polymers_at_angle(N_in_pol, Npols, R, pf, f_eq_stretch_force, random_polarity = false)
 
     #PolarPolymerParticle3d id type pol_id id_in_pol pol_N #####,overdamped_pq_xyc_evolver(1)
-    initial_state = PolarPolymerParticle3d[PolarPolymerParticle3d([id],[1],[pol_ids[id]],[ids_in_pol[id]],[N_in_pol], [1], [1], [radii[id]], [0.], [0.01], [x[id] , y[id],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for id=1:Npols*N_in_pol];
+    #initial_state = PolarPolymerParticle3d[PolarPolymerParticle3d([id],[1],[pol_ids[id]],[ids_in_pol[id]],[N_in_pol], [1], [1], [radii[id]], [0.], [0.01], [x[id] , y[id],0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for id=1:Npols*N_in_pol];
+    
+    file = jldopen(raw"E:\martin\sim_data\p_0.4,N_10\JAMs_final_state.jld2", "r")
+    older_simulation = file["SIM"]
+    close(file)
 
+    initial_state = older_simulation.final_particle_state
+    
     display(Npols*N_in_pol)
 
     sizes = [L,L,2];
@@ -67,7 +73,7 @@ end
 
 
 #p, N_in_pol, kpar, kbend
-sim = simulation(.05,  10, 1., 3.) 
+sim = simulation(.4,  10, -1., 3.) 
 
 # @profview sim = simulation() 
 

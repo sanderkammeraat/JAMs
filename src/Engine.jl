@@ -511,14 +511,14 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
             #Save the states before the final dof step
 
             if n==n_final_save
+                final_particle_state = deepcopy(current_particle_state)
+                final_field_state = deepcopy(current_field_state)
                 if !isnothing(Tsave)
                     jldopen(joinpath(save_folder_path, JAMs_final_state_file_name),"a+",iotype=IOStream ) do JAMs_file
 
                         JAMs_file["SIM"]=SIM(deepcopy(final_particle_state), deepcopy(final_field_state), deepcopy(dt), deepcopy(t_stop), deepcopy(system));
                     end
                 end
-                final_particle_state = deepcopy(current_particle_state)
-                final_field_state = deepcopy(current_field_state)
 
                 
             end
