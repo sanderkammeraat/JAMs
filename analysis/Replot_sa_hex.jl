@@ -8,7 +8,7 @@ GLMakie.activate!()
 @views function make_movie_full(raw_data_file,save_folder)
     save_tax = raw_data_file["integration_info"]["save_tax"]
 
-    J = raw_data_file["system"]["forces"]["external"]["self_align_with_v_unit_force"]["β"]
+    J = raw_data_file["system"]["forces"]["external"]["self_align_with_v_force"]["β"]
 
     frame_numbers = 1:1:length(save_tax)
 

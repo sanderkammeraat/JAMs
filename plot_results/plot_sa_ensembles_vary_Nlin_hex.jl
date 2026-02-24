@@ -10,7 +10,7 @@ base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/h
 
 
 
-figure_save_folder = joinpath(base_folder, "figures_30_01")
+figure_save_folder = joinpath(base_folder, "figures_16_02")
 mkpath(figure_save_folder)
 
 
@@ -34,14 +34,27 @@ marker_labels = [:circle, :rect, :diamond, :hexagon, :cross, :xcross]
 
 ensemble_files[1]["eigenmodes"]["eigvals"]["seed_1.h5"]
 marker_dict=Dict()
-for (i, Nint) in pairs(sort(unique(Nints)))
-    marker_dict[Nint] = marker_labels[i]
-end
+# for (i, Nint) in pairs(sort(unique(Nints)))
+#     marker_dict[Nint] = marker_labels[i]
+# end
+
+# color_dict=Dict()
+# for (i, J) in pairs(sort(unique(Js)))
+#     color_dict[J] = i
+# end
+
+
 
 color_dict=Dict()
-for (i, J) in pairs(sort(unique(Js)))
-    color_dict[J] = i
+for (i, Nint) in pairs(sort(unique(Nints)))
+    color_dict[Nint] =i
 end
+
+marker_dict=Dict()
+for (i, J) in pairs(sort(unique(Js)))
+    marker_dict[J] = marker_labels[i]
+end
+
 
 
 GLMakie.activate!()
@@ -274,39 +287,39 @@ for e in ensemble_files
 
         
 
-        eigvals = ensemble_files[1]["eigenmodes"]["eigvals"]["seed_2.h5"]
+        eigvals = e["eigenmodes"]["eigvals"]["seed_2.h5"]
 
         for key in keys(e["eigenmodes"]["eigvals"])
            # display(e["eigenmodes"]["eigvals"][key][1])
         end
 
-        eigvals = [0.004]
+        # eigvals = [0.004]
         a_min= @.sqrt(1 +  ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))^2 ) - ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))
-        eigvals =ensemble_files[1]["eigenmodes"]["eigvals"]["seed_2.h5"]# e["eigenmodes"]["eigvals"]["seed_2.h5"]
-        a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) 
+        # eigvals =ensemble_files[1]["eigenmodes"]["eigvals"]["seed_2.h5"]# e["eigenmodes"]["eigvals"]["seed_2.h5"]
+        # a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) 
 
-        p= [eigval_bin_centers, J, tau,e["v_projs_time_avg"]["v_projs_time_avg"][1]/e["v0"]^2]
+        # p= [eigval_bin_centers, J, tau,e["v_projs_time_avg"]["v_projs_time_avg"][1]/e["v0"]^2]
         
-        #display(a_num)
-        #display(e["vrms"]/v0)
-        #a based on loweest mode selection
-        #a =copy( e["vrms"]/v0)
-        #display(a)
-        #a = e["vrms_r"]["vrms_r"][2]/v0
-        #a = a_num
+        # #display(a_num)
+        # #display(e["vrms"]/v0)
+        # #a based on loweest mode selection
+        # #a =copy( e["vrms"]/v0)
+        # #display(a)
+        # #a = e["vrms_r"]["vrms_r"][2]/v0
+        # #a = a_num
 
-        #a = a_alt
-        #a=1
-        #a = a_num
-        #a = a_min
+        # #a = a_alt
+        # #a=1
+        # #a = a_num
+        # #a = a_min
 
-        if a_min<=a_ABP
+        # if a_min<=a_ABP
 
-            a=a_ABP
+        #     a=a_ABP
 
-        else
-            a=a_min
-        end
+        # else
+        #     a=a_min
+        # end
 
         #a+=ϵs[ind]
         ind+=1
@@ -314,7 +327,7 @@ for e in ensemble_files
         #display(abs(a_num-e["vrms"]/v0)/a_num*100)
        # a2 = 
         a = a_min
-        the_eigvals =eigvals[1:end]
+        the_eigvals =eigval_bin_centers
         theory_ABP = v0^2  ./ (2 .+ 2 .* the_eigvals .* tau)  /v0^2
         tauJ = 1/(J*a+1/tau)
         C =@.  1 - 2*(the_eigvals+1/tauJ)*a/J
@@ -350,22 +363,24 @@ for e in ensemble_files
 
         #lines!(ax,the_eigvals[select],theory_amin, color=e["J"], colorrange = (0, 1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
 
-        scatter!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2,color=log10(e["J"]), colorrange = (-3, 0))# ,  label="J = $(e["J"])",alpha=0.3)
+        scatterlines!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2, colorrange = (1, 6 ) , color=color_dict[e["Nint"]], label="J = $(e["J"]), Nint = $(e["Nint"])",marker=marker_dict[e["J"]], markersize=10)# ,  label="J = $(e["J"])",alpha=0.3)
 
-        lines!(ax,the_eigvals,theory_ABP, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) ABP theory ", alpha=0.2)
+        #lines!(ax,the_eigvals,theory_ABP, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) ABP theory ", alpha=0.2)
        
         #scatterlines!(ax,the_eigvals,real.(B), color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])", linestyle=:dash)
 
         
         #lines!(ax,the_eigvals,theory_integral, color=log10(e["J"]), colorrange = (-3, 0) , linestyle=:solid, label="J = $(e["J"]), a = $(e["vrms"]/v0)")#,  label="J = $(e["J"])")
-        #lines!(ax,the_eigvals,theory_amin, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
+        if J==0.2
+        lines!(ax,the_eigvals,theory_integral, color=color_dict[e["Nint"]], colorrange = (1, 6 ) ,  label="J = $(e["J"]) theory a=a_min", linestyle=:dash)
+        end
     end
 
 end
 
 xlims!(ax, 0.002,1)
 f[1,2]=Legend(f,ax)
-#save(joinpath(figure_save_folder,"v_projs_tau_J_theory_aABP.pdf"), f,backend=CairoMakie)
+save(joinpath(figure_save_folder,"v_projs_tau_J.pdf"), f,backend=CairoMakie)
 display(f)#
 end
 
@@ -381,10 +396,10 @@ for e in ensemble_files
     J= e["J"]
     Dr = e["Dr"]
 
-    if Dr ==0.01 #&& J==0.08
+    if Dr ==0.1 #&& J==0.08
     v0 = e["v0"]
 
-    ax = Axis(f[1,1], ylabel=L"ω_n", xlabel=L"ω", title="J=$J, Dr = $Dr, v0 = $(v0)")
+    ax = Axis(f[1,1], ylabel=L"ω_n", xlabel=L"ω", title="Nint = $(e["Nint"]),J=$J, Dr = $Dr, v0 = $(v0)")
 
     tau =1/Dr
 
@@ -408,7 +423,6 @@ for e in ensemble_files
     #f[1,2]=Legend(f,ax)
     save("temp.pdf",f)
     append_pdf!( joinpath(figure_save_folder,"Dre_0_01_wn_w.pdf"), "temp.pdf", cleanup=true)
-
 
     display(f)
     end

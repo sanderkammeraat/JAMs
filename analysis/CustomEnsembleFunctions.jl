@@ -127,6 +127,10 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
 
     ensemble_file["R"] = reference_seed["R"]
 
+    t = reference_seed["t"]
+
+    dt = t[2] - t[1]
+
 
 
     create_group(ensemble_file, "eigenmodes")
@@ -190,6 +194,24 @@ function sa_ensemble!(ensemble_file, loaded_seed_files, seed_names)
     ensemble_file["vrms_r"]["vrms_r"]= binned_vrms_r_data.bin_values
     ensemble_file["vrms_r"]["N_in_bin"]= binned_vrms_r_data.N_in_bin
 
+    kin_en = []
+    w = []
+    
+    for i in eachindex(loaded_seed_files)
+
+        if i==1
+            w = loaded_seed_files[i]["FT_v_projs"]["w"]
+            kin_en =  reshape(sum(loaded_seed_files[i]["FT_v_projs"]["Xf2"]   ,dims=1)[1,:] ,1,length(w))
+        else
+            kin_en =  vcat(kin_en,reshape(sum(loaded_seed_files[i]["FT_v_projs"]["Xf2"]   ,dims=1)[1,:] ,1,length(w)))
+
+        end
+
+    end
+    create_group(ensemble_file, "kin_en")
+    ensemble_file["kin_en"]["kin_en"] = mean(kin_en, dims=1)[1,:] 
+    ensemble_file["kin_en"]["w"] = w
+    
     
 
     X = []

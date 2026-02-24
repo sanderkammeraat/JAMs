@@ -8,7 +8,7 @@ base_folder = "/Volumes/T7_Shield/sa/statistics/hex_disordered/phi_1.3/Nlin_20/"
 
 
 
-figure_save_folder = joinpath(base_folder, "figures_30_01")
+figure_save_folder = joinpath(base_folder, "figures_20_02")
 mkpath(figure_save_folder)
 
 
@@ -30,6 +30,18 @@ v0s = [e["v0"] for e in ensemble_files] #by color
 
 
 ensemble_files[1]["eigenmodes"]["eigvals"]["seed_1.h5"]
+
+Js = [e["J"] for e in ensemble_files]
+
+
+e_ind_sort = sortperm(Js)
+
+
+color_dict=Dict()
+for (i, J) in pairs(sort(unique(Js)))
+    color_dict[J] = i
+end
+
 
 
 GLMakie.activate!()
@@ -208,17 +220,12 @@ function f_a_2(a,p)
         tau = p[3] 
         num_v = p[4]
 
-        A = Complex.( sqrt.( (1/tau + J * a) .* eigval))
-
-        B = Complex.( eigval .+  .-J /a  .+ 1/tau  .+ J*a) 
+        B =  eigval .+  .-J /a  .+ 1/tau  .+ J*a
 
 
-    
-        T1 =-(B^2 - 2*A^2)/2
-        T2 =1/2*sqrt(B^2 * (B^2 - 4 * A^2)) 
         #theory_integral = @. 2* pi* tauJ * (J*tauJ + a * (1+tauJ*eigvals)^2)/(a*tau*(1+tauJ*eigvals)^3)/4/pi
 
-        theory_integral =  real( @. 1im * pi* ( 1/ (sqrt(T1+T2)-sqrt(T1-T2)) ) ) *4*pi/tau/(2*pi)^2/2
+        theory_integral = pi/B* 4*pi/tau/(2*pi)^2/2
 
         if eigval .+  .-J /a  .+ 1/tau  .+ J*a<=0
             theory_integral*=1000
@@ -236,7 +243,7 @@ GLMakie.activate!()
 begin
 f = Figure()
 
-ax = Axis(f[1,1], xlabel=L"λ", ylabel=L"v projs /v_0^2",title=L"D_r=0.1", yscale=log10)#, xscale=log10, yscale=log10,title=L"First order in ($J \tau_J$), Dr=0.1")
+ax = Axis(f[1,1], xlabel=L"λ", ylabel=L"v projs /v_0^2",title=L"D_r=0.1",xscale=log10,yscale=log10)#, xscale=log10, yscale=log10,title=L"First order in ($J \tau_J$), Dr=0.1")
 ϵs = zeros(12)
 
 # J= [0.001, 0.01, 0.02, 0.04, 0.08, 0.10, 0.12, 0.16. 0.2, 0.4, 0.8, 1.0]
@@ -251,7 +258,7 @@ for e in ensemble_files
     v0 = e["v0"]
     J= e["J"]
     if Dr==0.1 && J>0
-        display(J)
+        #display(J)
         
             
         tau =1/Dr
@@ -268,26 +275,13 @@ for e in ensemble_files
            # display(e["eigenmodes"]["eigvals"][key][1])
         end
 
-        eigvals = [0.004]
+        eigvals = ensemble_files[1]["eigenmodes"]["eigvals"]["seed_2.h5"]
         a_min= @.sqrt(1 +  ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))^2 ) - ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))
         eigvals =ensemble_files[1]["eigenmodes"]["eigvals"]["seed_2.h5"]# e["eigenmodes"]["eigvals"]["seed_2.h5"]
         a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) 
 
         p= [eigval_bin_centers, J, tau,e["v_projs_time_avg"]["v_projs_time_avg"][1]/e["v0"]^2]
         
-        #display(a_num)
-        #display(e["vrms"]/v0)
-        #a based on loweest mode selection
-        #a =copy( e["vrms"]/v0)
-        #display(a)
-        #a = e["vrms_r"]["vrms_r"][2]/v0
-        #a = a_num
-
-        #a = a_alt
-        #a=1
-        #a = a_num
-        #a = a_min
-
         if a_min<=a_ABP
 
             a=a_ABP
@@ -297,27 +291,33 @@ for e in ensemble_files
         end
 
         #a+=ϵs[ind]
+        a_num = a
+        if J>0 && J<0.16
+            a_num = find_zero(f_a_2, a, p)
+         elseif J>=0.16
+            a_num=a_min
+            #a_num=find_zero(f_a_2, a, p)
+        end
+
+        #a+=ϵs[ind]
         ind+=1
-        #a_num = find_zero(f_a_2, a, p)
-        #display(abs(a_num-e["vrms"]/v0)/a_num*100)
        # a2 = 
-        a = a_min
+        a = a_num 
+
+        println(a)
         the_eigvals =eigvals[1:end]
         theory_ABP = v0^2  ./ (2 .+ 2 .* the_eigvals .* tau)  /v0^2
         tauJ = 1/(J*a+1/tau)
-        C =@.  1 - 2*(the_eigvals+1/tauJ)*a/J
-        A = Complex.( sqrt.( (1/tau + J * a) .* the_eigvals))
 
-        B = Complex.(@. the_eigvals .+  .-J /a  .+ 1/tau  .+ J*a) 
+        B = @. eigval_bin_centers .+  .-J /a  .+ 1/tau  .+ J*a
     
-        T1 =@. -(B^2 - 2*A^2)/2
-        T2 =@. 1/2*sqrt(B^2 * (B^2 - 4 * A^2)) 
+
         #B=@.B + 0-B[1]
 
         #integral= @.real( 1im * sqrt(2) *pi/(sqrt(2 *A^2+B*(-B+sqrt(-4 *A^2+B^2)))+sqrt(2 *A^2-B*(B+sqrt(-4* A^2+B^2)))))
         #theory_integral= @.real( 1im  *pi* ( T1+T2 + sqrt(T1-T2)*sqrt(T1+T2))/ (2 *sqrt(T1-T2)*T2) ) ./tau
 
-        theory_integral = @. real( @. 1im * pi* ( 1/ (sqrt(T1+T2)-sqrt(T1-T2)) ) ) *4*pi/tau/(2*pi)^2/2
+        theory_integral =@. pi/B* 4*pi/tau/(2*pi)^2/2
 
         
         #theory_integral = @. 2* pi* tauJ * (J*tauJ + a * (1+tauJ*the_eigvals)^2)/(a*tau*(1+tauJ*the_eigvals)^3)
@@ -338,14 +338,14 @@ for e in ensemble_files
 
         #lines!(ax,the_eigvals[select],theory_amin, color=e["J"], colorrange = (0, 1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
 
-        scatter!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2,color=log10(e["J"]), colorrange = (-3, 0))# ,  label="J = $(e["J"])",alpha=0.3)
+        scatter!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2,color=color_dict[e["J"]], colorrange = (1, 13),colormap=:turbo)# ,  label="J = $(e["J"])",alpha=0.3)
 
-        lines!(ax,the_eigvals,theory_ABP, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) ABP theory ", alpha=0.2)
+        #lines!(ax,the_eigvals,theory_ABP, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) ABP theory ", alpha=0.2)
        
         #scatterlines!(ax,the_eigvals,real.(B), color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])", linestyle=:dash)
 
         
-        #lines!(ax,the_eigvals,theory_integral, color=log10(e["J"]), colorrange = (-3, 0) , linestyle=:solid, label="J = $(e["J"]), a = $(e["vrms"]/v0)")#,  label="J = $(e["J"])")
+        lines!(ax,eigval_bin_centers,theory_integral, color=color_dict[e["J"]], colorrange = (1,13) , linestyle=:solid, label="J = $(e["J"]), a = $(e["vrms"]/v0)",colormap=:turbo)#,  label="J = $(e["J"])")
         #lines!(ax,the_eigvals,theory_amin, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
     end
 
@@ -356,6 +356,121 @@ f[1,2]=Legend(f,ax)
 #save(joinpath(figure_save_folder,"v_projs_tau_J_theory_aABP.pdf"), f,backend=CairoMakie)
 display(f)#
 end
+
+using CairoMakie
+
+
+begin
+GLMakie.activate!()
+f = Figure(size=(2000,1000))
+ax = Axis(f[1,1], ylabel=L"\sum_{\nu} <|\dot{a}_{\nu}|^2>", xlabel=L"ω",yscale=log10)
+Drplot = 0.1
+for e in ensemble_files
+
+
+    
+
+    J= e["J"]
+    Dr = e["Dr"]
+
+    if Dr ==Drplot && J<1
+
+
+    v0 = e["v0"]
+
+    
+
+    #, title="J=$J, Dr = $Dr, v0 = $(v0)")
+
+    tau =1/Dr
+
+    eigval_bin_centers = e["FT_v_projs"]["eigval_bin_centers"]
+
+
+    
+    w = e["kin_en"]["w"]
+    eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]   
+
+    a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) 
+    t = e["t"]
+
+    eigval_ind=1
+    min_t_ind = e["min_t_ind"]
+    a_min= @.sqrt(1 +  ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))^2 ) - ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))
+    p= [eigval_bin_centers, J, tau,e["v_projs_time_avg"]["v_projs_time_avg"][1]/e["v0"]^2]
+    if a_min<=a_ABP
+
+        a=a_ABP
+
+    else
+        a=a_min
+    end
+
+    #a+=ϵs[ind]
+    a_num = a
+    if J>0 && J<0.16
+        a_num = find_zero(f_a_2, a, p)
+    elseif J>=0.16
+        a_num=a_min
+        #a_num=find_zero(f_a_2, a, p)
+    end
+
+    #a+=ϵs[ind]
+    # a2 = 
+    a = a_num 
+    println(a)
+    #X = zeros(length(eigvals),(length(w)))  
+    X = zeros(size(e["FT_v_projs"]["X2"] ))  
+    
+    if J!=0
+    for i in 1:size(X)[1]
+
+        @Threads.threads for j in 1:size(X)[2]
+            X[i,j] = v0^2  * 1/tau * 2 *pi * w[j]^2/( ( (1/tau + J*a)*eigval_bin_centers[i]-w[j]^2)^2  + w[j]^2 * (eigval_bin_centers[i] - J/a + J*a + 1/tau)^2)
+            #X[i,j] = v0^2  * 2*tau * 2 *pi * w[j]^2*(1)/( (eigvals[i]^2 + w[j]^2)*(1+tau^2 * w[j]^2)-2*J*tau/a*((1+eigvals[i]*tau)*w[j]^2 - eigvals[i]^2*a^2 ) ) * (t[end] - t[min_t_ind])/(2*pi)/(2*pi)
+
+        end
+    end
+    else
+        for i in 1:size(X)[1]
+
+            @Threads.threads for j in 1:size(X)[2]
+                X[i,j] = v0^2  * 1/tau * 2 *pi * w[j]^2/( ( (1/tau)*eigval_bin_centers[i]-w[j]^2)^2  + w[j]^2 * (eigval_bin_centers[i] + 1/tau)^2) 
+            #X[i,j] = v0^2  * 2*tau * 2 *pi * w[j]^2*(1)/( (eigvals[i]^2 + w[j]^2)*(1+tau^2 * w[j]^2)-2*J*tau/a*((1+eigvals[i]*tau)*w[j]^2 - eigvals[i]^2*a^2 ) ) * (t[end] - t[min_t_ind])/(2*pi)/(2*pi)
+
+        end
+    end
+
+    end
+    display(length(w))
+    dt = t[2]-t[1]
+    scatterlines!(ax,e["kin_en"]["w"], e["kin_en"]["kin_en"]*dt^2 * (2*pi/length(t[e["min_t_ind"]:end])/dt), colorrange=(1,13), colormap=:gist_rainbow, color=color_dict[J],label="$J",alpha=0.2)
+    scatterlines!(ax,w, sum(e["FT_v_projs"]["X2"]   ,dims=1)[1,:] *dt^2 * (2*pi/length(t[e["min_t_ind"]:end])/dt), colorrange=(1,13), colormap=:gist_rainbow, color=color_dict[J],label="$J",alpha=0.2,marker=:diamond)
+    lines!(ax,e["kin_en"]["w"], sum(X ,dims=1)[1,:] , colorrange=(1,13), colormap=:gist_rainbow, color=color_dict[J],label="$J th")
+    label =  L"\langle \log_{10}| \dot{a}{\nu}(\omega) |^2 \rangle"
+    #cb = Colorbar(f[1, 2], limits = (-2, 3), label =label , colormap = :gist_rainbow)
+
+
+    # xlims!(0,0.5)
+    # ylims!(0,1)
+    # theory_ABP = v0^2  ./ (2 .+ 2 .* eigval_bin_centers .* tau)  /v0^2
+
+    # scatterlines!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2, color=e["v0"], colorrange = (0, 0.01 ) ,  label="v0 = $(e["v0"]),J = $(e["J"])")
+
+    # lines!(ax,eigval_bin_centers,theory_ABP, colorrange = (0, maximum(Drs) ) ,  label="v0 = $(e["v0"]),J = $(e["J"])")
+    #f[1,2]=Legend(f,ax)
+
+    
+    
+    end
+end
+f[1,2]=Legend(f,ax,"J")
+display(f)
+save(joinpath(figure_save_folder,"kin_en_spectrum_Dr_$Drplot.pdf"), f, backend=CairoMakie)
+end
+
+
+
 
 
 begin #heatmap wn vs w
@@ -369,7 +484,7 @@ for e in ensemble_files
     J= e["J"]
     Dr = e["Dr"]
 
-    if Dr ==0.01 #&& J==0.08
+    if Dr ==0.1 #&& J==0.08
     v0 = e["v0"]
 
     ax = Axis(f[1,1], ylabel=L"ω_n", xlabel=L"ω", title="J=$J, Dr = $Dr, v0 = $(v0)")
@@ -535,6 +650,7 @@ for Drplot in [0.1,0.01]
     as = []
     a_mins = []
     a_mids = []
+    a_nums = []
     eigvals = ensemble_files[2]["eigenmodes"]["eigvals"]["seed_1.h5"]
     tau = 1/Drplot
     a_ABP = sqrt(1/ensemble_files[1]["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) 
@@ -545,6 +661,9 @@ for Drplot in [0.1,0.01]
 
         if Dr==Drplot
 
+
+
+
         vrms = e["vrms"]
         a = vrms/e["v0"]
 
@@ -552,6 +671,25 @@ for Drplot in [0.1,0.01]
         a_mid = e["vrms_r"]["vrms_r"][1]
 
         eigval_bin_centers = e["FT_v_projs"]["eigval_bin_centers"]
+
+        p= [eigval_bin_centers, J, tau,e["v_projs_time_avg"]["v_projs_time_avg"][1]/e["v0"]^2]
+        
+        if a_min<=a_ABP
+
+            a=a_ABP
+
+        else
+            a=a_min
+        end
+
+        #a+=ϵs[ind]
+        a_num = a
+        if J>0 && J<0.16
+            a_num = find_zero(f_a_2, a, p)
+         elseif J>=0.16
+            a_num=a_min
+            #a_num=find_zero(f_a_2, a, p)
+        end
         eigval_ind=1
         J = e["J"]
         tau = 1/Dr
@@ -559,6 +697,7 @@ for Drplot in [0.1,0.01]
         push!(a_mins, a_min)
         push!(a_mids, a_mid)
         push!(as, a)
+        push!(a_nums, a_num)
         push!(Js, e["J"])
 
         Jse = ones(length(eigvals)) * J

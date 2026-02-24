@@ -41,7 +41,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.05, 1e4, Tplot=10,fps=60,plot_functions=(plot_sized_points!, plot_directors!, plot_velocity_vectors!), plotdim=3, Tsave=nothing, save_folder_path = "/Users/kammeraat/test_saving_speed/", save_functions=[save_2d_polar_p!]); 
+    sim = Euler_integrator(system,0.05, 1e4, Tplot=10,fps=60,plot_functions=(plot_points!, plot_directors!, plot_velocity_vectors!), plotdim=3, Tsave=nothing, save_folder_path = "/Users/kammeraat/test_saving_speed/", save_functions=[save_2d_polar_p!]); 
     return sim;
 
 end

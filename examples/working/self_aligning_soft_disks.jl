@@ -5,15 +5,15 @@ function simulation()
     
 
     pair_forces = (soft_disk_force(1,1.),)
-    external_forces = (ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,0.4),ABP_perpendicular_angular_noise(1,[0,0,1]))
+    external_forces = (ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,1),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_evolver(1),)
     global_dofevolvers = ()
     field_dofevolvers = []
 
-    N=10000
-    ϕ = 1.0
+    N=2000
+    ϕ = 1.3
     poly=15e-2
     Rs = rand(Uniform(1-poly, 1+poly),N)
     display(size(Rs))
@@ -40,7 +40,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.05, 1e3, Tplot=10,fps=60,plot_functions=(plot_disks_orientation!, plot_directors!, plot_velocity_vectors!), plotdim=2, Tsave=nothing, save_folder_path = "/Users/kammeraat/test_saving_speed/", save_functions=[save_2d_polar_p!]); 
+    sim = Euler_integrator(system,0.05, 1e4, Tplot=10,fps=60,plot_functions=(plot_disks_orientation!,), plotdim=2, Tsave=nothing, save_folder_path = "/Users/kammeraat/test_saving_speed/", save_functions=[save_2d_polar_p!]); 
     return sim;
 
 end

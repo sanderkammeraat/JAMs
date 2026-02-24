@@ -20,7 +20,7 @@ save_folder_path = "/Users/kammeraat/mounting/pi-henkes/kammeraat/pairAN/sim_for
 
 
 
-raw_data = h5.File(os.path.join(save_folder_path, "raw_data.h5"))
+raw_data = h5.File(os.path.join(save_folder_path, "raw_data.h5"), 'r')
 
 
 #%%
@@ -45,24 +45,30 @@ y = np.zeros( shape=(Nframes, Np))
 ids = np.zeros( shape=(Nframes, Np))
 types = np.zeros( shape=(Nframes, Np))
 
+frame_numbers = np.arange(1,Nframes+1)
 
-for i, frame in enumerate(raw_data['frames'].keys()):
+
+#%%
+
+
+
+
+for i, frame_int in enumerate(frame_numbers):
     
     #As we can observe by printing the keys of raw_data['frames'] in order,
     #the key does not match up with its order (i.e. i!=int(frame))
+    frame = str(frame_int)
     print(frame)
     
     #We correct for this by indexing the pre-allocated arrays with the actual frame key.
     #Note that frame 1 should be at index 0.
     
-    x[int(frame)-1,:] = raw_data['frames'][frame]['x']
-    y[int(frame)-1,:] = raw_data['frames'][frame]['y']
+    x[i,:] = raw_data['frames'][frame]['x']
+    y[i,:] = raw_data['frames'][frame]['y']
     
-    ids[int(frame)-1,:] = raw_data['frames'][frame]['id']
+    ids[i,:] = raw_data['frames'][frame]['id']
     
-    types[int(frame)-1,:] = raw_data['frames'][frame]['type']
-    
-    
+    types[i,:] = raw_data['frames'][frame]['type']
     
 
     
@@ -76,5 +82,36 @@ plt.scatter(x[i,:],y[i,:],c=ids[i,:])
 plt.gca().set_aspect("equal")
 
 plt.show()   
+#%%
+
+
+raw_data["system"].keys()
+
+
+system =raw_data["system"]
+
+
+force_params = {}
+
+for forcetype in system["forces"]:
+    
+    
+    if forcetype not in force_params:
+        force_params[forcetype] = {}
+    
+    for force in  system["forces"][forcetype]:
+        
+        if force not in force_params[forcetype]:
+            force_params[forcetype][force] = {}
+        
+        
+        for field in system["forces"][forcetype][force]:
+            
+
+            force_params[forcetype][force][field] = np.array(system["forces"][forcetype][force][field])
+
+
+
+
 #%%
 raw_data.close()

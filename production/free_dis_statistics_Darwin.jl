@@ -18,7 +18,7 @@ function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing, N=2000)
     global_dofevolvers = []
     field_dofevolvers = []
     N=N
-    ϕ = 1.3
+    ϕ = 0.8
     poly=15e-2
     Rs = rand(Uniform(1-poly, 1+poly),N)
     display(size(Rs))
@@ -36,16 +36,16 @@ function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing, N=2000)
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, field_dofevolvers, true,2.5*(1+poly));
 
     #Run integration
-    sim = Euler_integrator(system,0.1, 2000,Tsave=Tsave, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="rx", plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=10); 
+    sim = Euler_integrator(system,0.1, 2000,Tsave=nothing, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="rx", plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=10); 
     return sim
 
 end
 
 
 
-function self_aligning_step(rx_step,J,v0, Dr, seed,save_folder_path; Tsave=nothing, Tplot=nothing)
+function self_aligning_step(rx_step,J,v0, Dr, seed; Tsave=nothing, Tplot=nothing)
 
-    external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
+    external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
     pair_forces = (soft_disk_force(1,1.),)
 
@@ -72,7 +72,7 @@ function self_aligning_step(rx_step,J,v0, Dr, seed,save_folder_path; Tsave=nothi
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,true,rx_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,0.01, 5e3,Tsave=250,seed=seed, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="sa",  plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=10); 
+    sim = Euler_integrator(system,0.01, 5e3,seed=seed,res=(1000,1000),  plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=10); 
     return sim
 end
 
@@ -111,6 +111,11 @@ function relax_again_step(sa_step, save_folder_path; Tsave=nothing, Tplot=nothin
 end
 
 
+rx_step = relaxation_step("")
+
+
+
+self_aligning_step(rx_step,500,0.08, 0.1, 100)
 
 
 

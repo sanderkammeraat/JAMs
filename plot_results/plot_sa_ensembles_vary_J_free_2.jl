@@ -4,15 +4,12 @@ include("../analysis/AnalysisPipeline.jl")
 
 #base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 
-#base_folder = "/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
+base_folder = "/Volumes/T7_Shield/sa/statistics/free/phi_1.3/N_2000"   #"/Users/kammeraat/mounting/data2_kammeraat/sa/statistics/hex_disordered/phi_1.3/Nlin_20"
 
 
-#base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/free/phi_1.0/N_2000"
-
-base_folder = "/Volumes/T7_Shield/sa/statistics/free/phi_1.3/N_2000"
 
 
-figure_save_folder = joinpath(base_folder, "figures_20_02")
+figure_save_folder = joinpath(base_folder, "figures_16_02")
 mkpath(figure_save_folder)
 
 
@@ -29,10 +26,15 @@ Js = [e["J"] for e in ensemble_files]
 
 v0s = [e["v0"] for e in ensemble_files] #by color
 
+e_ind_sort = sortperm(Js)
 
 
+color_dict=Dict()
+for (i, J) in pairs(sort(unique(Js)))
+    color_dict[J] = i
+end
 
-ensemble_files[12]["v_projs_time_avg"]
+ensemble_files = ensemble_files[e_ind_sort]
 
 
 
@@ -46,64 +48,19 @@ ax = Axis(f[1,1], xlabel=L"r", ylabel=L"vrms(r)/v0")
 for e in ensemble_files
 
     Dre = e["Dr"]
-    J = e["J"]
-    if Dre==0.1 && J==1
-    
-    eigvals = ensemble_files[1]["eigenmodes"]["eigvals"]["seed_3.h5"]
-    display(eigvals)
-    #eigvals=e["FT_v_projs"]["eigval_bin_centers"]
-    tau = 1/Dre
 
-    a_ABP =  sqrt(1/e["Nint"]*sum( 1 ./(2 .+ 2*tau .* eigvals))) 
+    if Dre==0.1
+    Je = e["J"]
 
-    scatterlines!(ax, e["vrms_r"]["r_bin_centers"], e["vrms_r"]["vrms_r"]/e["v0"], colorrange = (0, 1 ) , color=e["J"], label="J = $(e["J"])")
-
-    a_min= @.sqrt(1 +  ( 0+ 1/(2 * tau *J ))^2 ) - ( 0 + 1/(2 * tau *J ))
-
-    hlines!(ax, a_ABP )
-    hlines!(ax, a_min, color="red" )
-    hlines!(ax, e["vrms"]/e["v0"], color=e["J"], colorrange = (0, 1 ) )
+    scatterlines!(ax, e["vrms_r"]["r_bin_centers"], e["vrms_r"]["vrms_r"]/e["v0"], colorrange = (0, 13 ) , color=color_dict[e["J"]], label="J = $(e["J"])", colormap=:turbo)
     end
 
 end
 ylims!(ax,0,1.5)
 f[1,2]=Legend(f,ax)
 display(f)
-
+save(joinpath(figure_save_folder,"vrms_r.pdf"), f, backend=CairoMakie)
 end
-
-
-begin
-
-f = Figure()
-
-ax = Axis(f[1,1], xlabel=L"r", ylabel=L"vrms/v0")
-
-for e in ensemble_files
-
-    Dre = e["Dr"]
-    J = e["J"]
-    if Dre==0.1 && J==1
-    
-    
-    #eigvals=e["FT_v_projs"]["eigval_bin_centers"]
-    tau = 1/Dre
-
-
-    a_min= @.sqrt(1 +  ( 0+ 1/(2 * tau *J ))^2 ) - ( 0 + 1/(2 * tau *J ))
-
-    hlines!(ax, a_ABP )
-    scatter!(ax, e["vrms"]/e["v0"], color=e["J"], colorrange = (0, 1 ) )
-    end
-
-end
-ylims!(ax,0,1.5)
-f[1,2]=Legend(f,ax)
-display(f)
-
-end
-
-
 
 
 begin
@@ -122,10 +79,9 @@ for e in ensemble_files
 
 
 
-    if Dr==0.1 && J<=0.1
+    if Dr==0.1 
 
-        eigvals = e["eigenmodes"]["eigvals"]["seed_5.h5"]
-        
+        eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]
 
         #a_min= @.sqrt(1 +  ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))^2 ) - ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))
         tau = 1/Dr
@@ -145,23 +101,85 @@ for e in ensemble_files
         end
     
 
-    scatter!(ax,det , e["auto_p"]["Cavg"], colorrange = (0, Jmax ) , color=e["J"], label="J = $(e["J"])",alpha=0.3)
+    scatterlines!(ax,det , e["auto_p"]["Cavg"], colorrange = (0, 13 ) , color=color_dict[e["J"]], label="J = $(e["J"])", colormap=:turbo)
 
-    lines!(ax,det , the_auto, colorrange = (0, Jmax ) , color=e["J"])#, label="J = $(e["J"])")
+    #lines!(ax,det , the_auto, colorrange = (0, Jmax ) , color=e["J"])#, label="J = $(e["J"])")
     end
 
 end
 
-xlims!(ax, 0,100)
+xlims!(ax, 0,200)
 
 lines!(ax, ensemble_files[1]["auto_p"]["deltat"],exp.(-ensemble_files[1]["auto_p"]["deltat"].*0.1), color="red", label="ABP_theory")
 
-ylims!(ax, -0.015,0.2)
+ylims!(ax,-0.5,1)
 f[1,2]=Legend(f,ax)
 display(f)
-save(joinpath(figure_save_folder,"auto_n_zoom.pdf"), f, backend=CairoMakie)
+save(joinpath(figure_save_folder,"auto_n.pdf"), f, backend=CairoMakie)
 
 end
+
+begin
+using CairoMakie
+CairoMakie.activate!()
+
+GLMakie.activate!()
+f = Figure()
+
+ax = Axis(f[1,1], xlabel=L"$\Delta t$", ylabel=L"$\langle \vec{v}(t+\Delta t)\cdot \vec{v}(t) \rangle$/(v_{rms}(t+\Delta t)v_{rms}(t))", title="Dr =0.1")
+for e in ensemble_files
+
+    Dr = e["Dr"]
+    J = e["J"]
+
+
+
+    if Dr==0.1 
+
+        eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]
+
+        #a_min= @.sqrt(1 +  ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))^2 ) - ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))
+        tau = 1/Dr
+        a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals)))
+        a = a_ABP
+        tauJ = 1/(J*a+1/tau)
+
+        det = e["auto_v"]["deltat"]
+
+        the_auto = zeros(length(det))
+        #the_auto_s = zeros(length(det))
+
+        for i in eachindex(the_auto)
+            ti = det[i]
+            #the_auto_s[i] = exp(-ti/tauJ)*tauJ/tau
+            the_auto[i] = 2/length(eigvals)*  sum(@.  1/(2*a*tau*(tauJ^2*eigvals^2-1)^2) *exp(-ti*(1/tauJ + eigvals))*( -2*exp(ti/tauJ)*J*tauJ^3*eigvals + exp(ti*eigvals) *tauJ * ( a*(tauJ^2*eigvals^2-1)^2+J*(tauJ + ti+tauJ^2*(tauJ-ti)*eigvals^2)  )   ))
+        end
+    
+
+    scatterlines!(ax,det , e["auto_v"]["Cavg"], colorrange = (0, 13 ) , color=color_dict[e["J"]], label="J = $(e["J"])", colormap=:turbo)
+
+    #lines!(ax,det , the_auto, colorrange = (0, Jmax ) , color=e["J"])#, label="J = $(e["J"])")
+    end
+
+end
+
+xlims!(ax, 0,200)
+
+lines!(ax, ensemble_files[1]["auto_v"]["deltat"],exp.(-ensemble_files[1]["auto_p"]["deltat"].*0.1), color="red", label="ABP_theory")
+
+ylims!(ax,-0.5,1)
+f[1,2]=Legend(f,ax)
+display(f)
+save(joinpath(figure_save_folder,"auto_v.pdf"), f, backend=CairoMakie)
+
+end
+
+
+
+
+
+
+
 
 
 
@@ -193,7 +211,7 @@ end
 using Roots
 function f_a_2(a,p)
 
-        eigval =p[1][2]
+        eigval =p[1][1]
         J = p[2]
         tau = p[3] 
         num_v = p[4]
@@ -217,113 +235,7 @@ function f_a_2(a,p)
 
     return theory_integral - num_v
 end
-begin
-GLMakie.activate!()
-f = Figure(size=(2000,1000))
-ax = Axis(f[1,1], ylabel=L"\sum_{\nu} <|\dot{a}_{\nu}|^2>", xlabel=L"ω",yscale=log10)
-Drplot = 0.1
-for e in ensemble_files
 
-
-    
-
-    J= e["J"]
-    Dr = e["Dr"]
-
-    if Dr ==Drplot
-
-
-    v0 = e["v0"]
-
-    
-
-    #, title="J=$J, Dr = $Dr, v0 = $(v0)")
-
-    tau =1/Dr
-
-    eigval_bin_centers = e["FT_v_projs"]["eigval_bin_centers"]
-
-
-    
-    w = e["FT_v_projs"]["w"]
-    eigvals =e["eigenmodes"]["eigvals"]["seed_2.h5"]   
-
-    a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) 
-    t = e["t"]
-
-    eigval_ind=1
-    min_t_ind = e["min_t_ind"]
-    a_min= @.sqrt(1 +  ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))^2 ) - ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))
-    p= [eigval_bin_centers, J, tau,e["v_projs_time_avg"]["v_projs_time_avg"][1]/e["v0"]^2]
-    if a_min<=a_ABP
-
-        a=a_ABP
-
-    else
-        a=a_min
-    end
-
-    #a+=ϵs[ind]
-    a_num = a
-    if J>0 && J<0.16
-        a_num = find_zero(f_a_2, a, p)
-    elseif J>=0.16
-        a_num=a_min
-        #a_num=find_zero(f_a_2, a, p)
-    end
-
-    #a+=ϵs[ind]
-    # a2 = 
-    a = a_num 
-    println(a)
-    X = zeros(size(e["FT_v_projs"]["X2"]))  
-    
-    if J!=0
-    for i in 1:size(X)[1]
-
-        @Threads.threads for j in 1:size(X)[2]
-            X[i,j] = v0^2  * 1/tau * 2 *pi * w[j]^2/( ( (1/tau + J*a)*eigval_bin_centers[i]-w[j]^2)^2  + w[j]^2 * (eigval_bin_centers[i] - J/a + J*a + 1/tau)^2)
-            #X[i,j] = v0^2  * 2*tau * 2 *pi * w[j]^2*(1)/( (eigvals[i]^2 + w[j]^2)*(1+tau^2 * w[j]^2)-2*J*tau/a*((1+eigvals[i]*tau)*w[j]^2 - eigvals[i]^2*a^2 ) ) * (t[end] - t[min_t_ind])/(2*pi)/(2*pi)
-
-        end
-    end
-    else
-        for i in 1:size(X)[1]
-
-            @Threads.threads for j in 1:size(X)[2]
-                X[i,j] = v0^2  * 1/tau * 2 *pi * w[j]^2/( ( (1/tau)*eigval_bin_centers[i]-w[j]^2)^2  + w[j]^2 * (eigval_bin_centers[i] + 1/tau)^2) 
-            #X[i,j] = v0^2  * 2*tau * 2 *pi * w[j]^2*(1)/( (eigvals[i]^2 + w[j]^2)*(1+tau^2 * w[j]^2)-2*J*tau/a*((1+eigvals[i]*tau)*w[j]^2 - eigvals[i]^2*a^2 ) ) * (t[end] - t[min_t_ind])/(2*pi)/(2*pi)
-
-        end
-    end
-
-    end
-    display(length(w))
-    dt = t[2]-t[1]
-    scatterlines!(ax,w, sum(e["FT_v_projs"]["X2"]   ,dims=1)[1,:] *dt^2 * (2*pi/length(t[e["min_t_ind"]:end])/dt), colorrange=(1,13), colormap=:gist_rainbow, color=color_dict[J],label="$J",alpha=0.2)
-
-    lines!(ax,w, sum(X ,dims=1)[1,:] , colorrange=(1,13), colormap=:gist_rainbow, color=color_dict[J],label="$J th")
-    label =  L"\langle \log_{10}| \dot{a}_{\nu}(\omega) |^2 \rangle"
-    #cb = Colorbar(f[1, 2], limits = (-2, 3), label =label , colormap = :gist_rainbow)
-
-
-    # xlims!(0,0.5)
-    # ylims!(0,1)
-    # theory_ABP = v0^2  ./ (2 .+ 2 .* eigval_bin_centers .* tau)  /v0^2
-
-    # scatterlines!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2, color=e["v0"], colorrange = (0, 0.01 ) ,  label="v0 = $(e["v0"]),J = $(e["J"])")
-
-    # lines!(ax,eigval_bin_centers,theory_ABP, colorrange = (0, maximum(Drs) ) ,  label="v0 = $(e["v0"]),J = $(e["J"])")
-    #f[1,2]=Legend(f,ax)
-
-    
-    
-    end
-end
-f[1,2]=Legend(f,ax,"J")
-display(f)
-save(joinpath(figure_save_folder,"kin_en_spectrum_Dr_$Drplot.pdf"), f, backend=CairoMakie)
-end
 
 
 
@@ -331,22 +243,9 @@ display(ensemble_files[1]["t"])
 using CairoMakie
 GLMakie.activate!()
 begin
+f = Figure()
 
-markers_labels = [
-(:circle, ":circle"),
-(:rect, ":rect"),
-(:diamond, ":diamond"),
-(:hexagon, ":hexagon"),
-(:cross, ":cross"),
-(:xcross, ":xcross"),
-(:utriangle, ":utriangle"),
-(:dtriangle, ":dtriangle"),
-(:ltriangle, ":ltriangle"),
-(:rtriangle, ":rtriangle"),
-(:pentagon, ":pentagon")]
-f = Figure(size=(1000,1000))
-
-ax = Axis(f[1,1], xlabel="eigval",yticks = [1e-2, 1e-1, 1e0, 1e1, 1e2,1e3] ,ylabel=L"v projs /v_0^2",title=L"D_r=0.1", yscale=log10)#, xscale=log10)#,title=L"First order in ($J \tau_J$), Dr=0.1")
+ax = Axis(f[1,1], xlabel=L"λ", ylabel=L"v projs /v_0^2", xscale=log10,title=L"D_r=0.1", yscale=log10)#, xscale=log10, yscale=log10,title=L"First order in ($J \tau_J$), Dr=0.1")
 ϵs = zeros(12)
 
 # J= [0.001, 0.01, 0.02, 0.04, 0.08, 0.10, 0.12, 0.16. 0.2, 0.4, 0.8, 1.0]
@@ -360,7 +259,7 @@ for e in ensemble_files
     Dr = e["Dr"]
     v0 = e["v0"]
     J= e["J"]
-    if Dr==0.1 && J>0
+    if Dr==0.1 
         display(J)
         
             
@@ -370,24 +269,28 @@ for e in ensemble_files
 
         eigval_ind = 1 
 
+        theory_ABP = v0^2  ./ (2 .+ 2 .* eigval_bin_centers .* tau)  /v0^2
 
-        eigvals = ensemble_files[1]["eigenmodes"]["eigvals"]["seed_1.h5"]
+        eigvals = ensemble_files[1]["eigenmodes"]["eigvals"]["seed_2.h5"]
 
-        #eigvals= eigval_bin_centers
-        a_min= @.sqrt(1 +  ( 1/(2 * tau *J ))^2 ) - ( 1/(2 * tau *J ))
-        # e["eigenmodes"]["eigvals"]["seed_2.h5"]
+        for key in keys(e["eigenmodes"]["eigvals"])
+           # display(e["eigenmodes"]["eigvals"][key][1])
+        end
+
+        eigvals = [0.004]
+        a_min= @.sqrt(1 +  ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))^2 ) - ( eigvals[eigval_ind] / (2 * J) + 1/(2 * tau *J ))
+        eigvals =ensemble_files[1]["eigenmodes"]["eigvals"]["seed_2.h5"]# e["eigenmodes"]["eigvals"]["seed_2.h5"]
         a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) 
 
-        p= [eigval_bin_centers, J, tau,e["v_projs_time_avg"]["v_projs_time_avg"][2]/e["v0"]^2]
+        p= [eigval_bin_centers, J, tau,e["v_projs_time_avg"]["v_projs_time_avg"][1]/e["v0"]^2]
         
         #display(a_num)
         #display(e["vrms"]/v0)
         #a based on loweest mode selection
-        #
         #a =copy( e["vrms"]/v0)
         #display(a)
         #a = e["vrms_r"]["vrms_r"][2]/v0
-        
+        #a = a_num
 
         #a = a_alt
         #a=1
@@ -403,31 +306,26 @@ for e in ensemble_files
         end
 
         #a+=ϵs[ind]
-        
+        ind+=1
         a_num = find_zero(f_a_2, a, p)
-        a = a_num
-        
         #display(abs(a_num-e["vrms"]/v0)/a_num*100)
        # a2 = 
-        a = a_min
+        # a = a_min
+        # the_eigvals =eigvals[1:end]
+        # tauJ = 1/(J*a+1/tau)
+        # C =@.  1 - 2*(the_eigvals+1/tauJ)*a/J
+        # A = Complex.( sqrt.( (1/tau + J * a) .* the_eigvals))
 
-        
-        the_eigvals =eigval_bin_centers
-        theory_ABP = 1 ./(2 .+ 2*tau .* the_eigvals)
-        display(the_eigvals)
-        tauJ = 1/(J*a+1/tau)
-        A = Complex.(@. sqrt.( (1/tau + J * a) .* the_eigvals))
-
-        B = Complex.(@. the_eigvals .+  .-J /a  .+ 1/tau  .+ J*a) 
+        # B = Complex.(@. the_eigvals .+  .-J /a  .+ 1/tau  .+ J*a) 
     
-        T1 =@. -(B^2 - 2*A^2)/2
-        T2 =@. 1/2*sqrt(B^2 * (B^2 - 4 * A^2)) 
-        #B=@.B + 0-B[1]
+        # T1 =@. -(B^2 - 2*A^2)/2
+        # T2 =@. 1/2*sqrt(B^2 * (B^2 - 4 * A^2)) 
+        # #B=@.B + 0-B[1]
 
-        #integral= @.real( 1im * sqrt(2) *pi/(sqrt(2 *A^2+B*(-B+sqrt(-4 *A^2+B^2)))+sqrt(2 *A^2-B*(B+sqrt(-4* A^2+B^2)))))
-        #theory_integral= @.real( 1im  *pi* ( T1+T2 + sqrt(T1-T2)*sqrt(T1+T2))/ (2 *sqrt(T1-T2)*T2) ) ./tau
+        # #integral= @.real( 1im * sqrt(2) *pi/(sqrt(2 *A^2+B*(-B+sqrt(-4 *A^2+B^2)))+sqrt(2 *A^2-B*(B+sqrt(-4* A^2+B^2)))))
+        # #theory_integral= @.real( 1im  *pi* ( T1+T2 + sqrt(T1-T2)*sqrt(T1+T2))/ (2 *sqrt(T1-T2)*T2) ) ./tau
 
-        theory_integral = @. real( @. 1im * pi* ( 1/ (sqrt(T1+T2)-sqrt(T1-T2)) ) ) *4*pi/tau/(2*pi)^2/2
+        # theory_integral = @. real( @. 1im * pi* ( 1/ (sqrt(T1+T2)-sqrt(T1-T2)) ) ) *4*pi/tau/(2*pi)^2/2
 
         
         #theory_integral = @. 2* pi* tauJ * (J*tauJ + a * (1+tauJ*the_eigvals)^2)/(a*tau*(1+tauJ*the_eigvals)^3)
@@ -448,40 +346,24 @@ for e in ensemble_files
 
         #lines!(ax,the_eigvals[select],theory_amin, color=e["J"], colorrange = (0, 1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
 
+        scatterlines!(ax,eigval_bin_centers,e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2, colorrange = (0, 10 ) , color=color_dict[e["J"]], label="J = $(e["J"])", colormap=:turbo)# ,  label="J = $(e["J"])",alpha=0.3)
+
+        #lines!(ax,eigval_bin_centers,theory_ABP, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) ABP theory ", alpha=0.2)
+       
+        #scatterlines!(ax,the_eigvals,real.(B), color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])", linestyle=:dash)
 
         
-
-        scatter!(ax,e["v_projs_time_avg"]["eigval_bin_centers"],e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2,color=ind, colorrange = (1, 13),colormap=:jet,label="J=$J")# ,  label="J = $(e["J"])",alpha=0.3)
-
-        #lines!(ax, range(1,length(e["v_projs_time_avg"]["eigval_bin_centers"])),e["v_projs_time_avg"]["v_projs_time_avg"]/e["v0"]^2,color=log10(e["J"]), colorrange = (-3, 0), label="J = $(e["J"])")# ,  label="J = $(e["J"])",alpha=0.3)
-
-        # for (si, seed) in pairs(keys(e["v_projs_time_avg"]["runs"]))
-        #     display(seed)
-
-        #     #scatter!(ax, e["v_projs_time_avg"]["runs"][seed]["eigvals"],e["v_projs_time_avg"]["runs"][seed]["v_projs"]/e["v0"]^2,color=log10(e["J"]), colorrange = (-3, 0),marker=markers_labels[si][1])# ,  label="J = $(e["J"])",alpha=0.3)
-        #     #scatter!(ax,range(1,length(e["v_projs_time_avg"]["runs"][seed]["v_projs"])),e["v_projs_time_avg"]["runs"][seed]["v_projs"]/e["v0"]^2,color=log10(e["J"]), colorrange = (-3, 0),marker=markers_labels[si][1],label="J = $(e["J"])")
-        # end
-        # if J==0
-        #     lines!(ax,the_eigvals,theory_ABP, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) ABP theory ")
-        # end
-        # #scatterlines!(ax,the_eigvals,real.(B), color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"])", linestyle=:dash)
-
-        
-        lines!(ax,the_eigvals,theory_integral,color=ind, colorrange = (0, 13), linestyle=:solid, label="J = $(e["J"])",colormap=:jet)#, a = $(e["vrms"]/v0)")#,  label="J = $(e["J"])")
-        # #lines!(ax,the_eigvals,theory_amin, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
-        ind+=1
+        #lines!(ax,the_eigvals,theory_integral, color=log10(e["J"]), colorrange = (-3, 0) , linestyle=:solid, label="J = $(e["J"]), a = $(e["vrms"]/v0)")#,  label="J = $(e["J"])")
+        #lines!(ax,the_eigvals,theory_amin, color=e["J"], colorrange = (0, .1) ,  label="J = $(e["J"]) theory a=a_ABP", linestyle=:dash)
     end
 
 end
 
-#xlims!(ax, 0,100)
-#ylims!(ax, low=0.05)
-f[1,2]=Legend(f,ax,merge=true)
-#save(joinpath(figure_save_folder,"v_projs_label_n_avg.pdf"), f,backend=CairoMakie)
+xlims!(ax, 0.002,1)
+f[1,2]=Legend(f,ax)
+save(joinpath(figure_save_folder,"v_projs_tau_J_theory_aABP.pdf"), f,backend=CairoMakie)
 display(f)#
 end
-
-
 
 
 begin #heatmap wn vs w
@@ -497,7 +379,7 @@ for e in ensemble_files
 
     if Dr ==0.1 #&& J==0.08
     v0 = e["v0"]
-
+    a = e["vrms"]/v0
     ax = Axis(f[1,1], ylabel=L"ω_n", xlabel=L"ω", title="J=$J, Dr = $Dr, v0 = $(v0)")
 
     tau =1/Dr
@@ -511,6 +393,8 @@ for e in ensemble_files
     heatmap!(ax,w, sqrt.(eigval_bin_centers), log10.(transpose(X)), rasterize=true, colorrange=(-2,4), colormap=:gist_rainbow)
     cb = Colorbar(f[1, 2], limits = (-2, 4), colormap = :gist_rainbow, flipaxis = false, label = "log10(ω^2 |a_n(ω)|^2)")
 
+    lines!(ax, sqrt.(eigval_bin_centers*(1/tau + J*a^2*v0)), sqrt.(eigval_bin_centers))
+
 
     xlims!(0,0.5)
     ylims!(0,1)
@@ -521,7 +405,7 @@ for e in ensemble_files
     # lines!(ax,eigval_bin_centers,theory_ABP, colorrange = (0, maximum(Drs) ) ,  label="v0 = $(e["v0"]),J = $(e["J"])")
     #f[1,2]=Legend(f,ax)
     save("temp.pdf",f)
-    append_pdf!( joinpath(figure_save_folder,"Dre_0_1_wn_w.pdf"), "temp.pdf", cleanup=true)
+    append_pdf!( joinpath(figure_save_folder,"Dre_0_01_wn_w.pdf"), "temp.pdf", cleanup=true)
 
 
     display(f)
@@ -557,7 +441,7 @@ for e in ensemble_files
     eigval_ind=1
     eigval_bin_centers = e["FT_v_projs"]["eigval_bin_centers"]
 
-    eigvals = e["eigenmodes"]["eigvals"]["seed_5.h5"]
+    eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]
     
 
 
@@ -567,16 +451,16 @@ for e in ensemble_files
     t = e["t"]
     min_t_ind = e["min_t_ind"]
 
-    a = a_min = sqrt(1 +  (0*eigval_bin_centers[eigval_ind]/(2 * J) + 1/(2 * tau *J ))^2 ) - (0*eigval_bin_centers[eigval_ind]/(2 * J) + 1/(2 * tau *J))
-    #a = a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) #
+    #a = a_min = sqrt(1 +  (eigval_bin_centers[eigval_ind]/(2 * J) + 1/(2 * tau *J ))^2 ) - (eigval_bin_centers[eigval_ind]/(2 * J) + 1/(2 * tau *J))
+    a = a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) #
     #a = vrms/v0
 
 
     for i in 1:size(X)[1]
 
         for j in 1:size(X)[2]
-            X[i,j] = v0^2  * 2/tau * 2 *pi * w[j]^2/( ( (1/tau + J*a)*eigval_bin_centers[i]-w[j]^2)^2  + w[j]^2 * (eigval_bin_centers[i] - J/a + J*a + 1/tau)^2) * (t[end] - t[min_t_ind])/(2*pi)/(2*pi)
-            #X[i,j] = v0^2  * 2*tau * 2 *pi * w[j]^2*(1)/( (eigvals[i]^2 + w[j]^2)*(1+tau^2 * w[j]^2)-2*J*tau/a*((1+eigvals[i]*tau)*w[j]^2 - eigvals[i]^2*a^2 ) ) * (t[end] - t[min_t_ind])/(2*pi)/(2*pi)
+            #X[i,j] = v0^2  * 2/tau * 2 *pi * w[j]^2/( ( (1/tau + J*a)*eigval_bin_centers[i]-w[j]^2)^2  + w[j]^2 * (eigval_bin_centers[i] - J/a + J*a + 1/tau)^2) * (t[end] - t[min_t_ind])/(2*pi)/(2*pi)
+            X[i,j] = v0^2  * 2*tau * 2 *pi * w[j]^2*(1)/( (eigvals[i]^2 + w[j]^2)*(1+tau^2 * w[j]^2)-2*J*tau/a*((1+eigvals[i]*tau)*w[j]^2 - eigvals[i]^2*a^2 ) ) * (t[end] - t[min_t_ind])/(2*pi)/(2*pi)
 
         end
     end
@@ -592,8 +476,8 @@ for e in ensemble_files
 
     # lines!(ax,eigval_bin_centers,theory_ABP, colorrange = (0, maximum(Drs) ) ,  label="v0 = $(e["v0"]),J = $(e["J"])")
     #f[1,2]=Legend(f,ax)
-    save("temp.pdf",f)
-    append_pdf!( joinpath(figure_save_folder,"Dre_0.1_wn_w_theory_a_min.pdf"), "temp.pdf", cleanup=true)
+    #save("temp.pdf",f)
+    #append_pdf!( joinpath(figure_save_folder,"Dre_0.1_wn_w_theory_a_ABP.pdf"), "temp.pdf", cleanup=true)
 
     display(f)
     end
@@ -674,17 +558,27 @@ for Drplot in [0.1]
         vrms = e["vrms"]
         a = vrms/e["v0"]
 
+
+        a_mid = e["vrms_r"]["vrms_r"][1]
+
+        eigval_bin_centers = e["FT_v_projs"]["eigval_bin_centers"]
+        eigval_ind=1
         J = e["J"]
         tau = 1/Dr
-        a_min = sqrt(1 +  (0 + 1/(2 * tau *J ))^2 ) - (0+ 1/(2 * tau *J))
+        if (eigvals[eigval_ind]+1/tau)/(J*v0)<1
+            a_min = sqrt(1 -  (eigvals[eigval_ind]+1/tau)/(J*v0))
+        else
+            a_min = a_ABP
+        end
+
         push!(a_mins, a_min)
-        #push!(a_mids, a_mid)
+        push!(a_mids, a_mid)
         push!(as, a)
         push!(Js, e["J"])
 
         Jse = ones(length(eigvals)) * J
         tau = 1/Dr
-        #a_minse = @. sqrt(1 +  (eigvals/(2 * J) + 1/(2 * tau *J ))^2 ) - (eigvals/(2 * J) + 1/(2 * tau *J))
+        #a_minse = @. sqrt(-1 +  (eigvals+1/tau)/(J*v0))
 
         #a_minse_2 = @. J/(1/tau + eigvals)
 
@@ -697,11 +591,9 @@ for Drplot in [0.1]
 
     scatterlines!(ax,Js, as, label="a_num")
 
-    scatterlines!(ax, Js, a_mins, color="orange", label="a_min")
+    scatterlines!(ax, Js, a_mins, color="orange", label="a_min", marker='p')
     hlines!(ax, a_ABP, color="red", label="a_ABP")
 
-    #annotation!(ax, (0.04,0), text="0.04")
-    #annotation!(ax, (0.08,0), text="0.08")
     #scatterlines!(ax, Js, a_mids, color="green", label="a_mid")
     ylims!(ax, 0,1)
     f[1,2]=Legend(f,ax)
@@ -713,6 +605,42 @@ end
 
 
 begin
+using CairoMakie
+CairoMakie.activate!()
+f = Figure()
+Dr = ensemble_files[1]["Dr"]
+v0=0.01
+ax = Axis(f[1,1], ylabel=L"a", xlabel=L"J", title="Dr = $Dr, v0 = $(v0)", xscale=log10)
+for e in ensemble_files
+
+
+    eigval_bin_centers = e["FT_v_projs"]["eigval_bin_centers"]
+    eigval_ind=1
+    J = e["J"]
+
+    if J==0.001 || J==0.0
+    Jse = ones(length(eigval_bin_centers)) * J
+    tau = 1/Dr
+    a_minse = @. sqrt(1 +  (eigval_bin_centers/(2 * J) + 1/(2 * tau *J ))^2 ) - (eigval_bin_centers/(2 * J) + 1/(2 * tau *J))
+    a_minse2 = @. 
+    scatter!(ax, Jse, a_minse, color=eigval_bin_centers)
+    end
+end
+
+scatterlines!(ax,Js, as, label="a_num")
+
+scatterlines!(ax, Js, a_mins, color="orange", label="a_min", marker='p')
+
+ylims!(ax, 0,1)
+f[1,2]=Legend(f,ax)
+
+save(joinpath(figure_save_folder,"a_vs_J.pdf"), f)
+
+display(f)
+
+
+
+end
 
 
 
@@ -890,5 +818,77 @@ f[1,2]=Legend(f,ax)
 display(f)
 
 end
-end
 close.(ensemble_files)
+
+begin
+using CairoMakie
+
+CairoMakie.activate!()
+
+GLMakie.activate!()
+f = Figure()
+
+ax = Axis(f[1,1], xlabel="r", ylabel="C_{vv}(r)", title="Dr = 0.1")
+Jmax = 0.1
+ind=1
+Drplot = 0.1
+for e in ensemble_files
+
+    Dr = e["Dr"]
+    J = e["J"]
+    
+
+
+    if Dr==Drplot
+    
+
+        scatterlines!(ax,e["spatial_vcor"]["r_bin_centers"] ,e["spatial_vcor"]["Cavg"], colorrange = (1, 13), linestyle=:solid, label= "$(e["J"])",colormap=:turbo,color=ind)
+        ind+=1
+    #lines!(ax,det , the_auto, colorrange = (0, Jmax ) , color=e["J"])#, label="J = $(e["J"])")
+    end
+
+end
+
+#xlims!(ax, 0,100)
+
+f[1,2]=Legend(f,ax,"J")
+display(f)
+save(joinpath(figure_save_folder,"spatial_vcor_Dr_$Drplot.pdf"), f, backend=CairoMakie)
+
+end
+
+begin
+using CairoMakie
+CairoMakie.activate!()
+
+GLMakie.activate!()
+f = Figure()
+
+ax = Axis(f[1,1], xlabel="r", ylabel="C_{nn}(r)", title="Dr = 0.1")
+Jmax = 0.1
+ind=1
+Drplot=0.1
+for e in ensemble_files
+
+    Dr = e["Dr"]
+    J = e["J"]
+    
+
+
+    if Dr==Drplot
+    
+
+        scatterlines!(ax,e["spatial_pcor"]["r_bin_centers"] ,e["spatial_pcor"]["Cavg"], colorrange = (1, 13), linestyle=:solid, label= "$(e["J"])",colormap=:turbo,color=ind)
+        ind+=1
+    #lines!(ax,det , the_auto, colorrange = (0, Jmax ) , color=e["J"])#, label="J = $(e["J"])")
+    end
+
+end
+
+#xlims!(ax, 0,100)
+
+f[1,2]=Legend(f,ax,"J")
+display(f)
+save(joinpath(figure_save_folder,"spatial_pcor_Dr_$Drplot.pdf"), f, backend=CairoMakie)
+
+end

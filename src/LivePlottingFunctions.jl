@@ -358,7 +358,7 @@ function plot_disks_vx!(f,ax, cpsO, cfsO)
 
     
     s = @lift([2*p_i.R[1]  for p_i in $cpsO])
-    scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1,colorrange=(-0.05,0.05))
+    scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1,colorrange=(-0.01,0.01),colormap=:seismic)
 
     return ax
 end

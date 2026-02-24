@@ -178,15 +178,25 @@ function run_sa_analysis!(analysis_file, raw_data_file; support_raw_data_file = 
     analysis_file["eigenmodes"]["x0int"] = x0int #for visualization purposes
     analysis_file["eigenmodes"]["y0int"] = y0int #for visualization purposes
 
+
     create_group(analysis_file, "projs")
+    #
     v_projs = project_on_eigvecs(eigenmodes["eigvecs"], vx,vy)
     analysis_file["projs"]["v_projs"] = v_projs
 
-
-
     FT_v_projs = temporal_Fourier_transform(dt, v_projs, min_t_ind = min_t_ind, output_not_avg=true)
     save_dict2h5!(analysis_file, FT_v_projs, "FT_v_projs")
+    #
 
+    #
+    p_projs = project_on_eigvecs(eigenmodes["eigvecs"], px,py)
+    analysis_file["projs"]["p_projs"] = p_projs
+
+
+
+    FT_p_projs = temporal_Fourier_transform(dt, p_projs, min_t_ind = min_t_ind, output_not_avg=true)
+    save_dict2h5!(analysis_file, FT_p_projs, "FT_p_projs")
+    #
 
 
     run_sa_analysis_add_auto_p!(analysis_file, raw_data_file, support_raw_data_file = support_raw_data_file)
