@@ -135,13 +135,13 @@ function stacked_polymers_at_angle(N_in_pol, R, pf, f_eq_stretch_force, L_0; til
 
     S_overlap = 2*(R*R*acos(f_eq_stretch_force*R) - (f_eq_stretch_force*R)^2*tan(acos(f_eq_stretch_force*R)))
 
-    Spol = S*N_in_pol-S_overlap*(N_in_pol-1)
+    S_polymers = (S*N_in_pol-S_overlap*(N_in_pol-1))
 
-    Npols = convert(Int64, floor(L_0^2 * pf / Spol))
+    Npols = floor(Int64, pf * L_0^2 / S_polymers)
 
-    L = sqrt(Npols*Spol/pf)
+    L = sqrt(Npols*S_polymers/pf)
 
-    M = Npols * N_in_pol
+    M = Npols*N_in_pol
 
     x = zeros(M)
     y = zeros(M)
