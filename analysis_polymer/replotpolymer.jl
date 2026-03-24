@@ -1,9 +1,8 @@
 using Observables
 using GLMakie
 
-if false
-    include("loaddata.jl")
-end
+include("loaddata.jl")
+
 
 GLMakie.activate!()
 
@@ -73,8 +72,8 @@ GLMakie.activate!()
         t[] = frames[stri]["t"]
         #tplot[]=push!(tplot[], frames[stri]["t"] )
 
-        x[] = x[stri]["x"]
-        y[] = y[stri]["y"]
+        x[] = frames[stri]["x"]
+        y[] = frames[stri]["y"]
 
         vx[] = frames[stri]["vx"]
         vy[] = frames[stri]["vy"]
@@ -87,40 +86,35 @@ GLMakie.activate!()
     close(raw_data_file)
 end
 
-if false
-
-    sim_folder_name = "sim_data"
+sim_folder_name = "initial_configuration"
 
 
-    p = [0.04, 0.06, 0.08, 0.1, 0.13, 0.15, 0.2, 0.4]
-    kactive = [(-1., 0.), (1., 0.), (0., 1.), (0., -1.), (1/sqrt(2), 1/sqrt(2)),(-1/sqrt(2), 1/sqrt(2)),(1/sqrt(2), -1/sqrt(2)),(-1/sqrt(2), -1/sqrt(2))]
+p = [0.8]
+kpar = [-1]
 
 
+for p_value in p
+for kpar_value in kpar
 
-    for p_value in p
-    for (kpar_value, kperp_value) in kactive
+    parameters = "p_$p_value-kpar_$kpar_value"
 
-        parameters = "p_$p_value,kpar_$kpar_value,kperp_$kperp_value"
+    #for windows
+    base_folder = joinpath("E:", "martin","martin", sim_folder_name, parameters)
 
-        #for windows
-        base_folder = joinpath("E:", "martin", sim_folder_name, parameters)
+    #for linux
+    #base_folder = joinpath("/run/media/martin/HENKESGRFAT/martin", sim_folder_name, parameters)
 
-        #for linux
-        #base_folder = joinpath("/run/media/martin/HENKESGRFAT/martin", sim_folder_name, parameters)
+    if !isfile(joinpath(base_folder, "movie", "sim_movie.mp4"))
 
-        if !isfile(joinpath(base_folder, "movie", "sim_movie.mp4"))
+        raw_data_file = load_file(joinpath(base_folder, "raw_data.h5"))
 
-            raw_data_file = load_file(joinpath(base_folder, "raw_data.h5"))
+        make_movie(raw_data_file,joinpath(base_folder,"movie"))
 
-            make_movie(raw_data_file,joinpath(base_folder,"movie"))
-
-            close(raw_data_file)
-            
-            GLMakie.closeall()
-            
-        end
+        close(raw_data_file)
+        
+        GLMakie.closeall()
         
     end
-    end
-
+    
+end
 end

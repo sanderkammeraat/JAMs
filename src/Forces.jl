@@ -153,6 +153,7 @@ end
 
 struct polymer_harmonic_stretch_force{T1,T2}<:Force
     ontypes::Union{Int64,Vector{Int64}}
+    internal_repulsion::Bool
     karray::T1
     farray::T2
 end
@@ -174,6 +175,11 @@ struct ring_polymer_harmonic_bend_force{T1}<:Force
 end
 
 struct polymer_exterior_soft_disk_force{T1}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+end
+
+struct polymer_soft_disk_force{T1}<:Force
     ontypes::Union{Int64,Vector{Int64}}
     karray::T1
 end
@@ -523,7 +529,11 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
 
                 f_factor = force.farray[get_param_ind(force.ontypes,p_i.type[1]), get_param_ind(force.ontypes,p_j.type[1])]
                 
-                l_stretch = d2R*(2*f_factor - 1)
+                if force.internal_repulsion
+                    l_stretch = d2R*(2*f_factor - 1)
+                else
+                    l_stretch = d2R*f_factor
+                end
 
                 p_i.f.+= force.karray[get_param_ind(force.ontypes,p_i.type[1]), get_param_ind(force.ontypes,p_j.type[1])] * (dxn-l_stretch) * dx/dxn
             end
@@ -670,6 +680,23 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
 
             @views f.= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
             p_i.f.+= f
+        end
+    end
+    return p_i
+
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::polymer_soft_disk_force)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        if !(p_i.pol_id[1]==p_j.pol_id[1]) || ((p_i.pol_id[1]==p_j.pol_id[1]) && abs(p_i.id_in_pol[1]-p_j.id_in_pol[1]) > 1)
+        d2R = p_i.R[1]+p_j.R[1]
+        f = @MVector zeros(length(dx))
+            if dxn < d2R
+
+                @views f.= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
+                p_i.f.+= f
+            end
         end
     end
     return p_i

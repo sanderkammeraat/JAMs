@@ -2,7 +2,7 @@ include("analysisfunctions.jl")
 include("loaddata.jl")
 
 
-sim_folder_name = "sim_data"
+sim_folder_name = "sim_data_polar"
 
 #for windows
 path_data = joinpath("E:", "martin", sim_folder_name)
@@ -12,19 +12,19 @@ path_data = joinpath("E:", "martin", sim_folder_name)
 
 
 ksd = [1.]
-kbend = [.3]
+kbend = [3.]
 kstretch = [1.]
 fstretch = [.7]
-p = [0., 0.04,#= 0.06, 0.08, =#0.1, #=0.13, 0.15, 0.2, =#0.4]
+p = [0.005, 0.008, 0.009, 0.01, 0.012, 0.015, 0.02, 0.05]
 kpar = [-1]
 Npol = [750]
-N_in_pol = [2, 10, 20]
+N_in_pol = [10]
 
 
-MSDbool = false
+MSDbool = true
 polymer_MSDbool = false
 basic_MSDbool = false
-average_velocitybool = false
+average_velocitybool = true
 radius_of_gyrationbool = false
 end_to_end_distancebool = true
 
@@ -37,12 +37,12 @@ for fstretch_value in fstretch
 for (i, p_value) in enumerate(p)
 for kpar_value in kpar
 for Npol_value in Npol
-for (j, N_in_pol_value) in enumerate(N_in_pol)
+for N_in_pol_value in N_in_pol
 
-    parameters = "p_$p_value,N_$N_in_pol_value" #"ksd_$ksd_value_kbend_$kbend_value_kstretch_$kstretch_value_fstretch_$f_stretch_value_p_$p_value_kperp_$kperp_value_kpar_$kpar_value_Npol_$Npol_value_N_$N_value"
+    parameters = "p_$p_value" #"ksd_$ksd_value_kbend_$kbend_value_kstretch_$kstretch_value_fstretch_$f_stretch_value_p_$p_value_kperp_$kperp_value_kpar_$kpar_value_Npol_$Npol_value_N_$N_value"
 
-    max = length(p)*length(N_in_pol)
-    progress = convert(Int64, floor(100*((i-1)*length(N_in_pol) + j-1)/max))
+    max = length(p)
+    progress = convert(Int64, floor(100*(i/max)))
     println("$parameters\n\n$progress% done\n\n")
 
 
