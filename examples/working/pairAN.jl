@@ -7,10 +7,10 @@ function simulation()
     #type, torque, rfact, kpar, kper
     #1.3 -1 0 0.3
 
-    kpar = -1
-    kper=0
+    kpar = 0
+    kper=1
     #pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,1.3, 1, 0., 0.3), pair_nematic_alignment_force(1,2.5,0.15))
-    pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,false,1.3, kpar, kper, 1), pair_nematic_alignment_force(1,2.5,0.3))
+    pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,true,1.3, kpar, kper, 0.3), pair_nematic_alignment_force(1,2.5,0.3))
 
 
     #dofevolvers = [inertial_evolver!]
@@ -18,7 +18,7 @@ function simulation()
     global_dofevolvers = ()
     field_dofevolvers = ()
 
-    N=1000
+    N=2000
     
     ϕ = 1.0
     poly=15e-2

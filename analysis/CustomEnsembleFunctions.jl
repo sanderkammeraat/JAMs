@@ -305,13 +305,6 @@ function sa_ensemble_add_FT_px!(ensemble_file, loaded_seed_files, seed_names)
     ensemble_file["FT_px_w"]["X2"] = mean(X, dims=1)[1,:]
     ensemble_file["FT_px_w"]["w"] = w
 
-    
-
-
-
-
-
-
     return ensemble_file
 
 end
@@ -358,5 +351,263 @@ function sa_ensemble_add_spatial_cors!(ensemble_file, loaded_seed_files, seed_na
 
     return ensemble_file
 
+end
+
+
+function sa_ensemble_free!(ensemble_file, loaded_seed_files, seed_names)
+
+    #Use the first seed to extract system information
+
+    reference_seed = loaded_seed_files[1]
+
+    ensemble_file["Nseeds"] = length(loaded_seed_files)
+
+    ensemble_file["seed_names"] = seed_names
+
+    ensemble_file["t"] = reference_seed["t"]
+
+    ensemble_file["dt"] = reference_seed["dt"]
+
+    ensemble_file["Nt"] = reference_seed["Nt"]
+
+    ensemble_file["v0"] = reference_seed["v0"]
+
+    ensemble_file["Dr"] = reference_seed["Dr"]
+
+    ensemble_file["J"] = reference_seed["J"]
+
+    ensemble_file["k"] = reference_seed["k"]
+
+    ensemble_file["Nint"] = reference_seed["Nint"]
+
+    min_t_ind = reference_seed["min_t_ind"]
+    ensemble_file["min_t_ind"] = reference_seed["min_t_ind"]
+
+    ensemble_file["type"] = reference_seed["type"]
+
+    ensemble_file["R"] = reference_seed["R"]
+
+    t = reference_seed["t"]
+
+    dt = t[2] - t[1]
+
+
+
+    create_group(ensemble_file, "eigenmodes")
+    create_group(ensemble_file["eigenmodes"],"eigvals" )
+    for i in eachindex(loaded_seed_files)
+        ensemble_file["eigenmodes"]["eigvals"][seed_names[i]]=loaded_seed_files[i]["eigenmodes"]["eigvals"]
+    end
+
+    eigvalbins = create_bins(0, 1,0.002)
+
+
+    ensemble_file["eigval_bin_centers"] = eigvalbins.centers
+
+    v_projs = []
+    eigvals = []
+    create_group(ensemble_file, "v_projs_time_avg")
+    create_group(ensemble_file["v_projs_time_avg"],"runs" )
+    for i in eachindex(loaded_seed_files)
+
+        create_group(ensemble_file["v_projs_time_avg"]["runs"], seed_names[i])
+
+        v_projs_i = mean(loaded_seed_files[i]["projs"]["v_projs"][:,min_t_ind:end].^2, dims=2)[:,1]
+        eigvals_i = loaded_seed_files[i]["eigenmodes"]["eigvals"]
+
+        ensemble_file["v_projs_time_avg"]["runs"][seed_names[i]]["v_projs"] = v_projs_i
+        ensemble_file["v_projs_time_avg"]["runs"][seed_names[i]]["eigvals"] = eigvals_i
+
+        v_projs=vcat(v_projs, v_projs_i)
+        eigvals=vcat(eigvals,eigvals_i )
+
+    end
+
+    binned_v_projs_data = bin_vector_data(eigvalbins, eigvals, v_projs)
+    
+
+    ensemble_file["v_projs_time_avg"]["eigval_bin_centers"] = binned_v_projs_data.bin_centers
+    ensemble_file["v_projs_time_avg"]["v_projs_time_avg"] = binned_v_projs_data.bin_values
+    ensemble_file["v_projs_time_avg"]["N_in_bin"] = binned_v_projs_data.N_in_bin
+
+
+    vrms = []
+    for i in eachindex(loaded_seed_files)
+        vrms=vcat(vrms, loaded_seed_files[i]["vrms_particle_avg_time_avg"])
+    end
+    ensemble_file["vrms"]= mean(vrms)
+
+
+    rbins = create_bins(0, 200,2.5)
+    ensemble_file["r_bin_centers"] = rbins.centers
+
+    vrms_r = []
+    r = []
+    for i in eachindex(loaded_seed_files)
+        r=vcat(r, loaded_seed_files[i]["r_particle_time_avg"])
+        vrms_r = vcat(vrms_r,loaded_seed_files[i]["vrms_particle_time_avg"] )
+    end
+    create_group(ensemble_file, "vrms_r")
+
+    binned_vrms_r_data = bin_vector_data(rbins, r, vrms_r)
+    ensemble_file["vrms_r"]["r_bin_centers"]= binned_vrms_r_data.bin_centers
+    ensemble_file["vrms_r"]["vrms_r"]= binned_vrms_r_data.bin_values
+    ensemble_file["vrms_r"]["N_in_bin"]= binned_vrms_r_data.N_in_bin
+
+    kin_en = []
+    w = []
+    
+    for i in eachindex(loaded_seed_files)
+
+        if i==1
+            w = loaded_seed_files[i]["FT_v_projs"]["w"]
+            kin_en =  reshape(sum(loaded_seed_files[i]["FT_v_projs"]["Xf2"]   ,dims=1)[1,:] ,1,length(w))
+        else
+            kin_en =  vcat(kin_en,reshape(sum(loaded_seed_files[i]["FT_v_projs"]["Xf2"]   ,dims=1)[1,:] ,1,length(w)))
+
+        end
+
+    end
+    create_group(ensemble_file, "kin_en")
+    ensemble_file["kin_en"]["kin_en"] = mean(kin_en, dims=1)[1,:] 
+    ensemble_file["kin_en"]["w"] = w
+    
+    
+
+    X = []
+    w = []
+    for i in eachindex(loaded_seed_files)
+
+        if i==1
+
+            w =loaded_seed_files[i]["FT_v_projs"]["w"]
+
+            X = loaded_seed_files[i]["FT_v_projs"]["Xf2"]
+        else
+
+            X = vcat(X, loaded_seed_files[i]["FT_v_projs"]["Xf2"])
+        end
+    end
+
+    binned_X = bin_matrix_data(eigvalbins, eigvals, X)
+
+    #display("Collecting FTs")
+    create_group(ensemble_file, "FT_v_projs")
+
+    ensemble_file["FT_v_projs"]["w"] = w
+    ensemble_file["FT_v_projs"]["eigval_bin_centers"] = binned_X.bin_centers
+    ensemble_file["FT_v_projs"]["X2"] = binned_X.bin_values
+
+    #auto_p
+    Cavg = []
+    deltat = []
+    for i in eachindex(loaded_seed_files)
+
+        if i==1
+
+            deltat =loaded_seed_files[i]["auto_p"]["deltat"][1:length(loaded_seed_files[i]["auto_p"]["Cavg"])]
+
+            Cavg =reshape( loaded_seed_files[i]["auto_p"]["Cavg"], 1, length(deltat)) 
+        else
+
+            Cavg = vcat(Cavg, reshape( loaded_seed_files[i]["auto_p"]["Cavg"], 1, length(deltat)) )
+        end
+    end
+    create_group(ensemble_file, "auto_p")
+    ensemble_file["auto_p"]["Cavg"] = mean(Cavg, dims=1)[1,:] 
+    ensemble_file["auto_p"]["deltat"] = deltat
+
+    #auto_v
+    # Cavg = []
+    # deltat = []
+    # for i in eachindex(loaded_seed_files)
+
+    #     if i==1
+
+    #         deltat =loaded_seed_files[i]["auto_v"]["deltat"][1:length(loaded_seed_files[i]["auto_v"]["Cavg"])]
+
+    #         Cavg =reshape( loaded_seed_files[i]["auto_v"]["Cavg"], 1, length(deltat)) 
+    #     else
+
+    #         Cavg = vcat(Cavg, reshape( loaded_seed_files[i]["auto_v"]["Cavg"], 1, length(deltat)) )
+    #     end
+    # end
+    # create_group(ensemble_file, "auto_v")
+    # ensemble_file["auto_v"]["Cavg"] = mean(Cavg, dims=1)[1,:] 
+    # ensemble_file["auto_v"]["deltat"] = deltat
+
+    sa_ensemble_add_FT_px!(ensemble_file, loaded_seed_files, seed_names)
+
+    #sa_ensemble_add_spatial_cors!(ensemble_file, loaded_seed_files, seed_names)
+
+
+    return ensemble_file
+end
+
+
+function sa_vrms_ensemble!(ensemble_file, loaded_seed_files, seed_names)
+
+    #Use the first seed to extract system information
+
+    #reference_seed = loaded_seed_files[1]
+
+    #ensemble_file["Nseeds"] = length(loaded_seed_files)
+
+    #ensemble_file["seed_names"] = seed_names
+
+    #ensemble_file["t"] = reference_seed["t"]
+
+    #ensemble_file["dt"] = reference_seed["dt"]
+
+    #ensemble_file["Nt"] = reference_seed["Nt"]
+
+    #ensemble_file["v0"] = reference_seed["v0"]
+
+    #ensemble_file["Dr"] = reference_seed["Dr"]
+
+    #ensemble_file["J"] = reference_seed["J"]
+
+    #ensemble_file["k"] = reference_seed["k"]
+
+    #ensemble_file["Nint"] = reference_seed["Nint"]
+
+    #min_t_ind = reference_seed["min_t_ind"]
+    #ensemble_file["min_t_ind"] = reference_seed["min_t_ind"]
+
+    #ensemble_file["type"] = reference_seed["type"]
+
+    #ensemble_file["R"] = reference_seed["R"]
+
+    # t = reference_seed["t"]
+
+    # dt = t[2] - t[1]
+
+
+
+    vrms = []
+    for i in eachindex(loaded_seed_files)
+        push!(vrms, loaded_seed_files[i]["vrms_particle_avg_time_avg"])
+    end
+    ensemble_file["vrms_cor"]= mean(vrms)
+
+
+    # rbins = create_bins(0, 200,2.5)
+    # ensemble_file["r_bin_centers"] = rbins.centers
+
+    # vrms_r = []
+    # r = []
+    # for i in eachindex(loaded_seed_files)
+    #     r=vcat(r, loaded_seed_files[i]["r_particle_time_avg"])
+    #     vrms_r = vcat(vrms_r,loaded_seed_files[i]["vrms_particle_time_avg"] )
+    # end
+    # create_group(ensemble_file, "vrms_r")
+
+    # binned_vrms_r_data = bin_vector_data(rbins, r, vrms_r)
+    # ensemble_file["vrms_r"]["r_bin_centers"]= binned_vrms_r_data.bin_centers
+    # ensemble_file["vrms_r"]["vrms_r"]= binned_vrms_r_data.bin_values
+    # ensemble_file["vrms_r"]["N_in_bin"]= binned_vrms_r_data.N_in_bin
+
+
+    return ensemble_file
 end
 

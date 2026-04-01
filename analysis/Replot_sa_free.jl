@@ -12,15 +12,15 @@ GLMakie.activate!()
 
 # run_multithreaded_analysis(rp, ap,custom_analysis_function, support_raw_data_file_paths=sp)
 
-base_folder = "/Users/kammeraat/mounting/alicedata1_kammeraatsc1/sa/statistics/free/phi_1.0/N_2000/"
-rp, mp =  auto_movie_dir(base_folder, "ra_raw_data.h5")
+base_folder = "/Volumes/T7_Shield/sa/statistics/free/phi_1.3/N_2000/"
+rp, mp =  auto_movie_dir(base_folder, "sa_raw_data.h5")
 
 
 
 @views function make_movie_sa(raw_data_file,movie_save_path)
     save_tax = raw_data_file["integration_info"]["save_tax"]
 
-    J = 0#raw_data_file["system"]["forces"]["external"]["self_align_with_v_unit_force"]["β"]
+    J = raw_data_file["system"]["forces"]["external"]["self_align_with_v_unit_force"]["β"]
 
     
     frame_numbers = 1:1:length(save_tax)
@@ -73,7 +73,7 @@ rp, mp =  auto_movie_dir(base_folder, "ra_raw_data.h5")
     #directors
     cp = @lift( angle.($px+1im*$py) )
 
-    arrows!(ax, x,y, px,py , color=cp,  colormap=:hsv,colorrange=(-pi,pi))
+    arrows2d!(ax, x,y, px,py , color=cp,  colormap=:hsv,colorrange=(-pi,pi))
 
     #velocity vectors
     cv = @lift( angle.($vx+1im*$vy) )
@@ -82,7 +82,7 @@ rp, mp =  auto_movie_dir(base_folder, "ra_raw_data.h5")
 
     vp_y = @lift( sin.($cp-$cv) )
 
-    arrows!(ax, x,y, vx,vy , color=cv,  colormap=:hsv,colorrange=(-pi,pi))
+    arrows2d!(ax, x,y, vx,vy , color=cv,  colormap=:hsv,colorrange=(-pi,pi))
 
     #arrows!(ax, x,y, vp_x,vp_y , color=cv,  colormap=:hsv,colorrange=(-pi,pi))
     #plotpx = @lift(scaleup.*$(px)[type.==1]) 
@@ -128,10 +128,10 @@ rp, mp =  auto_movie_dir(base_folder, "ra_raw_data.h5")
     end
 end
 
-rp[131]
+rp[249]
 #movie_single(rp[1], mp[1], make_movie_sa)
 
-movie_single(rp[131], "/Users/kammeraat/test_free_relax/movie_ra.mp4", make_movie_sa)
+movie_single(rp[249], "/Users/kammeraat/free_osc_2/movie_osc.mp4", make_movie_sa)
 
 # run_sequential_movie(rp, mp, make_movie_sa)
 

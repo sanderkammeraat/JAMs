@@ -29,8 +29,35 @@ frames = raw_data["frames"]
 
 
 
+integration_info = raw_data["integration_info"]
+
+integration_info.keys()
+integration_info["Tsave"]
+
+
 x1 = np.array(frames["1"]["x"])
 
+integration_info["dt"]
+
+
+#%%
+
+
+
+raw_data["system"].keys()
+
+raw_data["sizes"]
+
+
+
+
+
+
+
+#%%
+
+
+print(raw_data["frames"]["1"].keys())
 
 #%% Suppose we want to collect the particle coordinates over time:
     
@@ -46,6 +73,7 @@ ids = np.zeros( shape=(Nframes, Np))
 types = np.zeros( shape=(Nframes, Np))
 
 frame_numbers = np.arange(1,Nframes+1)
+
 
 
 #%%
@@ -103,6 +131,8 @@ for forcetype in system["forces"]:
         
         if force not in force_params[forcetype]:
             force_params[forcetype][force] = {}
+        
+        
         
         
         for field in system["forces"][forcetype][force]:

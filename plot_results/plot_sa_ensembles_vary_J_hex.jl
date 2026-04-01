@@ -8,7 +8,7 @@ base_folder = "/Volumes/T7_Shield/sa/statistics/hex_disordered/phi_1.3/Nlin_20/"
 
 
 
-figure_save_folder = joinpath(base_folder, "figures_20_02")
+figure_save_folder = joinpath(base_folder, "figures_02_03")
 mkpath(figure_save_folder)
 
 
@@ -299,6 +299,10 @@ for e in ensemble_files
             #a_num=find_zero(f_a_2, a, p)
         end
 
+        if J==0
+            a_num = a_ABP
+        end
+
         #a+=ϵs[ind]
         ind+=1
        # a2 = 
@@ -389,7 +393,7 @@ for e in ensemble_files
 
     
     w = e["kin_en"]["w"]
-    eigvals = e["eigenmodes"]["eigvals"]["seed_1.h5"]   
+    eigvals = e["eigenmodes"]["eigvals"]["seed_7.h5"]   
 
     a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) 
     t = e["t"]
@@ -418,24 +422,26 @@ for e in ensemble_files
     #a+=ϵs[ind]
     # a2 = 
     a = a_num 
+    
     println(a)
-    #X = zeros(length(eigvals),(length(w)))  
-    X = zeros(size(e["FT_v_projs"]["X2"] ))  
+    X = zeros(length(eigvals),(length(w)))  
+    #X = zeros(size(e["FT_v_projs"]["X2"] ))  
     
     if J!=0
     for i in 1:size(X)[1]
 
         @Threads.threads for j in 1:size(X)[2]
-            X[i,j] = v0^2  * 1/tau * 2 *pi * w[j]^2/( ( (1/tau + J*a)*eigval_bin_centers[i]-w[j]^2)^2  + w[j]^2 * (eigval_bin_centers[i] - J/a + J*a + 1/tau)^2)
+            X[i,j] = v0^2  * 1/tau * 2 *pi * w[j]^2/( ( (1/tau + J*a)*eigvals[i]-w[j]^2)^2  + w[j]^2 * (eigvals[i] - J/a + J*a + 1/tau)^2)
             #X[i,j] = v0^2  * 2*tau * 2 *pi * w[j]^2*(1)/( (eigvals[i]^2 + w[j]^2)*(1+tau^2 * w[j]^2)-2*J*tau/a*((1+eigvals[i]*tau)*w[j]^2 - eigvals[i]^2*a^2 ) ) * (t[end] - t[min_t_ind])/(2*pi)/(2*pi)
 
         end
     end
     else
+        a = a_ABP
         for i in 1:size(X)[1]
 
             @Threads.threads for j in 1:size(X)[2]
-                X[i,j] = v0^2  * 1/tau * 2 *pi * w[j]^2/( ( (1/tau)*eigval_bin_centers[i]-w[j]^2)^2  + w[j]^2 * (eigval_bin_centers[i] + 1/tau)^2) 
+                X[i,j] = v0^2  * 1/tau * 2 *pi * w[j]^2/( ( (1/tau)*eigvals[i]-w[j]^2)^2  + w[j]^2 * (eigvals[i] + 1/tau)^2) 
             #X[i,j] = v0^2  * 2*tau * 2 *pi * w[j]^2*(1)/( (eigvals[i]^2 + w[j]^2)*(1+tau^2 * w[j]^2)-2*J*tau/a*((1+eigvals[i]*tau)*w[j]^2 - eigvals[i]^2*a^2 ) ) * (t[end] - t[min_t_ind])/(2*pi)/(2*pi)
 
         end
@@ -445,7 +451,7 @@ for e in ensemble_files
     display(length(w))
     dt = t[2]-t[1]
     scatterlines!(ax,e["kin_en"]["w"], e["kin_en"]["kin_en"]*dt^2 * (2*pi/length(t[e["min_t_ind"]:end])/dt), colorrange=(1,13), colormap=:gist_rainbow, color=color_dict[J],label="$J",alpha=0.2)
-    scatterlines!(ax,w, sum(e["FT_v_projs"]["X2"]   ,dims=1)[1,:] *dt^2 * (2*pi/length(t[e["min_t_ind"]:end])/dt), colorrange=(1,13), colormap=:gist_rainbow, color=color_dict[J],label="$J",alpha=0.2,marker=:diamond)
+    #scatterlines!(ax,w, sum(e["FT_v_projs"]["X2"]   ,dims=1)[1,:] *dt^2 * (2*pi/length(t[e["min_t_ind"]:end])/dt), colorrange=(1,13), colormap=:gist_rainbow, color=color_dict[J],label="$J",alpha=0.2,marker=:diamond)
     lines!(ax,e["kin_en"]["w"], sum(X ,dims=1)[1,:] , colorrange=(1,13), colormap=:gist_rainbow, color=color_dict[J],label="$J th")
     label =  L"\langle \log_{10}| \dot{a}{\nu}(\omega) |^2 \rangle"
     #cb = Colorbar(f[1, 2], limits = (-2, 3), label =label , colormap = :gist_rainbow)
@@ -510,13 +516,81 @@ for e in ensemble_files
     # lines!(ax,eigval_bin_centers,theory_ABP, colorrange = (0, maximum(Drs) ) ,  label="v0 = $(e["v0"]),J = $(e["J"])")
     #f[1,2]=Legend(f,ax)
     save("temp.pdf",f)
-    append_pdf!( joinpath(figure_save_folder,"Dre_0_01_wn_w.pdf"), "temp.pdf", cleanup=true)
+    append_pdf!( joinpath(figure_save_folder,"Dre_0_1_wn_w.pdf"), "temp.pdf", cleanup=true)
 
 
     display(f)
     end
 end
 end
+
+
+
+
+begin
+e = ensemble_files[1]
+f = Figure()
+
+v0 = e["v0"]
+J = e["J"]
+Dr = e["Dr"]
+
+ax = Axis(f[1,1], ylabel=L"aa", xlabel=L"lambda", title="J=$J, Dr = $Dr, v0 = $(v0)")
+
+tau =1/Dr
+
+
+eigval_bin_centers = e["FT_v_projs"]["eigval_bin_centers"]
+
+w = e["FT_v_projs"]["w"][end]
+
+X = e["FT_v_projs"]["X2"]
+
+
+scatter!(ax,eigval_bin_centers, X[:,end])
+
+    eigvals = e["eigenmodes"]["eigvals"]["seed_7.h5"]   
+
+    a_ABP = sqrt(1/e["Nint"]*sum(1 ./(2 .+ 2*tau .* eigvals))) 
+    t = e["t"]
+
+    eigval_ind=1
+    min_t_ind = e["min_t_ind"]
+
+    println(a)
+    X = zeros(length(eigvals),(length(w)))  
+    #X = zeros(size(e["FT_v_projs"]["X2"] ))  
+    
+
+
+    a = a_ABP
+    for i in 1:size(X)[1]
+
+        @Threads.threads for j in 1:size(X)[2]
+            X[i,j] = v0^2  * 1/tau * 2 *pi * w[j]^2/( ( (1/tau)*eigvals[i]-w[j]^2)^2  + w[j]^2 * (eigvals[i] + 1/tau)^2) 
+        #X[i,j] = v0^2  * 2*tau * 2 *pi * w[j]^2*(1)/( (eigvals[i]^2 + w[j]^2)*(1+tau^2 * w[j]^2)-2*J*tau/a*((1+eigvals[i]*tau)*w[j]^2 - eigvals[i]^2*a^2 ) ) * (t[end] - t[min_t_ind])/(2*pi)/(2*pi)
+
+    end
+    end
+#heatmap!(ax,w, sqrt.(eigval_bin_centers), log10.(transpose(X)), rasterize=true, colorrange=(-2,4), colormap=:gist_rainbow)
+cb = Colorbar(f[1, 2], limits = (-2, 4), colormap = :gist_rainbow, flipaxis = false, label = "log10(ω^2 |a_n(ω)|^2)")
+
+scatter!(ax,eigval_bin_centers, X[:,end])
+
+# xlims!(0,0.5)
+# ylims!(0,1)
+
+display(f)
+
+
+end
+
+
+
+
+
+
+
 
 e1 = ensemble_files[1]
 
@@ -662,7 +736,7 @@ for Drplot in [0.1,0.01]
         if Dr==Drplot
 
 
-
+        J = e["J"]
 
         vrms = e["vrms"]
         a = vrms/e["v0"]

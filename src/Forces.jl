@@ -79,6 +79,12 @@ struct self_align_with_v_unit_force<:Force
     
 end
 
+struct self_align_with_v_unit_force_interactive<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    β
+    
+end
+
 struct external_harmonic_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
     k::Float64
@@ -433,6 +439,19 @@ function contribute_external_force!(p_i, t, dt,rngs_particles, system, force::se
             p_i.q.+= force.β*cross(p_i.p,  p_i.v)./vnorm
         else
             p_i.q.+= force.β*cross(p_i.p,  p_i.v)
+        end
+    end 
+    return p_i
+end
+
+function contribute_external_force!(p_i, t, dt,rngs_particles, system, force::self_align_with_v_unit_force_interactive)
+    if p_i.type[1] in force.ontypes
+    #compensate for the dt from the dof evolver, can be changed if the evolver also changes
+        vnorm = norm(p_i.v)
+        if vnorm!=0
+            p_i.q.+= force.β[]*cross(p_i.p,  p_i.v)./vnorm
+        else
+            p_i.q.+= force.β[]*cross(p_i.p,  p_i.v)
         end
     end 
     return p_i

@@ -59,6 +59,7 @@ function plot_field_magnitude!(f,ax, cpsO, cfsO)
     field_centers2 = @lift($(cfsO)[1].bin_centers[2])
     field_C = @lift($(cfsO)[1].C)
     heatmap!(ax,field_centers1,field_centers2,field_C, alpha=0.2,colormap=:viridis,colorrange=(0,1))
+    Colorbar(f[1,2], limits = (0, 1), label="Concentration c",colormap=:viridis)
     return ax
 end
 
@@ -327,7 +328,7 @@ function plot_disks_type!(f,ax, cpsO, cfsO)
 
     
     s = @lift([2*p_i.R[1]  for p_i in $cpsO])
-    scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1, colormap=Reverse(:seismic))
+    scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1, colormap=:RdYlGn)
 
     return ax
 end

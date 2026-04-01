@@ -441,7 +441,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     current_particle_state = deepcopy(system.initial_particle_state)
     current_field_state = deepcopy(system.initial_field_state)
 
-    #We do not really care that  it is a shallow copy, we will properly set it at the end. We need to prepare it as variables that exist outside the for loop over time.
+    
     final_particle_state = deepcopy(system.initial_particle_state)
     final_field_state = deepcopy(system.initial_field_state)
 
@@ -515,17 +515,20 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
                     frame_counter+=1
                 end
             end
-            #Save the states before the final dof step
 
+            
+            #Save the states before the final dof step
             if n==n_final_save
+
+                final_particle_state = deepcopy(current_particle_state)
+                final_field_state = deepcopy(current_field_state)
+
                 if !isnothing(Tsave)
                     jldopen(joinpath(save_folder_path, JAMs_final_state_file_name),"a+",iotype=IOStream ) do JAMs_file
 
-                        JAMs_file["SIM"]=SIM(deepcopy(final_particle_state), deepcopy(final_field_state), deepcopy(dt), deepcopy(t_stop), deepcopy(system));
+                        JAMs_file["SIM"]=SIM(deepcopy(current_particle_state), deepcopy(current_field_state), deepcopy(dt), deepcopy(t_stop), deepcopy(system));
                     end
                 end
-                final_particle_state = deepcopy(current_particle_state)
-                final_field_state = deepcopy(current_field_state)
 
                 
             end

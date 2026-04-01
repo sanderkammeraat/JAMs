@@ -18,7 +18,7 @@ function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing, N=2000)
     global_dofevolvers = []
     field_dofevolvers = []
     N=N
-    ϕ = 0.8
+    ϕ = 1.3
     poly=15e-2
     Rs = rand(Uniform(1-poly, 1+poly),N)
     display(size(Rs))
@@ -45,7 +45,7 @@ end
 
 function self_aligning_step(rx_step,J,v0, Dr, seed; Tsave=nothing, Tplot=nothing)
 
-    external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
+    external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
     pair_forces = (soft_disk_force(1,1.),)
 
@@ -115,7 +115,7 @@ rx_step = relaxation_step("")
 
 
 
-self_aligning_step(rx_step,500,0.08, 0.1, 100)
+self_aligning_step(rx_step,1,0.01, 0.1, 100)
 
 
 

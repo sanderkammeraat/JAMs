@@ -521,3 +521,44 @@ function unwrap(angles)
     end
     return θpc
 end
+
+
+function centered_ma(x,y, wlen)
+
+    # x x |x| x x  for odd wlen, note that we get a shorter array of (wlen-1)/2 on both sides so the new array is of length x-(wlen-1)/2*2
+
+    if wlen>0 && isodd(wlen)
+        wlen_side = round(Int, (wlen-1)/2)
+        yma = zeros(length(y) - wlen  +1)
+
+        xma = x[(wlen_side +1 ): (length(x) - wlen_side)]
+
+        for (im,i) in  pairs( wlen_side +1 : length(y) - wlen_side )
+                yma[im] = mean( y[i - wlen_side: i+ wlen_side])
+        end
+    #Convenience function to turn off moving average    
+    elseif wlen==0
+        yma = copy(y)
+        xma = copy(x)
+    else
+        error("Should use positive and odd wlen, or set wlen=0 to turn of ma.")
+    end
+
+    return Dict("xma"=> xma, "yma"=>yma)
+
+end
+
+function MSD(t,x,y; tavg=true, pavg = true)
+
+    msd = zeros(length(t))
+
+    for i in eachindex(msd)
+        msd[i] = mean( (x[:,i:end]-x[:,1:end-i+1]) .^2 + (y[:,i:end]-y[:,1:end-i+1]) .^2 )
+
+    end
+
+    return Dict("msd"=>msd, "delta_t"=>t)
+
+end
+
+

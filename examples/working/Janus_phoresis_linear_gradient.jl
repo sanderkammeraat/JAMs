@@ -7,7 +7,7 @@ function simulation(save_path)
     pair_forces = []#[soft_disk_force(1,1.)]
     #type,  consumption, cmid, v0max, σ in Lorentzian
     
-    field_forces = (field_propulsion_distr_force(1,0.0, log10(0.5) ,0.8,30), self_align_with_∇C_force(1,3), grad_field_propulsion_force(1,0.,-2))
+    field_forces = (field_propulsion_distr_force(1,0.0, log10(0.5) ,0.8,30), self_align_with_∇C_force(1,10), grad_field_propulsion_force(1,0.,-2))
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers =  [overdamped_xvf_evolver(1), overdamped_pq_xyc_evolver(1)]
     global_dofevolvers =  []

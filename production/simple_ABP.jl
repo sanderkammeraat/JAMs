@@ -9,7 +9,7 @@ function simulation()
     field_dofevolvers = []
     pair_forces = (soft_disk_force(1,1.),)
 
-    N=800
+    N=2000
     ϕ = 1.3
     poly=15e-2
     Rs = rand(Uniform(1-poly, 1+poly),N)
@@ -28,7 +28,7 @@ function simulation()
 
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, field_dofevolvers, true,2.5*(1+poly));
     #Run integration
-    sim = Euler_integrator(system,0.01, 1e3,Tsave=100, save_functions = [save_2d_polar_p!],save_folder_path="/Users/kammeraat/testABP_st/simdata/J_0/",  plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=10); 
+    sim = Euler_integrator(system,0.01, 1e3,Tsave=nothing, save_functions = [save_2d_polar_p!],save_folder_path="/Users/kammeraat/testABP_st/simdata/J_0/",  plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=10); 
     return sim
 end
 
