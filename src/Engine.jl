@@ -516,7 +516,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
                 end
             end
 
-            
+
             #Save the states before the final dof step
             if n==n_final_save
 
@@ -532,7 +532,6 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
 
                 
             end
-
 
             #Only now evolve dofs of every particle
             #Local

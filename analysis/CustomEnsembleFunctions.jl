@@ -42,7 +42,6 @@ function bin_vector_data(bins::Bins, ref_vector_data, vector_data)
         bool_in_bin = (ref_vector_data.> bins.edges[i]) .* (ref_vector_data.<= bins.edges[i+1])
 
         N_in_bin[i] = sum(bool_in_bin)
-
         if N_in_bin[i]>0
             binned_vector_data[i] = mean( vector_data[bool_in_bin]) 
         end
