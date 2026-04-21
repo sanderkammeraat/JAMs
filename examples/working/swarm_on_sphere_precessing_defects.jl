@@ -6,7 +6,7 @@ function simulation()
     
 
     pair_forces = (soft_disk_force(1,1.),)
-    external_forces = (ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,0.1),ABP_3d_angular_noise(1))
+    external_forces = (ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,10),ABP_3d_angular_noise(1))
 
     #dofevolvers = [inertial_evolver!]
     
@@ -21,13 +21,13 @@ function simulation()
     R = 10
     local_dofevolvers = (overdamped_xvf_Rc_evolver(1,R),overdamped_pq_Rc_evolver(1,R))
 
-    L =  2.5 *R 
+    L =  2.5*R
     Ly = L
     Lx = L
     Lz = L
     positions, polarities = random_on_sphere(R,N)
 
-    initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [Rs[i]], [0.001], [0.0], positions[i],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],polarities[i],[0,0,0],[0,0,0]) for i=1:N ];
+    initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [Rs[i]], [0.2], [0.000], positions[i],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],polarities[i],[0,0,0],[0,0,0]) for i=1:N ];
 
 
     display(L)
@@ -40,12 +40,12 @@ function simulation()
     #β=-1 interesting!
     
 
-    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,2.5*(1+poly));
+    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,3*(1+poly));
 
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.01, 1e4, Tplot=10,fps=60,plot_functions=(plot_points!, plot_directors!, plot_velocity_vectors!), plotdim=3, Tsave=nothing)#, record_folder_path = "/Users/kammeraat/self_alignment_on_sphere/", res=(1000,1000)); 
+    sim = Euler_integrator(system,0.005, 1e4, Tplot=1,fps=60,plot_functions=(plot_sized_points!, plot_directors!, plot_velocity_vectors!), plotdim=3, Tsave=nothing, save_folder_path = "/Users/kammeraat/test_saving_speed/", save_functions=[save_2d_polar_p!]); 
     return sim;
 
 end
