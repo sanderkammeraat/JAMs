@@ -57,9 +57,21 @@ function plot_field_magnitude!(f,ax, cpsO, cfsO)
     
     field_centers1 = @lift($(cfsO)[1].bin_centers[1])
     field_centers2 = @lift($(cfsO)[1].bin_centers[2])
+    
     field_C = @lift($(cfsO)[1].C)
-    heatmap!(ax,field_centers1,field_centers2,field_C, alpha=0.2,colormap=:viridis,colorrange=(0,1))
-    Colorbar(f[1,2], limits = (0, 1), label="Concentration c",colormap=:viridis)
+    heatmap!(ax,field_centers1,field_centers2,field_C, alpha=0.2,colormap=:jet,colorrange=(0.0,1))
+    Colorbar(f[1,2], limits = (0.0, 1), label="Concentration c",colormap=:jet)
+    return ax
+end
+
+function plot_field_log_magnitude!(f,ax, cpsO, cfsO)
+    
+    field_centers1 = @lift($(cfsO)[1].bin_centers[1])
+    field_centers2 = @lift($(cfsO)[1].bin_centers[2])
+    
+    field_C = @lift(log10.($(cfsO)[1].C))
+    heatmap!(ax,field_centers1,field_centers2,field_C, alpha=0.2,colormap=:jet,colorrange=(-1,0))
+    Colorbar(f[1,2], limits = (-1, 0), label="Concentration c",colormap=:jet)
     return ax
 end
 

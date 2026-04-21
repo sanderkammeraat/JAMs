@@ -170,3 +170,17 @@ function stacked_polymers_at_angle(N_in_pol, L, R,pf; tilt_angle = nothing)
     return x, y, radii, pol_ids, ids_in_pol, Npols
 
 end
+
+function random_on_sphere(R, N)
+
+    positions = [ ]
+    polarities = [ ]
+    for i=1:N
+        unit_position = normalize( rand(Normal(0,1),3))
+        position = R .* unit_position
+        polarity = normalize( cross(  rand(Normal(0,1),3) ,unit_position) )
+        push!(positions, position)
+        push!(polarities, polarity)
+    end
+    return positions, polarities
+end

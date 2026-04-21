@@ -39,6 +39,11 @@ struct grad_field_propulsion_force<:Force
     consumption::Float64
     μ::Float64
 end
+struct grad_field_propulsion_c_force
+    ontypes::Union{Int64,Vector{Int64}}
+    consumption::Float64
+    μ::Float64
+end
 
 struct self_align_with_∇C_unit_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
@@ -139,6 +144,8 @@ end
 struct ABP_3d_propulsion_force <:Force
     ontypes::Union{Int64,Vector{Int64}}
 end
+
+
 struct oscillatory_3d_propulsion_force <:Force
     ontypes::Union{Int64,Vector{Int64}}
     ω::Float64
@@ -147,7 +154,6 @@ end
 struct ABP_3d_angular_noise<:Force
     ontypes::Union{Int64,Vector{Int64}}
 end
-
 
 
 #Pair forces
@@ -410,6 +416,8 @@ function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::ABP
     end
     return p_i
 end
+
+
 
 # We will treat the noise purely angular, but reconstruct the torque from it that is later used to rotate the vector
 function contribute_external_force!(p_i, t, dt, rngs_particles, system, force::ABP_perpendicular_angular_noise)
@@ -1232,7 +1240,7 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt,rngs_particles
         p_i.f[2]+= p_i.zeta[1] * (field_j.C[x_index, y_index]+force.v0offset) *sin(p_i.θ[1])
 
         if field_j.C[x_index, y_index]>0
-            field_j.Cf[x_index, y_index]+=-force.consumption
+            field_j.Cf[x_index, y_index]+=-force.consumption*dt
         end
     end
 
@@ -1240,23 +1248,23 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt,rngs_particles
 
 end
 
-function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles,system, force::field_propulsion_3d_force)
-    if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
-        x_index = field_indices[1]
-        y_index = field_indices[2]
-        #print(x_index)
+# function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles,system, force::field_propulsion_3d_force)
+#     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
+#         x_index = field_indices[1]
+#         y_index = field_indices[2]
+#         #print(x_index)
 
-        p_i.f[1]+= p_i.zeta[1] * (field_j.C[x_index, y_index]+force.v0offset) *p_i.p[1]
-        p_i.f[2]+= p_i.zeta[1] * (field_j.C[x_index, y_index]+force.v0offset) *p_i.p[2]
+#         p_i.f[1]+= p_i.zeta[1] * (field_j.C[x_index, y_index]+force.v0offset) *p_i.p[1]
+#         p_i.f[2]+= p_i.zeta[1] * (field_j.C[x_index, y_index]+force.v0offset) *p_i.p[2]
 
-        if field_j.C[x_index, y_index]>0
-            field_j.Cf[x_index, y_index]+=-force.consumption
-        end
-    end
+#         if field_j.C[x_index, y_index]>0
+#             field_j.Cf[x_index, y_index]+=-force.consumption
+#         end
+#     end
 
-    return p_i, field_j
+#     return p_i, field_j
 
-end
+# end
 
 function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles,system, force::field_propulsion_distr_force)
     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
@@ -1267,10 +1275,10 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particle
 
 
         if field_j.C[x_index, y_index]>0
-            v0fact = force.v0max * force.σ/(force.σ^2+(log10(field_j.C[x_index, y_index]) - force.cmid)^2)
+            v0fact = force.v0max * force.σ^2/(force.σ^2+(log10(field_j.C[x_index, y_index]) - force.cmid)^2)
             p_i.f[1]+= p_i.zeta[1] * (v0fact) *p_i.p[1]
             p_i.f[2]+= p_i.zeta[1] * (v0fact) *p_i.p[2]
-            field_j.Cf[x_index, y_index]+=-force.consumption
+            field_j.Cf[x_index, y_index]+=-force.consumption*dt
         else
             field_j.Cf[x_index, y_index]=0
         end
@@ -1280,30 +1288,30 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particle
 
 end
 
-function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles,system, force::asymmetric_field_propulsion_distr_force)
-    if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
-        x_index = field_indices[1]
-        y_index = field_indices[2]
-        #print(x_index)
+# function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles,system, force::asymmetric_field_propulsion_distr_force)
+#     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
+#         x_index = field_indices[1]
+#         y_index = field_indices[2]
+#         #print(x_index)
 
 
 
-        if field_j.C[x_index, y_index]>0
-            v0fact = force.v0max * force.σ/(force.σ+(log10(field_j.C[x_index, y_index]))^2)
-            p_i.f[1]+= p_i.zeta[1] * (v0fact) *p_i.p[1]
-            p_i.f[2]+= p_i.zeta[1] * (v0fact) *p_i.p[2]
+#         if field_j.C[x_index, y_index]>0
+#             v0fact = force.v0max * force.σ/(force.σ+(log10(field_j.C[x_index, y_index]))^2)
+#             p_i.f[1]+= p_i.zeta[1] * (v0fact) *p_i.p[1]
+#             p_i.f[2]+= p_i.zeta[1] * (v0fact) *p_i.p[2]
 
             
 
-            field_j.Cf[x_index-round(Int64,p_i.p[1]), y_index-round(Int64,p_i.p[2])]+=-force.consumption
-        else
-            field_j.Cf[x_index, y_index]=0
-        end
-    end
+#             field_j.Cf[x_index-round(Int64,p_i.p[1]), y_index-round(Int64,p_i.p[2])]+=-force.consumption
+#         else
+#             field_j.Cf[x_index, y_index]=0
+#         end
+#     end
 
-    return p_i, field_j
+#     return p_i, field_j
 
-end
+# end
 
 function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles, system, force::self_align_with_∇C_force)
     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
@@ -1352,8 +1360,29 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particle
 
         if field_j.C[x_index, y_index]>0
             p_i.f.+= force.μ * ∇C
-            field_j.Cf[x_index, y_index]+=-force.consumption
+            field_j.Cf[x_index, y_index]+=-force.consumption*dt
         else
+            p_i.f.+= force.μ * ∇C
+            field_j.Cf[x_index, y_index]=0
+        end
+    end
+    return p_i, field_j
+end
+
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles, system, force::grad_field_propulsion_c_force)
+    if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
+
+
+        x_index = field_indices[1]
+        y_index = field_indices[2]
+
+        ∇C = grad(field_j, x_index, y_index)
+
+        if field_j.C[x_index, y_index]>0
+            p_i.f.+= force.μ * ∇C/field_j.C[x_index, y_index]
+            field_j.Cf[x_index, y_index]+=-force.consumption*dt
+        else
+            p_i.f.+= force.μ * ∇C*0
             field_j.Cf[x_index, y_index]=0
         end
     end

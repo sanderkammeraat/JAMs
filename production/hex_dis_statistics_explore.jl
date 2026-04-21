@@ -114,7 +114,7 @@ end
 
 function self_aligning_step(rx_step,J,v0, Dr, seed,save_folder_path; Tsave=nothing, Tplot=nothing)
 
-    external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
+    external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
     pair_forces = [soft_disk_force([1, 2],[1 2; 2 1])]
 
@@ -189,6 +189,6 @@ rx_result= relaxation_step("", Tsave=nothing, Tplot=10)
 
 # rx_step,J,v0, Dr, seed, save_folder_path
 
-sa_result=self_aligning_step(rx_result, 0.001 , 0.01, 0.00,nothing, "", Tplot=10,  Tsave=nothing);
+sa_result=self_aligning_step(rx_result, 10.0 , 0.01, 0.00,nothing, "", Tplot=10,  Tsave=nothing);
 
 # ra_result=relax_again_step(sa_result, save_folder_path);
