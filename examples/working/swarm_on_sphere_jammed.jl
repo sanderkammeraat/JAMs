@@ -6,7 +6,7 @@ function simulation()
     
 
     pair_forces = (soft_disk_force(1,1.),)
-    external_forces = (ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,0.1),ABP_3d_angular_noise(1))
+    external_forces = (ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,2),ABP_3d_angular_noise(1))
 
     #dofevolvers = [inertial_evolver!]
     
@@ -45,7 +45,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.01, 1e4, Tplot=10,fps=60,plot_functions=(plot_points!, plot_directors!, plot_velocity_vectors!), plotdim=3, Tsave=nothing)#, record_folder_path = "/Users/kammeraat/self_alignment_on_sphere/", res=(1000,1000)); 
+    sim = Euler_integrator(system,0.01, 1e4, Tplot=10,fps=60,plot_functions=(plot_sized_points!, plot_directors!, plot_velocity_vectors!), plotdim=3, Tsave=nothing)#, record_folder_path = "/Users/kammeraat/self_alignment_on_sphere/", res=(1000,1000)); 
     return sim;
 
 end

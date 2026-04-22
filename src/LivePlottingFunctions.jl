@@ -214,6 +214,15 @@ function plot_Swarmalators!(f,ax, cpsO, cfsO)
 end
 
 
+function plot_sphere!(f,ax, cpsO, cfsO)
+
+
+    R = norm(cpsO[][1].x)
+    meshscatter!(ax,0,0,0, markersize=R, color=:white)
+
+    return ax
+end
+
 
 function plot_sized_points!(f,ax, cpsO, cfsO)
 
@@ -231,7 +240,7 @@ function plot_sized_points!(f,ax, cpsO, cfsO)
 
         R = @lift([p_i.R[1] for p_i in $cpsO])
 
-        meshscatter!(ax,x,y,z, color=c, markersize =R, transparency=true)
+        meshscatter!(ax,x,y,z, color=c, markersize =R, transparency=true, colormap=(:viridis,0.2))
 
 
     else

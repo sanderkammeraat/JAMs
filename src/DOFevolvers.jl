@@ -73,6 +73,13 @@ function evolve_locally!(p_i, t, dt, dofevolver::overdamped_xvf_Rc_evolver)
 
         p_i.x .+= p_i.v * dt
         p_i.xuw.+= p_i.v * dt
+
+        #Correct for Euler step drift off of sphere
+        normalize!(p_i.x)
+        p_i.x.*= dofevolver.R
+
+        normalize!(p_i.xuw)
+        p_i.xuw.*= dofevolver.R
         
 
         #reinitialize
