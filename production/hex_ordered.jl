@@ -26,8 +26,9 @@ addprocs(n)
     pair_forces = [soft_disk_force([1, 2],[1. 1.; 1. 1.])]
 
 
-    #dofevolvers = [inertial_evolver!]
-    dofevolvers = [overdamped_evolver!]
+    local_dofevolvers = [overdamped_xvf_evolver(1), overdamped_pq_evolver(1)]
+    global_dofevolvers = []
+    field_dofevolvers = []
 
 
     #First make stair
@@ -39,7 +40,7 @@ addprocs(n)
     xs = []
     ys = []
     r=1.0
-    ϕ=1.
+    ϕ=1.1
     l = 2* sqrt(pi*sqrt(3)/(6*ϕ))# 2*r
 
     typess = []
@@ -109,7 +110,7 @@ addprocs(n)
     field_updaters = []
 
 
-    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,2.5);
+    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, false,2.5);
 
     #Run integration
     sim = Euler_integrator(system,1e-2, 5e3,seed = seed,Tsave=100,Tplot=nothing, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
@@ -120,8 +121,8 @@ end
 
 
 
-Drs = [0.,0.01, 0.02, 0.05, 0.1, 0.2, 0.5,1.,10.] 
-Js=[0.0, 0.01, 0.02, 0.05, 0.1, 0.2,  0.5, 1.]
+Drs = [0.,0.01, 0.05, 0.1, 0.5, 1.,10.] 
+Js=[0.0, 0.01, 0.05, 0.1, 0.5, 1.]
 
 seeds = reshape( collect(1:length(Drs)*length(Js)), (length(Drs),length(Js)) )
 
@@ -133,7 +134,7 @@ seeds = reshape( collect(1:length(Drs)*length(Js)), (length(Drs),length(Js)) )
 
         display("Running")
 
-        save_folder_path = joinpath(homedir(),"sa","phi_1","Nlin_4","vary_J_Dr","simdata", "J_$J","Dr_$Dr","seed_$seed");
+        save_folder_path = joinpath(homedir(),"sa","phi_1.1","Nlin_4","vary_J_Dr","simdata", "J_$J","Dr_$Dr","seed_$seed");
         print(save_folder_path)
 
         sim = simulation(J,Dr,seed, save_folder_path);

@@ -1,176 +1,404 @@
+using Distributed
 
+include(joinpath("..","src","Engine.jl"))
+include("AnalysisFunctions.jl")
+include("CustomAnalysisFunctions.jl")
+include("CustomEnsembleFunctions.jl")
 
-function readdir_filt(folder_path)
-    directories = filter!(e->e!=".DS_Store",readdir(folder_path))
-    return directories
+#Helper function
+function load_file(file_location)
 
+    file = jldopen(file_location, "r",iotype=IOStream)
+    return file
 end
 
-function construct_folder_tree_param_param_seed(base_folder)
-    tree = Dict()
+#Helper function
+function initialize_file(save_path; overwrite = false, append=false, modify=false)
 
-    #Base folders (first parameter axis)
-    dirs = readdir_filt(base_folder)
-    
-    #Subfolder (second parameter axis)
-    for dir in dirs
-        tree[dir]=Dict()
-        subdirs = readdir_filt(joinpath( base_folder, dir ))
-    
-        for subdir in  subdirs
-            tree[dir][subdir]=Dict()
-    
-            seeddirs =  readdir_filt(joinpath( base_folder, dir, subdir ))
-    
-            for seeddir in seeddirs
-                tree[dir][subdir][seeddir]= joinpath( base_folder, dir, subdir, seeddir )
-            end
-        end
-        
-    
-    end
-    return tree
-end
+    save_folder_path = mkpath(dirname(save_path))
 
-function initialize_analysis_file!(raw_data_file,analysis_file)
-
-    integration_info = raw_data_file["integration_info"]
-
-    system = read(raw_data_file,"system")
-
-    for info in keys(integration_info)
-        analysis_file["integration_info/$(info)"] = raw_data_file["integration_info"][info]
-    end
-
-    for forcetype in keys(system["forces"])
-
-        for force in keys(system["forces"][forcetype])
-
-            for force_param in keys(system["forces"][forcetype][force])
-
-                analysis_file["system/forces/$(forcetype)/$(force)/$(force_param)"]=system["forces"][forcetype][force][force_param]
-            end
-        end
-    end
-
-    for dofevolver in keys(system["dofevolvers"])
-        analysis_file["system/dofevolvers/$(dofevolver)"] = system["dofevolvers"][dofevolver]
-    end
-
-end
-#Does nothing else than opening and saving analysis file.
-# analyze_single_seed_inner is a function that should take  (analysis_file, system, integration_info, frames) as arguments and return analysis_file.
-function analyze_single_seed_outer(raw_data_file_path, analysis_file_path, analyze_single_seed_inner; overwrite=false)
-
-    raw_data_file = jldopen(raw_data_file_path, "r")
-
-    if overwrite
-        analysis_file = jldopen(analysis_file_path, "w")
-        initialize_analysis_file!(raw_data_file,analysis_file)
-
+    if (append && overwrite) || (append && modify) || (overwrite && modify)
+        error("Set only append, modify or error to true, not both!")
     else
-        if !isfile(analysis_file_path)
-            
-            jldopen(analysis_file_path, "a+") do analysis_file
-                initialize_analysis_file!(raw_data_file,analysis_file)
-            end
+        if !isfile(save_path)
+
+            file = h5open(save_path,"cw")
+
+            return file
+
+        elseif isfile(save_path) && append
+            file = h5open(save_path,"cw")
+
+            return file
+
+        elseif isfile(save_path) && overwrite
+            file = h5open(save_path,"w")
+
+            return file
+
+        elseif isfile(save_path) && modify
+            file = h5open(save_path,"r+")
+
+            return file
+
+        else
+            error("Initialized file already existing, aborting to prevent overwriting.")
         end
-        #But for the analysis data, so reload in append only mode 
-        analysis_file = jldopen(analysis_file_path, "a+")
     end
+end
 
-    #Expose by default the following data
-    system = analysis_file["system"]
-    integration_info  = analysis_file["integration_info"]
-    frames = raw_data_file["frames"]
 
-    #Do stuff with custom inner analysis function
+#With data_dict, we mean a Julia dict in which we will collect data that we need for analysis
+#With analysis_file we mean an initialized analysis file in which we will store the analysis results
+#The idea is to first expose the necessary data from the simulation file to the datadict, and then let the add_analysis files use this to calculate something.
 
-    try
-        analysis_file = analyze_single_seed_inner(analysis_file, system, integration_info, frames)
+#General analysis
+function analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=nothing,  overwrite = false, append = false, modify=false)
+
+
+    #Preparing files
+    loaded_raw_data_file = load_file(raw_data_file_path)
+
+    loaded_support_raw_data_file = !isnothing(support_raw_data_file_path) ?  load_file(support_raw_data_file_path) : nothing
+
+    try  
+        initialized_analysis_file = initialize_file(analysis_save_path; overwrite = overwrite, append=append, modify = modify)
+
+        try 
+            
+            #Actually running the analysis
+            initialized_analysis_file = custom_analysis_function(initialized_analysis_file,loaded_raw_data_file; support_raw_data_file = loaded_support_raw_data_file)
+
+            #Closing the files
+            close(initialized_analysis_file)
+
+            if !isnothing(loaded_support_raw_data_file)
+                close(loaded_support_raw_data_file)
+            end
+
+            close(loaded_raw_data_file)
+
+        catch e 
+
+            println("Something in the custom analysis function went wrong. Safely aborting and closing the files.")
+            close(initialized_analysis_file)
+
+            if !isnothing(loaded_support_raw_data_file)
+                close(loaded_support_raw_data_file)
+
+            end
+
+            close(loaded_raw_data_file)
+
+            rethrow(e)
+        end
+
+        
     catch e
-        close(analysis_file)
-        close(raw_data_file)
-        error("JAMS: data(group) already present in analysis file, aborted to prevent overwriting.  Suggested solution: check if overwriting is desired and if so, use overwrite=true.)")
+        println("Something went wrong. Safely aborting and closing the files.")
+
+        if !isnothing(loaded_support_raw_data_file)
+            close(loaded_support_raw_data_file)
+        end
+
+        close(loaded_raw_data_file)
+
         rethrow(e)
 
     end
 
-    #Now close
-    close(analysis_file)
-    close(raw_data_file)
 end
 
-function run_serial_analysis_param1_param2_seed(tree, analyze_single_seed_inner, analysis_base_folder; raw_data_file_name="raw_data.jld2", overwrite=false)
+function ensemble_single(seed_file_paths, ensemble_save_path,custom_ensemble_function; overwrite = false, append = false, modify=false)
 
-     for (param1, subdict) in tree
 
-        for (param2, seeddict) in subdict
+    #Preparing files
 
-            @showprogress dt = 1 desc="Analysis in progress..." showspeed=true for (seed, seedpath) in  seeddict
+    loaded_seed_files = [ load_file(seed_file_path) for seed_file_path in seed_file_paths]
 
-                raw_data_file_path = joinpath(seedpath, raw_data_file_name)
+    seed_names = [ splitpath(seed_file_path)[end] for seed_file_path in seed_file_paths ]
 
-                analysis_file_path = joinpath( mkpath(joinpath(analysis_base_folder,param1, param2)), "$(seed).jld2")
+    try 
+        initialized_ensemble_file = initialize_file(ensemble_save_path; overwrite = overwrite, append=append, modify = modify)
 
-                analyze_single_seed_outer(raw_data_file_path,analysis_file_path, analyze_single_seed_inner, overwrite=overwrite)
-            end
+        try 
+            
+            #Actually running the analysis
+            initialized_ensemble_file = custom_ensemble_function(initialized_ensemble_file,loaded_seed_files, seed_names)
 
+            #Closing the files
+            close(initialized_ensemble_file)
+
+            close.(loaded_seed_files)
+
+        catch e 
+
+            println("Something in the custom analysis function went wrong. Safely aborting and closing the files.")
+            close(initialized_ensemble_file)
+
+            close.(loaded_seed_files)
+
+            rethrow(e)
         end
+    catch e
+        println("Something went wrong. Safely aborting and closing the files.")
+
+
+        close.(loaded_seed_files)
+
+        rethrow(e)
 
     end
+
 end
 
-function run_multithreaded_analysis_param1_param2_seed(tree, analyze_single_seed_inner, analysis_base_folder; raw_data_file_name="raw_data.jld2", overwrite=false)
+function run_sequential_ensemble(ensemble_save_paths, seed_file_paths_per_ensemble_folder, custom_ensemble_function; overwrite = false, append = false, modify=false)
 
-    k1s = collect(keys(tree))
-    for k1 in k1s
-        k2s = collect(keys(tree[k1]))
+    for i in eachindex(ensemble_save_paths)
 
-        Threads.@threads for k2 in k2s
-        k3s = collect(keys(tree[k1][k2]))
+        ensemble_save_path = ensemble_save_paths[i]
 
-           @showprogress dt = 1 desc="Analysis in progress..." showspeed=true for k3 in  k3s
-            
-               seedpath = tree[k1][k2][k3]
-               seed = k3
-               raw_data_file_path = joinpath(seedpath, raw_data_file_name)
+        seed_file_paths = seed_file_paths_per_ensemble_folder[i]
+        println(ensemble_save_path)
 
-               analysis_file_path = joinpath( mkpath(joinpath(analysis_base_folder,k1, k2)), "$(seed).jld2")
 
-               analyze_single_seed_outer(raw_data_file_path,analysis_file_path, analyze_single_seed_inner, overwrite=overwrite)
-           end
+        ensemble_single(seed_file_paths, ensemble_save_path, custom_ensemble_function,  overwrite = overwrite, append = append, modify=modify)
 
-       end
+    end
 
-   end
+end
+function run_multithreaded_ensemble(ensemble_save_paths, seed_file_paths_per_ensemble_folder, custom_ensemble_function; overwrite = false, append = false)
+
+    @Threads.threads for i in eachindex(ensemble_save_paths)
+
+        ensemble_save_path = ensemble_save_paths[i]
+
+        seed_file_paths = seed_file_paths_per_ensemble_folder[i]
+        println(ensemble_save_path)
+
+
+        ensemble_single(seed_file_paths, ensemble_save_path, custom_ensemble_function,  overwrite = overwrite, append = append)
+
+    end
+
 end
 
 
+
+function movie_single(raw_data_file_path, movie_save_path, custom_movie_function)
+
+
+    #Preparing files
+    loaded_raw_data_file = load_file(raw_data_file_path)
+
+    try 
+        mkpath(dirname(movie_save_path))
+        custom_movie_function(loaded_raw_data_file,movie_save_path)
+
+
+        close(loaded_raw_data_file)
+
+    catch e
+        println("Something went wrong. Safely aborting and closing the raw data file.")
+
+        close(loaded_raw_data_file)
+
+        rethrow(e)
+
+    end
+
+end
+
+
+
+#helper function
+function save_dict2h5!(file,dict, dictsavename)
+
+    create_group(file, dictsavename)
+
+    for (key, val) in dict
+        file[dictsavename][string(key)] = val
+    end
+    return file
+end
+
+#helper function
 function extract_frame_data_for_type(datakey, type, frame_data)
 
     return frame_data[datakey][ frame_data["type"].==type ]
 
 end
 
-function acces_param1_param2_seedanalysis(tree, dofunctions)
+function findfile(directory, filepattern)
 
-    for (param1, subdict) in tree
+    paths = String[]
 
-        for (param2, seeddict) in subdict
+    for (root, dirs, files) in walkdir(directory)
 
-            for (seed, seedpath) in  seeddict
+        for file in files
 
-                jldopen(seedpath, "r") do seedanalysis_file
+            if occursin(filepattern, file) && occursin(".h5", file)
 
-                    for dofunction in dofunctions
-                        dofunction(seed, seedanalysis_file)
-                    end
-
-                end
-
+                push!(paths, joinpath(root, file))
             end
         end
     end
+
+    return paths
+end
+
+
+
+function auto_analysis_dir(base_folder, raw_data_file_name_pattern; support_raw_data_file_name_pattern = nothing, mimic_source_dir_name = "simdata",mimic_target_dir_name = "analysis")
+
+    raw_data_file_paths = findfile(base_folder, raw_data_file_name_pattern)
+
+    support_raw_data_file_paths = !isnothing(support_raw_data_file_name_pattern) ? findfile(base_folder, support_raw_data_file_name_pattern) : nothing
+
+    seed_dir_names = [ splitpath(dirname(file_path))[end] for file_path in raw_data_file_paths]
+
+    analysis_save_folders = replace.( dirname.(dirname.(raw_data_file_paths)), mimic_source_dir_name => mimic_target_dir_name) 
+
+    analysis_save_paths = [joinpath(analysis_save_folders[i],seed_dir_names[i]*".h5") for i=eachindex(seed_dir_names)]
+
+
+    return raw_data_file_paths, support_raw_data_file_paths, analysis_save_paths
+
+end
+
+function auto_ensemble_dir(base_folder, analysis_file_name_pattern; mimic_source_dir_name = "analysis", mimic_target_dir_name = "ensembles")
+
+    #Find all analysis files
+    analysis_file_paths = findfile(base_folder, analysis_file_name_pattern)
+
+    display(analysis_file_paths)
+
+    #Construct ensemble save folder structures
+    ensemble_save_folders = unique(replace.( dirname.(analysis_file_paths), mimic_source_dir_name => mimic_target_dir_name))
+
+    ensemble_save_paths = joinpath.(ensemble_save_folders,"ensemble.h5")
+
+    seed_file_paths_per_ensemble_folder = []
+    
+    for i in eachindex(ensemble_save_folders)
+
+        #Corresponding analysis folder
+        analysis_folder  = replace.( ensemble_save_folders[i], mimic_target_dir_name => mimic_source_dir_name) 
+
+        #Find all seeds in this folder
+        seed_paths_in_ensemble = findfile(analysis_folder, analysis_file_name_pattern)
+
+        #Add these file paths to the corresponding ensemble
+        push!(seed_file_paths_per_ensemble_folder,seed_paths_in_ensemble)
+    end
+
+
+    return ensemble_save_paths, seed_file_paths_per_ensemble_folder
+end
+
+function auto_movie_dir(base_folder, raw_data_file_name_pattern, mimic_source_dir_name = "simdata", mimic_target_dir_name = "movies")
+
+    raw_data_file_paths = findfile(base_folder, raw_data_file_name_pattern)
+
+    seed_dir_names = [ splitpath(dirname(file_path))[end] for file_path in raw_data_file_paths]
+
+    movie_save_folders = replace.( dirname.(dirname.(raw_data_file_paths)), mimic_source_dir_name => mimic_target_dir_name) 
+
+    movie_save_paths = [joinpath(movie_save_folders[i],seed_dir_names[i]*".mp4") for i=eachindex(seed_dir_names)]
+
+
+    return raw_data_file_paths, movie_save_paths
+
+end
+
+
+function run_distributed_analysis(raw_data_file_paths, analysis_save_paths,custom_analysis_function; support_raw_data_file_paths=nothing,  overwrite = false, append = false, modify=false)
+
+    @sync @distributed for i in eachindex(raw_data_file_paths)
+        
+        raw_data_file_path = raw_data_file_paths[i]
+        println(raw_data_file_path)
+        analysis_save_path = analysis_save_paths[i]
+        support_raw_data_file_path = !isnothing(support_raw_data_file_paths) ? support_raw_data_file_paths[i] : nothing
+
+        analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=support_raw_data_file_path,  overwrite = overwrite, append = append, modify=modify)
+
+    end
+
+end
+
+function run_multithreaded_analysis(raw_data_file_paths, analysis_save_paths,custom_analysis_function; support_raw_data_file_paths=nothing,  overwrite = false, append = false, modify=false)
+
+    Threads.@threads for i in eachindex(raw_data_file_paths)
+        raw_data_file_path = raw_data_file_paths[i]
+        println(raw_data_file_path)
+        analysis_save_path = analysis_save_paths[i]
+        support_raw_data_file_path = !isnothing(support_raw_data_file_paths) ? support_raw_data_file_paths[i] : nothing
+
+        analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=support_raw_data_file_path,  overwrite = overwrite, append = append, modify=modify)
+
+    end
+
+end
+
+function run_sequential_analysis(raw_data_file_paths, analysis_save_paths,custom_analysis_function; support_raw_data_file_paths=nothing,  overwrite = false, append = false, modify=false)
+
+    for i in eachindex(raw_data_file_paths)
+
+
+        raw_data_file_path = raw_data_file_paths[i]
+        println(raw_data_file_path)
+        analysis_save_path = analysis_save_paths[i]
+        support_raw_data_file_path = !isnothing(support_raw_data_file_paths) ? support_raw_data_file_paths[i] : nothing
+
+        analyze_single(raw_data_file_path, analysis_save_path, custom_analysis_function; support_raw_data_file_path=support_raw_data_file_path,  overwrite = overwrite, append = append, modify=modify)
+
+            
+
+    end
+    
+
+end
+
+function run_multithreaded_movie(raw_data_file_paths, movie_save_paths,custom_movie_function)
+
+    Threads.@threads for i in eachindex(raw_data_file_paths)
+        raw_data_file_path = raw_data_file_paths[i]
+        println(raw_data_file_path)
+        movie_save_path = movie_save_paths[i]
+
+        movie_single(raw_data_file_path, movie_save_path, custom_movie_function)
+    end
+
+end
+
+function run_sequential_movie(raw_data_file_paths, movie_save_paths,custom_movie_function; only_seed="seed_1")
+
+    if !isnothing(only_seed)
+        @showprogress showspeed=true for i in eachindex(raw_data_file_paths)
+
+            raw_data_file_path = raw_data_file_paths[i]
+
+            if splitpath(raw_data_file_path)[end-1] == only_seed
+            
+                println(raw_data_file_path)
+                movie_save_path = movie_save_paths[i]
+
+                movie_single(raw_data_file_path, movie_save_path, custom_movie_function)
+            end
+        end
+    else
+        @showprogress showspeed=true for i in eachindex(raw_data_file_paths)
+
+            raw_data_file_path = raw_data_file_paths[i]
+
+            println(raw_data_file_path)
+            movie_save_path = movie_save_paths[i]
+
+            movie_single(raw_data_file_path, movie_save_path, custom_movie_function)
+        end
+
+    end
+    
 
 end

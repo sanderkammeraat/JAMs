@@ -7,8 +7,16 @@ using StaticArrays
 
 abstract type Force end
 
-
 #Single-particle forces
+
+@kwdef struct Lorenz_system<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+
+    σ::Float64
+    ρ::Float64
+    β::Float64
+end
+
 struct field_propulsion_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
     consumption::Float64
@@ -19,6 +27,41 @@ struct field_propulsion_3d_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
     consumption::Float64
     v0offset::Float64
+end
+struct field_propulsion_distr_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    consumption::Float64
+    cmid::Float64
+    v0max::Float64
+    σ::Float64
+end
+
+struct asymmetric_field_propulsion_distr_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    consumption::Float64
+    cmid::Float64
+    v0max::Float64
+    σ::Float64
+end
+struct grad_field_propulsion_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    consumption::Float64
+    μ::Float64
+end
+struct grad_field_propulsion_c_force
+    ontypes::Union{Int64,Vector{Int64}}
+    consumption::Float64
+    μ::Float64
+end
+
+struct self_align_with_∇C_unit_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    β::Float64
+end
+
+struct self_align_with_∇C_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    β::Float64
 end
 
 struct external_harmonic_pinning_force<:Force
@@ -42,15 +85,44 @@ struct self_align_with_v_force<:Force
     
 end
 
+
+
 struct self_align_with_v_unit_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
     β::Float64
     
 end
 
+struct self_align_with_v_unit_force_interactive<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    β
+    
+end
+
 struct external_harmonic_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
     k::Float64
+    
+end
+struct external_mexican_hat_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    a::Float64
+    b::Float64
+    
+end
+
+struct external_double_gaussian_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    a::Float64
+    b::Float64
+    xa::MVector{3,Float64}
+    xb::MVector{3,Float64}
+    
+end
+
+struct external_anisotropic_harmonic_force{T1}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
     
 end
 
@@ -82,9 +154,16 @@ struct ABP_3d_propulsion_force <:Force
     ontypes::Union{Int64,Vector{Int64}}
 end
 
+
+struct oscillatory_3d_propulsion_force <:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    ω::Float64
+end
+
 struct ABP_3d_angular_noise<:Force
     ontypes::Union{Int64,Vector{Int64}}
 end
+
 
 #Pair forces
 struct coulomb_force<:Force
@@ -93,6 +172,41 @@ struct coulomb_force<:Force
     
 end
 
+struct polymer_harmonic_stretch_force{T1}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+end
+
+struct ring_polymer_harmonic_stretch_force{T1}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+end
+
+
+struct polymer_harmonic_bend_force{T1}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+end
+
+struct ring_polymer_harmonic_bend_force{T1}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+end
+
+struct polymer_exterior_soft_disk_force{T1}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+end
+
+struct polymer_align_director_tangent_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    J::Float64
+end
+
+struct polymer_nematic_align_director_tangent_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    J::Float64
+end
 
 
 struct soft_atre_type_force{T1, T2}
@@ -102,12 +216,41 @@ struct soft_atre_type_force{T1, T2}
     
 end
 
+
 #Thanks to Julia's indexing system. karray can be a float or a 1-element vector if using only one type: type= 1
 # cf. b=[2] then b[1,1] = 2 or b=2 then also b[1,1]=2. Or karray is 2d array with different stifness between different types
 struct soft_disk_force{T1} <: Force
     ontypes::Union{Int64,Vector{Int64}}
     karray::T1
 end
+
+@kwdef struct exp_repulsion_force{T1} <: Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+    rfact::Float64
+end
+
+
+struct soft_shape_disk_force{T1} <: Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+end
+
+#Based on Wensink et al. PHYSICAL REVIEW E 89, 010302(R) (2014)
+struct exp_shape_disk_force{T1} <: Force
+    ontypes::Union{Int64,Vector{Int64}}
+    u0array::T1
+end
+
+
+
+struct morse_force{T1, T2}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    Dearray::T1
+    aarray::T2
+    
+end
+
 
 struct swarm_pos_force <: Force
     ontypes::Union{Int64,Vector{Int64}}
@@ -131,11 +274,46 @@ struct Vicsek_align_force<:Force
     
 end
 
-struct pairABP_force<:Force
+struct pairABP_force{T1}<:Force
     ontypes::Union{Int64,Vector{Int64}}
     rfact::Float64
-    
+    marray::T1
+    torque::Bool
 end
+
+struct pairAN_force{T1,T2, T3}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    torque::Bool
+    traceless::Bool
+    rfact::Float64
+    k_par::T1
+    k_per::T2
+    parray::T3
+end
+
+struct polymer_pairAN_force{T1,T2, T3}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    torque::Bool
+    traceless::Bool
+    rfact::Float64
+    k_par::T1
+    k_per::T2
+    parray::T3
+end
+
+
+struct pair_polar_alignment_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    rcut::Float64
+    J::Float64
+end
+
+struct pair_nematic_alignment_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    rcut::Float64
+    J::Float64
+end
+
 
 struct chain_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
@@ -143,11 +321,14 @@ struct chain_force<:Force
     l::Float64
     
 end
+struct tangential_propulsion_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}    
+end
 
 
 struct spring_network_2d_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
-    l::Float64
+    l_network::Matrix{Float64}
     k_network::Matrix{Float64}
     
 end
@@ -174,10 +355,26 @@ struct fluid_dipole_3d_force<:Force
     l::Float64
 
 end
+
+struct Ellipse_2d_morse{T1,T2}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    Dearray::T1
+    aarray::T2
+    epsilon::Float64
+end
+
+struct Ellipse_2d_harmonic<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    epsilon_0::Float64
+    expont::Int32
+end
+
+
+
 #Let's test the power of multiple dispatch
 
 
-function contribute_external_force!(p_i,t, dt, force::ABP_2d_propulsion_force,rngs_particles)
+function contribute_external_force!(p_i,t, dt, rngs_particles, system, force::ABP_2d_propulsion_force,)
 
     if p_i.type[1] in force.ontypes
     p_i.f[1]+= p_i.zeta[1] * p_i.v0[1] *cos(p_i.θ[1])
@@ -186,7 +383,7 @@ function contribute_external_force!(p_i,t, dt, force::ABP_2d_propulsion_force,rn
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::ABP_2d_angular_noise,rngs_particles)
+function contribute_external_force!(p_i, t, dt, rngs_particles, system, force::ABP_2d_angular_noise)
 
     if p_i.type[1] in force.ontypes
     ω=sqrt(2*p_i.Dr[1])*rand(rngs_particles[p_i.id[1]],Normal(0, 1))
@@ -197,7 +394,19 @@ function contribute_external_force!(p_i, t, dt, force::ABP_2d_angular_noise,rngs
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::thermal_translational_noise,rngs_particles)
+
+function contribute_external_force!(p_i, t, dt, rngs_particles, system, force::Lorenz_system)
+
+    if p_i.type[1] in force.ontypes
+      p_i.f[1]+=force.σ * (p_i.x[2] - p_i.x[1]) 
+
+      p_i.f[2]+=  p_i.x[1]* (force.ρ - p_i.x[3] ) - p_i.x[2]
+      p_i.f[3]+= p_i.x[1]* p_i.x[2] - force.β * p_i.x[3] 
+    end
+    return p_i
+end
+
+function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::thermal_translational_noise)
 
     if p_i.type[1] in force.ontypes
         for i in eachindex(p_i.f)
@@ -209,7 +418,7 @@ function contribute_external_force!(p_i, t, dt, force::thermal_translational_noi
     return p_i
 end
 
-function contribute_external_force!(p_i,t, dt, force::ABP_3d_propulsion_force,rngs_particles)
+function contribute_external_force!(p_i,t, dt,rngs_particles, system, force::ABP_3d_propulsion_force)
 
     if p_i.type[1] in force.ontypes
     p_i.f.+= p_i.zeta[1] * p_i.v0[1] * p_i.p
@@ -218,57 +427,116 @@ function contribute_external_force!(p_i,t, dt, force::ABP_3d_propulsion_force,rn
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::ABP_3d_angular_noise,rngs_particles)
+function contribute_external_force!(p_i,t, dt,rngs_particles,system, force::oscillatory_3d_propulsion_force)
+
+    if p_i.type[1] in force.ontypes
+    p_i.f.+= p_i.zeta[1] * p_i.v0[1] * p_i.p * cos(force.ω*t)
+    end
+
+    return p_i
+end
+
+function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::ABP_3d_angular_noise)
     if p_i.type[1] in force.ontypes
     xi=sqrt(2*p_i.Dr[1])*normalize(rand(rngs_particles[p_i.id[1]],Normal(0, 1),3))
 
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
-    p_i.q.+= cross(p_i.p, xi ) * sqrt(dt)/dt
+    p_i.q.+=  xi .* sqrt(dt)/dt
     end
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::ABP_perpendicular_angular_noise,rngs_particles)
+
+
+# We will treat the noise purely angular, but reconstruct the torque from it that is later used to rotate the vector
+function contribute_external_force!(p_i, t, dt, rngs_particles, system, force::ABP_perpendicular_angular_noise)
     if p_i.type[1] in force.ontypes
     η =sqrt(2*p_i.Dr[1])*rand(rngs_particles[p_i.id[1]],Normal(0, 1))
 
-    p_i.q.+= η*cross(p_i.p, force.perpendicular_vector ) * sqrt(dt)/dt
+    p_i.q.+= η .*force.perpendicular_vector .* sqrt(dt)/dt 
     end
     return p_i
 end
 
 
 
-function contribute_external_force!(p_i, t, dt, force::self_align_with_v_force,rngs_particles)
+function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::self_align_with_v_force)
     if p_i.type[1] in force.ontypes
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
-    p_i.q.+= force.β*cross(cross(p_i.p, p_i.v ), p_i.p)
+    p_i.q.+= force.β*cross(p_i.p, p_i.v )
     end
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::self_align_with_v_unit_force,rngs_particles)
+function contribute_external_force!(p_i, t, dt,rngs_particles, system, force::self_align_with_v_unit_force)
     if p_i.type[1] in force.ontypes
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
         vnorm = norm(p_i.v)
         if vnorm!=0
-            p_i.q.+= force.β*cross(cross(p_i.p,  p_i.v), p_i.p)./vnorm
+            p_i.q.+= force.β*cross(p_i.p,  p_i.v)./vnorm
         else
-            p_i.q.+= force.β*cross(cross(p_i.p,  p_i.v), p_i.p)
+            p_i.q.+= force.β*cross(p_i.p,  p_i.v)
         end
     end 
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::external_harmonic_force,rngs_particles)
+function contribute_external_force!(p_i, t, dt,rngs_particles, system, force::self_align_with_v_unit_force_interactive)
     if p_i.type[1] in force.ontypes
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
+        vnorm = norm(p_i.v)
+        if vnorm!=0
+            p_i.q.+= force.β[]*cross(p_i.p,  p_i.v)./vnorm
+        else
+            p_i.q.+= force.β[]*cross(p_i.p,  p_i.v)
+        end
+    end 
+    return p_i
+end
+
+function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::external_harmonic_force)
+    if p_i.type[1] in force.ontypes
     p_i.f.+= - force.k * p_i.x
     end
     return p_i
 end
+#U = a/2 x^2 - b/4 x^4 -> F = -ax -bx^3
+function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::external_mexican_hat_force)
+    if p_i.type[1] in force.ontypes
+    p_i.f.+=  force.a * p_i.x
+    p_i.f.+=  -force.b * dot(p_i.x, p_i.x) .* p_i.x
+    end
+    return p_i
+end
 
-function contribute_external_force!(p_i, t, dt, force::electrode_force,rngs_particles)
+#U = exp(-(r - r0))
+function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::external_double_gaussian_force)
+
+
+    if p_i.type[1] in force.ontypes
+
+        da = p_i.x .- force.xa
+
+        db = p_i.x .- force.xb
+
+        
+        p_i.f.+=  - force.a .* da  .* exp(-dot(da, da)/2*force.a )
+        p_i.f.+=  - force.b .* db  .* exp(-dot(db, db)/2*force.a )
+
+    end
+    return p_i
+end
+
+
+function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::external_anisotropic_harmonic_force)
+    if p_i.type[1] in force.ontypes
+    #Dot product
+    p_i.f.+= - force.karray * p_i.x
+    end
+    return p_i
+end
+
+function contribute_external_force!(p_i, t, dt,rngs_particles, system, force::electrode_force)
     if p_i.type[1] in force.ontypes
         #compensate for the dt from the dof evolver, can be changed if the evolver also changes
         if p_i.x[3]+p_i.R[1]<=force.d/2 && p_i.x[3]-p_i.R[1]>=-force.d/2
@@ -285,7 +553,7 @@ function contribute_external_force!(p_i, t, dt, force::electrode_force,rngs_part
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::external_friction_force,rngs_particles)
+function contribute_external_force!(p_i, t, dt,rngs_particles, system, force::external_friction_force)
     if p_i.type[1] in force.ontypes
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
     p_i.f.+= - force.γ * p_i.v
@@ -293,7 +561,7 @@ function contribute_external_force!(p_i, t, dt, force::external_friction_force,r
     return p_i
 end
 
-function contribute_external_force!(p_i, t, dt, force::external_harmonic_pinning_force,rngs_particles)
+function contribute_external_force!(p_i, t, dt,rngs_particles, system, force::external_harmonic_pinning_force)
     if p_i.type[1] in force.ontypes
         dxp = @MVector zeros(length(p_i.x))
         dxp.=p_i.x - force.pins[p_i.id[1],:]
@@ -307,25 +575,298 @@ function contribute_external_force!(p_i, t, dt, force::external_harmonic_pinning
 end
 
 
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::polymer_harmonic_stretch_force)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        #If in same polymer
+        if p_i.pol_id[1]==p_j.pol_id[1]
+
+            #If neigbouring points in the polymer
+            if p_j.id_in_pol[1]==p_i.id_in_pol[1]+1 || p_j.id_in_pol[1]==p_i.id_in_pol[1]-1
+
+                d2R = p_i.R[1]+p_j.R[1]
+                
+                p_i.f.+= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
+            end
+        end
+    end
+    return p_i
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::ring_polymer_harmonic_stretch_force)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        #If in same polymer
+        if p_i.pol_id[1]==p_j.pol_id[1]
+
+            #If neigbouring points in the polymer
+            if abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==1 || p_i.pol_N[1]-abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==1
+
+                d2R = p_i.R[1]+p_j.R[1]
+                
+                p_i.f.+= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
+            end
+        end
+    end
+    return p_i
+end
+
+@views function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::polymer_harmonic_bend_force)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        #If in same polymer
+        if p_i.pol_id[1]==p_j.pol_id[1]
+
+            #If i is one of the middle 
+            if p_i.id_in_pol[1]>2 && p_i.id_in_pol[1]<p_i.pol_N[1]-1
 
 
+                if p_j.id_in_pol[1]==p_i.id_in_pol[1]+2 || p_j.id_in_pol[1]==p_i.id_in_pol[1]-2
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_disk_force,rngs_particles)
+                    p_i.f.+= -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
-    if p_i.type[1]::Int64 in force.ontypes && p_j.type[1]::Int64 in force.ontypes
+                elseif p_j.id_in_pol[1]==p_i.id_in_pol[1]+1 || p_j.id_in_pol[1]==p_i.id_in_pol[1]-1
+
+                    p_i.f.+= 4 * force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                end
+
+            #If i is the left most particle
+            elseif p_i.id_in_pol[1]==1
+
+                if p_j.id_in_pol[1]==3
+
+                    p_i.f.+=  -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                elseif p_j.id_in_pol[1]==2
+
+                    p_i.f.+= 2 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                end
+        
+            #If i is the right most particle
+            elseif p_i.id_in_pol[1]== p_i.pol_N[1]
+
+                if p_j.id_in_pol[1]==p_i.pol_N[1]-2
+
+                    p_i.f.+=  -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                elseif p_j.id_in_pol[1]==p_i.pol_N[1]-1
+
+                    p_i.f.+= 2 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                end
+
+            
+            #If i is the second left most particle
+            elseif p_i.id_in_pol[1]==2 
+
+                if p_j.id_in_pol[1]==4
+
+                    p_i.f.+= - force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                elseif p_j.id_in_pol[1]==3
+
+                    p_i.f.+= 4 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                elseif p_j.id_in_pol[1]==1
+
+                    p_i.f.+= 2 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                end
+
+            #If i is the second right most particle
+            elseif p_i.id_in_pol[1]==p_i.pol_N[1]-1
+
+                if p_j.id_in_pol[1]==p_i.pol_N[1]-3
+
+                    p_i.f.+=  -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                elseif p_j.id_in_pol[1]==p_i.pol_N[1]-2
+
+                    p_i.f.+= 4 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                elseif p_j.id_in_pol[1]==p_i.pol_N[1]
+
+                    p_i.f.+= 2 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+                end
+            end
+        
+        end
+    end
+    return p_i
+end
+@views function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::ring_polymer_harmonic_bend_force)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        #If in same polymer
+        if p_i.pol_id[1]==p_j.pol_id[1]
+
+
+            if abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==2 || p_i.pol_N[1]-abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==2
+
+                p_i.f.+= -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+            elseif abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==1 || p_i.pol_N[1]-abs( p_j.id_in_pol[1] - p_i.id_in_pol[1])==1
+
+                p_i.f.+= 4 * force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+
+            end
+        
+        end
+    end
+    return p_i
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::soft_disk_force)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
     d2R = p_i.R[1]+p_j.R[1]
     f = @MVector zeros(length(dx))
         if dxn < d2R
 
-            @views f.= force.karray[p_i.type[1],p_j.type[1]] * (dxn-d2R) * dx/dxn
+            @views f.= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
             p_i.f.+= f
         end
     end
     return p_i
 
 end
+#Continue here
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::exp_repulsion_force)
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::chain_force,rngs_particles)
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        d2R = p_i.R[1]+p_j.R[1]
+        p_i.f.+= -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] *d2R * exp(-dxn/d2R/force.rfact) * dx/dxn
+
+    end
+    return p_i
+
+end
+
+
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::polymer_exterior_soft_disk_force)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        #If not part of the same polymer
+        if p_i.pol_id[1]!= p_j.pol_id[1]
+        d2R = p_i.R[1]+p_j.R[1]
+        f = @MVector zeros(length(dx))
+            if dxn < d2R
+
+                @views f.= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
+                p_i.f.+= f
+            end
+        end
+    end
+    return p_i
+
+end
+
+
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles ,system, force::soft_shape_disk_force)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        f = @MVector zeros(length(dx))
+        T = @MVector zeros(length(dx))
+
+
+        @views for m=1:size(p_i.xe)[1]
+
+            for n=1:size(p_j.xe)[1]
+                
+                d2R = p_i.re[m] + p_j.re[n]
+
+
+                dxe =  @MVector zeros(length(dx))
+
+                dxe.= minimal_image_difference!(dxe, p_i.xe[m,:],p_j.xe[n,:],system.sizes, system.Periodic)
+
+                dxen = norm(dxe)
+
+                if dxen<d2R
+                    f.= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxen - d2R) * dxe/dxen
+                    T.=  cross(p_i.xo[m,:] +dxe/dxen*p_i.re[m] , f)
+
+                    p_i.f.+= f
+                    p_i.q.+= T
+
+                end
+            end
+        end
+    end
+    return p_i
+
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles,system, force::exp_shape_disk_force)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        f = @MVector zeros(length(dx))
+        T = @MVector zeros(length(dx))
+
+        @views for m=1:size(p_i.xe)[1]
+
+            for n=1:size(p_j.xe)[1]
+                
+                #Note we use here the radius not the diameter
+                d2R = p_i.re[m] + p_j.re[n]
+
+
+                dxe =  @MVector zeros(length(dx))
+
+                dxe.= minimal_image_difference!(dxe, p_i.xe[m,:],p_j.xe[n,:],system.sizes, system.Periodic)
+
+                dxen = norm(dxe)
+
+                if dxen<d2R
+
+                    fact = -1*exp(-dxen/d2R)*(2*d2R +dxen )/(d2R * dxen^3)
+
+                    f.= force.u0array[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * fact * dxe/dxen
+                    T.=  cross(p_i.xe[m,:] +dxe/dxen*p_i.re[m] - p_i.x , f)
+
+                    p_i.f.+= f
+                    p_i.q.+= T
+
+                end
+            end
+        end
+    end
+    return p_i
+
+end
+
+
+
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::morse_force)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        re = p_i.R[1]+p_j.R[1]
+        f = @MVector zeros(length(dx))
+
+        a = force.aarray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]
+        De = force.Dearray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]
+
+        f.= -2 * De*a*( exp(-2a*(dxn-re)) - exp(-a*(dxn-re)) ) * dx/dxn
+        p_i.f.+= f
+
+    end
+    return p_i
+
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::chain_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
         if p_j.id[1] == p_i.id[1]+1 || p_j.id[1] == p_i.id[1]-1
             p_i.f.+= force.k * (dxn-force.l) * dx/dxn
@@ -335,15 +876,25 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::chain_force,rng
 
 end
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::spring_network_2d_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::tangential_propulsion_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
-        p_i.f.+= force.k_network[p_i.id[1],p_j.id[1]] * (dxn-force.l) * dx/dxn
+        if p_j.id[1] == p_i.id[1]+1
+            p_i.f.+= p_i.v0[1]*p_i.zeta[1] * dx/dxn
+        end
     end
     return p_i
 
 end
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::periodic_chain_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::spring_network_2d_force)
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        p_i.f.+= force.k_network[p_i.id[1],p_j.id[1]] * (dxn-force.l_network[p_i.id[1],p_j.id[1]]) * dx/dxn
+    end
+    return p_i
+
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::periodic_chain_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
         if p_j.id[1] == p_i.id[1]+1 || p_j.id[1] == p_i.id[1]-1
             p_i.f.+= force.k * (dxn-force.l) * dx/dxn
@@ -362,26 +913,25 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::periodic_chain_
 end
 
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_atre_type_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system, force::soft_atre_type_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
         bij = p_i.R[1]+p_j.R[1]
         f = @MVector zeros(length(dx))
         
-        ϵ = force.ϵarray[p_i.type[1],p_j.type[1]]::Float64
+        ϵ = force.ϵarray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]::Float64
 
         r1 = (1+ϵ)*bij
 
         r2 = (1+2*ϵ)*bij
 
         if dxn <= r1
-            k = force.karray[p_i.type[1],p_j.type[1]]
-
+            k = force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]
             f.= k * (dxn-bij) * dx/dxn
             p_i.f.+= f
 
         elseif  r1<dxn<r2
-            k = force.karray[p_i.type[1],p_j.type[1]]
-            f.=  k * (dxn-r2) * dx/dxn
+            k = force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]
+            f.=  -k * (dxn-r2) * dx/dxn
 
             p_i.f.+= f
         else
@@ -391,7 +941,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::soft_atre_type_
     return p_i
 
 end
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::coulomb_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::coulomb_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
     p_i.f.+= -force.k * (dx/dxn^3 * p_i.Q[1] * p_j.Q[1]) 
     end  
@@ -399,14 +949,14 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::coulomb_force,r
 end
 
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::swarm_pos_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::swarm_pos_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
     @views p_i.f.+= force.N_inv * (dx/dxn * (1 + force.J*cos(p_j.ϕ[1]-p_i.ϕ[1]) ) - dx/dxn^2)  
     end 
     return p_i
 end
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::swarm_angular_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::swarm_angular_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
     p_i.ψ.+= force.N_inv * force.K * sin(p_j.ϕ[1]-p_i.ϕ[1])/dxn
     end
@@ -416,7 +966,7 @@ end
 
 
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::Vicsek_align_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::Vicsek_align_force)
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
         if dxn < force.r
             p_i.ωn[1] += p_j.θ[1]/dt
@@ -426,7 +976,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::Vicsek_align_fo
     return p_i
 end
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::pairABP_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::pairABP_force)
     
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
         d2a = p_i.R[1]+p_j.R[1]
@@ -434,18 +984,269 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::pairABP_force,r
         r = force.rfact*d2a::Float64
 
         if dxn < r
+
+            f = @MVector zeros(length(dx))
             β = 1 - dxn/r
-            p_i.fn[1] += -β*(cos(p_j.θ[1])*p_j.v0[1]- cos(p_i.θ[1])*p_i.v0[1])/2
-            p_i.fn[2] += -β*(sin(p_j.θ[1])*p_j.v0[1]- sin(p_i.θ[1])*p_i.v0[1])/2
-            p_i.n[1]+=1
+            f.= -β*(p_j.p *p_j.v0[1] .- p_i.p* p_i.v0[1])/2 * force.marray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]
+
+            p_i.f.+= f
+            #add torque
+            if force.torque
+                p_i.q.+= cross(dx/2, f)
+            end
         end
     end
     return p_i
 
+end
+
+#needs proper general normal vector (old implementation)
+# function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::pairAN_force)
+    
+#     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+#         d2a = p_i.R[1]+p_j.R[1]
+
+#         r = force.rfact*d2a::Float64
+
+#         if dxn < r
+
+#             f = @MVector zeros(length(dx))
+#             β = 1 - dxn/r
+#             rij_cap = dx/dxn
+
+#             Cij = dot(rij_cap, p_i.p .+ p_j.p)
+
+#             Sij = cross(rij_cap, p_i.p .+ p_j.p)[3]
+
+#             Dij = dot(rij_cap, p_i.p .- p_j.p)
+
+#             Eij = cross(rij_cap, p_i.p .- p_j.p)[3]
+
+#             f.= β* ( (force.k_par * Dij + force.k_per * Eij) .* (p_i.p .- p_j.p) .+ (force.k_par * Cij + force.k_per * Sij) .* (p_i.p .+ p_j.p)) 
+
+#             p_i.f.+= f
+#             #add torque
+#             if force.torque
+#                 p_i.q.+= cross(dx/dxn .*p_i.R[1], f)
+#             end
+#         end
+#     end
+#     return p_i
+
+# end
+
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::pairAN_force)
+    
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        d2a = p_i.R[1]+p_j.R[1]
+
+        r = force.rfact*d2a::Float64
+
+        if dxn < r
+
+            z_hat = @SVector [0,0,1]
+
+            f = @MVector zeros(length(dx))
+
+            sigma_i_dot_dx = @MVector zeros(length(dx))
+
+            sigma_j_dot_dx = @MVector zeros(length(dx))
+
+            sigma_i_dot_dx_perp = @MVector zeros(length(dx))
+
+            sigma_j_dot_dx_perp = @MVector zeros(length(dx))
+
+
+
+            β = 1 - dxn/r
+            #rij_cap = dx/dxn
+
+
+            if force.traceless
+                sigma_i_dot_dx.= force.parray[p_i.type[1]] .* ( dot(p_i.p,dx) .* p_i.p - 0.5 .* dx)
+
+                sigma_j_dot_dx.= force.parray[p_j.type[1]] .* ( dot(p_j.p, dx) .* p_j.p - 0.5 .* dx)
+
+
+
+                sigma_i_dot_dx_perp.= force.parray[p_i.type[1]] .*  (dot(p_i.p, cross(dx,z_hat)) .* p_i.p - 0.5 .* cross(dx, z_hat)) 
+
+                sigma_j_dot_dx_perp.= force.parray[p_j.type[1]] .*  (dot(p_j.p, cross(dx,z_hat)).* p_j.p- 0.5 .* cross(dx, z_hat)) 
+
+
+            else
+                #par
+                sigma_i_dot_dx.= force.parray[p_i.type[1]] .* dot(p_i.p,dx) .* p_i.p 
+
+                sigma_j_dot_dx.= force.parray[p_j.type[1]] .* dot(p_j.p, dx) .* p_j.p
+
+                # perp
+                sigma_i_dot_dx_perp.= force.parray[p_i.type[1]] .*  dot(p_i.p,cross(dx,z_hat)) .* p_i.p
+
+                sigma_j_dot_dx_perp.= force.parray[p_j.type[1]] .*  dot(p_j.p,cross(dx,z_hat)).* p_j.p
+
+            end
+
+
+
+            f.= β .*  ( force.k_par .* (sigma_i_dot_dx .+ sigma_j_dot_dx )  .+ force.k_per .* (sigma_i_dot_dx_perp .+ sigma_j_dot_dx_perp ))
+
+            p_i.f.+= f
+            #add torque
+            if force.torque
+                p_i.q.+= cross(dx/2, f)
+            end
+        end
+    end
+    return p_i
+
+end
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::polymer_pairAN_force)
+    
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        if  p_j.pol_id[1]!=p_i.pol_id[1]
+
+            d2a = p_i.R[1]+p_j.R[1]
+            
+
+            r = force.rfact*d2a::Float64
+
+            if dxn < r
+
+                z_hat = @SVector [0,0,1]
+
+                f = @MVector zeros(length(dx))
+                β = 1 - dxn/r
+                sigma_i_dot_dx = @MVector zeros(length(dx))
+
+                sigma_j_dot_dx = @MVector zeros(length(dx))
+
+                sigma_i_dot_dx_perp = @MVector zeros(length(dx))
+
+                sigma_j_dot_dx_perp = @MVector zeros(length(dx))
+                    
+                if force.traceless
+                    sigma_i_dot_dx = force.parray[p_i.type[1]] * ( dot(p_i.p,dx) .* p_i.p - 0.5 * dx)
+
+                    sigma_j_dot_dx = force.parray[p_j.type[1]] * ( dot(p_j.p, dx) .* p_j.p - 0.5 * dx)
+
+
+
+                    sigma_i_dot_dx_perp = force.parray[p_i.type[1]] *  (dot(p_i.p,cross(dx,z_hat)) .* p_i.p - 0.5 * cross(dx,z_hat)) 
+
+                    sigma_j_dot_dx_perp = force.parray[p_j.type[1]] *  (dot(p_j.p,cross(dx,z_hat)).* p_j.p- 0.5 * cross(dx,z_hat)) 
+
+
+                else
+                    #par
+                    sigma_i_dot_dx = force.parray[p_i.type[1]] * dot(p_i.p,dx) .* p_i.p 
+
+                    sigma_j_dot_dx = force.parray[p_j.type[1]] * dot(p_j.p, dx) .* p_j.p
+
+                    # perp
+                    sigma_i_dot_dx_perp = force.parray[p_i.type[1]] *  dot(p_i.p,cross(dx,z_hat)) .* p_i.p
+
+                    sigma_j_dot_dx_perp = force.parray[p_j.type[1]] *  dot(p_j.p,cross(dx,z_hat)).* p_j.p
+
+                end
+
+
+                f.= β .*  ( force.k_par .* (sigma_i_dot_dx .+ sigma_j_dot_dx )  .+ force.k_per .* (sigma_i_dot_dx_perp .+ sigma_j_dot_dx_perp ))
+
+                p_i.f.+= f
+                #add torque
+                if force.torque
+                    p_i.q.+= cross(dx/2, f)
+                end
+            end
+        end
+    end
+    return p_i
 
 end
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::fluid_dipole_2d_force,rngs_particles)
+
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system, force::pair_polar_alignment_force)
+    
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        #d2a = p_i.R[1]+p_j.R[1]
+
+        if dxn < force.rcut
+
+            #add torque
+            p_i.q.+=force.J*cross(p_i.p, p_j.p)
+        end
+    end
+    return p_i
+
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system, force::pair_nematic_alignment_force)
+    
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        #d2a = p_i.R[1]+p_j.R[1]
+
+        if dxn < force.rcut
+
+            #add torque
+            p_i.q.+=force.J*cross(p_i.p, p_j.p) .* (dot(p_i.p,p_j.p))
+        end
+    end
+    return p_i
+
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system, force::polymer_align_director_tangent_force)
+    
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        #d2a = p_i.R[1]+p_j.R[1]
+
+        if p_i.pol_id[1]==p_j.pol_id[1]
+
+            if p_j.id_in_pol[1]==p_i.id_in_pol[1]+1
+
+                #add torque
+                p_i.q.+=force.J*cross(p_i.p, dx/dxn)
+
+            elseif  p_j.id_in_pol[1]==p_i.id_in_pol[1]-1
+
+                #add torque (note the tangent vector points the other way)
+                p_i.q.+=force.J*cross(p_i.p, -dx/dxn)
+            end
+        end
+    end
+    return p_i
+
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system, force::polymer_nematic_align_director_tangent_force)
+    
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+        #d2a = p_i.R[1]+p_j.R[1]
+
+        if p_i.pol_id[1]==p_j.pol_id[1]
+
+            if p_j.id_in_pol[1]==p_i.id_in_pol[1]+1
+
+                #add torque
+                p_i.q.+=force.J*cross(p_i.p, dx/dxn)* (dot(p_i.p,dx/dxn))
+
+            elseif  p_j.id_in_pol[1]==p_i.id_in_pol[1]-1
+
+                #add torque (note the tangent vector points the other way)
+                p_i.q.+=force.J*cross(p_i.p, -dx/dxn)* (dot(p_i.p,-dx/dxn))
+            end
+        end
+    end
+    return p_i
+
+end
+
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::fluid_dipole_2d_force)
     
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
 
@@ -458,7 +1259,7 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::fluid_dipole_2d
 
 end
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::fluid_dipole_3d_force,rngs_particles)
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::fluid_dipole_3d_force)
     
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
 
@@ -470,7 +1271,9 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, force::fluid_dipole_3d
 
 end
 
-function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_propulsion_force,rngs_particles)
+
+
+function contribute_field_force!(p_i,field_j,field_indices, t, dt,rngs_particles, system, force::field_propulsion_force)
     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
         x_index = field_indices[1]
         y_index = field_indices[2]
@@ -480,7 +1283,7 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_
         p_i.f[2]+= p_i.zeta[1] * (field_j.C[x_index, y_index]+force.v0offset) *sin(p_i.θ[1])
 
         if field_j.C[x_index, y_index]>0
-            field_j.Cf[x_index, y_index]+=-force.consumption
+            field_j.Cf[x_index, y_index]+=-force.consumption*dt
         end
     end
 
@@ -488,20 +1291,221 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_
 
 end
 
-function contribute_field_force!(p_i,field_j,field_indices, t, dt, force::field_propulsion_3d_force, rngs_particles)
+# function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles,system, force::field_propulsion_3d_force)
+#     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
+#         x_index = field_indices[1]
+#         y_index = field_indices[2]
+#         #print(x_index)
+
+#         p_i.f[1]+= p_i.zeta[1] * (field_j.C[x_index, y_index]+force.v0offset) *p_i.p[1]
+#         p_i.f[2]+= p_i.zeta[1] * (field_j.C[x_index, y_index]+force.v0offset) *p_i.p[2]
+
+#         if field_j.C[x_index, y_index]>0
+#             field_j.Cf[x_index, y_index]+=-force.consumption
+#         end
+#     end
+
+#     return p_i, field_j
+
+# end
+
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles,system, force::field_propulsion_distr_force)
     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
         x_index = field_indices[1]
         y_index = field_indices[2]
         #print(x_index)
 
-        p_i.f[1]+= p_i.zeta[1] * (field_j.C[x_index, y_index]+force.v0offset) *p_i.p[1]
-        p_i.f[2]+= p_i.zeta[1] * (field_j.C[x_index, y_index]+force.v0offset) *p_i.p[2]
+
 
         if field_j.C[x_index, y_index]>0
-            field_j.Cf[x_index, y_index]+=-force.consumption
+            v0fact = force.v0max * force.σ^2/(force.σ^2+(log10(field_j.C[x_index, y_index]) - force.cmid)^2)
+            p_i.f[1]+= p_i.zeta[1] * (v0fact) *p_i.p[1]
+            p_i.f[2]+= p_i.zeta[1] * (v0fact) *p_i.p[2]
+            field_j.Cf[x_index, y_index]+=-force.consumption*dt
+        else
+            field_j.Cf[x_index, y_index]=0
         end
     end
 
     return p_i, field_j
+
+end
+
+# function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles,system, force::asymmetric_field_propulsion_distr_force)
+#     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
+#         x_index = field_indices[1]
+#         y_index = field_indices[2]
+#         #print(x_index)
+
+
+
+#         if field_j.C[x_index, y_index]>0
+#             v0fact = force.v0max * force.σ/(force.σ+(log10(field_j.C[x_index, y_index]))^2)
+#             p_i.f[1]+= p_i.zeta[1] * (v0fact) *p_i.p[1]
+#             p_i.f[2]+= p_i.zeta[1] * (v0fact) *p_i.p[2]
+
+            
+
+#             field_j.Cf[x_index-round(Int64,p_i.p[1]), y_index-round(Int64,p_i.p[2])]+=-force.consumption
+#         else
+#             field_j.Cf[x_index, y_index]=0
+#         end
+#     end
+
+#     return p_i, field_j
+
+# end
+
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles, system, force::self_align_with_∇C_force)
+    if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
+
+
+        x_index = field_indices[1]
+        y_index = field_indices[2]
+
+        ∇C = grad(field_j, x_index, y_index)
+
+        p_i.q.+= force.β*cross(p_i.p, ∇C)
+    end
+
+    return p_i, field_j
+end
+
+
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles, system, force::self_align_with_∇C_unit_force)
+    if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
+
+
+        x_index = field_indices[1]
+        y_index = field_indices[2]
+
+        ∇C = grad(field_j, x_index, y_index)
+
+        vnorm = norm(∇C)
+        if vnorm!=0
+            p_i.q.+= force.β*cross(p_i.p, ∇C)./vnorm
+        else
+            p_i.q.+= force.β*cross(p_i.p,  ∇C)
+        end
+    end
+
+    return p_i, field_j
+end
+
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles, system, force::grad_field_propulsion_force)
+    if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
+
+
+        x_index = field_indices[1]
+        y_index = field_indices[2]
+
+        ∇C = grad(field_j, x_index, y_index)
+
+        if field_j.C[x_index, y_index]>0
+            p_i.f.+= force.μ * ∇C
+            field_j.Cf[x_index, y_index]+=-force.consumption*dt
+        else
+            p_i.f.+= force.μ * ∇C
+            field_j.Cf[x_index, y_index]=0
+        end
+    end
+    return p_i, field_j
+end
+
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles, system, force::grad_field_propulsion_c_force)
+    if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
+
+
+        x_index = field_indices[1]
+        y_index = field_indices[2]
+
+        ∇C = grad(field_j, x_index, y_index)
+
+        if field_j.C[x_index, y_index]>0
+            p_i.f.+= force.μ * ∇C/field_j.C[x_index, y_index]
+            field_j.Cf[x_index, y_index]+=-force.consumption*dt
+        else
+            p_i.f.+= force.μ * ∇C*0
+            field_j.Cf[x_index, y_index]=0
+        end
+    end
+    return p_i, field_j
+end
+
+function grad(field_j, x_index, y_index)
+
+
+    grad_x = (field_j.C[x_index+1, y_index] - field_j.C[x_index-1, y_index])/2
+
+    grad_y = (field_j.C[x_index, y_index+1] - field_j.C[x_index, y_index-1])/2
+
+    ∇C = @MVector[grad_x, grad_y,0.]
+    return ∇C
+end
+
+function get_param_ind(force_types, particle_type)
+    return findfirst(isequal(particle_type),force_types)
+end
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system, force::Ellipse_2d_morse)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        sigma_e = p_i.Lambda0[1,1] + p_j.Lambda0[1,1]
+        sigma_s = p_i.Lambda0[2,2] + p_j.Lambda0[2,2] 
+        chi = ( (sigma_e/sigma_s)^2 - 1)/( (sigma_e/sigma_s)^2 +1)
+
+        u1 = p_i.p
+        u2 = p_j.p
+
+        r_dot_u1 = dot(dx,u1)
+        r_dot_u2 = dot(dx,u2)
+
+        u1_dot_u2 = dot(u1,u2)
+
+        dots_add = r_dot_u1 + r_dot_u2
+        dots_sub = r_dot_u1 - r_dot_u2
+
+        chi_add = 1 + chi*u1_dot_u2
+        chi_sub = 1 - chi*u1_dot_u2
+
+        sigma_0 = p_i.sigma_0[1]
+
+        sigma = sigma_0*(1 - chi/2/dxn^2 * (dots_add^2/chi_add + dots_sub^2/chi_sub))^(-1/2)
+        if dxn< 2*sigma
+            f = @MVector zeros(length(dx))
+
+
+            ii = get_param_ind(force.ontypes, p_i.type[1])
+            jj = get_param_ind(force.ontypes, p_j.type[1])
+            a  = force.aarray[ii, jj]
+            De = force.Dearray[ii, jj]
+            epsilon = force.epsilon
+
+            f .= 2*a*De*epsilon*exp(-a*(dxn-sigma))*(1- exp(-a*(dxn-sigma))) *(dx/dxn - (chi*sigma^3)/(2*sigma_0^2) * (-dx/dxn^4 * (dots_add^2/chi_add + dots_sub^2/chi_sub) + 1/dxn^2 * (dots_add/chi_add*(u1+ u2) + dots_sub/chi_sub*(u1 - u2)))) 
+
+            torque = 1/2*a*De*epsilon*chi*sigma_0*exp(-a*(dxn-sigma))*(1- exp(-a*(dxn-sigma)))* (1 - 0.5*chi/dxn^2 * (dots_add^2/chi_add + dots_sub^2/chi_sub))^(-3/2) * (2*dots_add*dx/dxn/chi_add + dots_add^2*chi*u2/chi_add^2 + 2*dots_sub*dx/dxn/chi_sub + dots_sub^2*chi*u2/chi_sub^2)
+
+            T = cross(u1,torque)
+
+            rcrossF = dx[1:2] * f[1:2]' # outer product defined like this as r cross transpose of f
+
+            #f.= -2 * De*a*( exp(-2a*(dxn-re)) - exp(-a*(dxn-re)) ) * dx/dxn
+
+            p_i.f.+= f
+            p_i.q.+= T
+
+            #p_i.stress.+= 1/(2*pi*p_i.sigma_0[1]^2).*rcrossF
+
+            p_i.stress[1,1] +=1/(2*pi*p_i.sigma_0[1]^2) * rcrossF[1,1]
+            p_i.stress[1,2] +=1/(2*pi*p_i.sigma_0[1]^2) * rcrossF[1,2]
+            p_i.stress[2,1] +=1/(2*pi*p_i.sigma_0[1]^2) * rcrossF[2,1]
+            p_i.stress[2,2] +=1/(2*pi*p_i.sigma_0[1]^2) * rcrossF[2,2]
+
+            
+        end
+
+    end
+    return p_i
 
 end

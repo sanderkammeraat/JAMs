@@ -1,4 +1,4 @@
-include(joinpath("..","src","Engine.jl"))
+include(joinpath(pwd(),"src","Engine.jl"))
 using Random, Distributions
 
 function simulation()
@@ -10,7 +10,9 @@ function simulation()
     field_forces = [field_propulsion_force(1,1e-2,0.01)]
     field_updaters = [PeriodicDiffusion(1,8e-3)]
 
-    dofevolvers =  [overdamped_evolver!]
+    local_dofevolvers =  [overdamped_xvf_evolver(1), overdamped_θω_evolver(1)]
+    global_dofevolvers =  []
+    field_dofevolvers = [overdamped_CCvCf_evolver(1)]
 
     #Initialize state
     N=1000
@@ -37,9 +39,9 @@ function simulation()
 
     C = ones(length(x_bin_centers), length(y_bin_centers))*v00
     
-    initial_field_state=[FuelField2d(1,bin_centers,C, C.*0, C.*0)]
+    initial_field_state=[FuelField2d(1,1,bin_centers,C, C.*0, C.*0)]
 
-    system = System(size, initial_particle_state,initial_field_state,external_forces, pair_forces, field_forces, field_updaters,dofevolvers, true, 1e1);
+    system = System(size, initial_particle_state,initial_field_state,external_forces, pair_forces, field_forces, field_updaters,local_dofevolvers,global_dofevolvers,field_dofevolvers, true, 2.5*(1+poly));
 
     #Run integration
     #Use plot_disks! for nice visuals

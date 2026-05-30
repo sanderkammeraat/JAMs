@@ -5,7 +5,7 @@ external_forces =  (ABP_2d_propulsion_force(1), ABP_2d_angular_noise(1))
 
 pair_forces = [soft_disk_force(1,1)]
 
-dofevolvers = [overdamped_evolver!]
+local_dofevolvers = [overdamped_evolver!]
 
 #Initialize state
 N=10000

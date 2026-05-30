@@ -37,7 +37,7 @@ f = Figure(size=(1000,1000));
 ax = Axis(f[1,1], aspect=1,title = @lift("t = $(round($t, digits = 1))"));
 
 c = @lift( angle.($px+1im*$py) )
-s = @lift( 2. *$R )
+s = @lift( 2. *$R)
 scatter!(ax,x,y, color=c, markersize =s,marker = Circle, markerspace=:data,alpha=0.7, strokecolor=:black, strokewidth=1,colormap=:hsv,colorrange=(-pi,pi))
 display(f)
 end

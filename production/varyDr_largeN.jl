@@ -27,7 +27,9 @@ addprocs(n)
 
 
     #dofevolvers = [inertial_evolver!]
-    dofevolvers = [overdamped_evolver!]
+    local_dofevolvers = [overdamped_xvf_evolver(1), overdamped_pq_evolver(1)]
+    global_dofevolvers = []
+    field_dofevolvers = []
 
 
     #First make stair
@@ -111,7 +113,7 @@ addprocs(n)
     field_updaters = []
 
 
-    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,2.5);
+    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers,field_dofevolvers, false,2.5);
 
     #Run integration
     sim = Euler_integrator(system,1e-2, 5e3,seed = seed,Tsave=Tsave,Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 

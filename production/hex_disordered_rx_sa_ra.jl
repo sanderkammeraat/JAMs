@@ -19,11 +19,13 @@ addprocs(n)
 
 @everywhere function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing)
 
-    external_forces =[thermal_translational_noise(1, 0 .*[1.,1.,0])]
+    external_forces = []#[thermal_translational_noise(1, 0 .*[1.,1.,0])]
 
     pair_forces = [soft_disk_force([1, 2],[1. 1.; 1. 1.])]
     #dofevolvers = [inertial_evolver!]
-    dofevolvers = [overdamped_evolver!]
+    local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1))
+    global_dofevolvers = []
+    field_dofevolvers = []
     #First make stair
     Nlin=20
     Nrows = 2*Nlin
@@ -33,7 +35,6 @@ addprocs(n)
     r=1.0
     ϕ=1.
     l = 2* sqrt(pi*sqrt(3)/(6*ϕ))# 2*r
-
 
 
     typess = []
@@ -104,23 +105,24 @@ addprocs(n)
     field_forces = []
     field_updaters = []
 
-    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,2.5*r*(1+poly));
+    system = System(size, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, field_dofevolvers, false,2.5*r*(1+poly));
 
     #Run integration
-    sim = Euler_integrator(system,1e-1, 1e4,Tsave=Tsave, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="rx" , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-1, 5e3,Tsave=Tsave, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="rx")# , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 
 end
 
 
-@everywhere function self_aligning_step(rx_step,J, Dr,seed, save_folder_path; Tsave=100, Tplot=nothing)
+@everywhere function self_aligning_step(rx_step,J, Dr, seed,save_folder_path; Tsave=100, Tplot=nothing)
 
     external_forces = ( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
     pair_forces = [soft_disk_force([1, 2],[1 1; 1 1])]
 
-    #dofevolvers = [inertial_evolver!]
-    dofevolvers = [overdamped_evolver!]
+    local_dofevolvers = [overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1)]
+    global_dofevolvers = []
+    field_dofevolvers = []
 
     sizes = rx_step.system.sizes
     initial_field_state=[]
@@ -138,19 +140,62 @@ end
         p_i.v0[1] = 0.01
 
     end
-    system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, dofevolvers, false,rx_step.system.rcut_pair_global);
+    system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,false,rx_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,1e-2, 5e3,Tsave=Tsave,seed=seed, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="sa" , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,1e-2, 5e4,Tsave=Tsave,seed=seed, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="sa" )#, fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim
 end
 
-rx_result= relaxation_step("",Tsave=nothing, Tplot=100)
-self_aligning_step(rx_result,0.8, 0.01,1, ""; Tsave=nothing, Tplot=100)
+
+@everywhere function relax_again_step(sa_step, save_folder_path; Tsave=100, Tplot=nothing)
+
+    external_forces =[] # [thermal_translational_noise(1, 0 .*[1.,1.,0])]
+
+    pair_forces = [soft_disk_force([1, 2],[1. 1.; 1. 1.])]
+
+    local_dofevolvers = [overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1)]
+    global_dofevolvers = []
+    field_dofevolvers = []
+
+    sizes = sa_step.system.sizes
+    initial_field_state=[]
+    field_forces = []
+    field_updaters = []
+
+    initial_particle_state =deepcopy(sa_step.final_particle_state)
+
+    #Modify initial state
+    for (i, p_i) in pairs(initial_particle_state)
+        #reinitialize forces 
+        p_i.f.*=0
+        p_i.q.*=0
+        p_i.Dr[1] = 0.
+        p_i.v0[1] = 0.
+
+    end
+    system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,false,sa_step.system.rcut_pair_global);
+
+    #Run integration
+    sim = Euler_integrator(system,1e-1, 5e3,Tsave=Tsave,seed=nothing, Tplot=Tplot, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path, save_tag="ra")# , fps=120, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    return sim
+end
+
+#rx_result= relaxation_step("",Tsave=nothing, Tplot=100)
+#sa_result=self_aligning_step(rx_result,0.8, 0.01,1, ""; Tsave=nothing, Tplot=100);
+
+#ra_result=relax_again_step(sa_result, ""; Tsave=nothing, Tplot=100);
 
 
-Drs = [0., 0.01, 0.1, 1, 10] 
-Js=[0.1, 1.]
+
+
+
+
+# Drs = [0.,0.001, 0.01,0.02,0.05, 0.1, 0.2, 0.5, 1, 10] 
+# Js=[0, 0.01, 0.1, 0.2, 0.5, 1. ,2., 5.]
+
+Drs = [0.01] 
+Js=[0.1]
 
 seeds = reshape( collect(1:length(Drs)*length(Js)), (length(Drs),length(Js)) )
 
@@ -164,11 +209,17 @@ for j in eachindex(Js)
 
         display("Running")
 
-        save_folder_path = joinpath(homedir(),"sa","vary_J_Dr_largeN","simdata", "J_$J","Dr_$Dr","seed_$seed");
+        base_path="/Volumes/T7_Shield/"
+        #base_path = homedir()
+        save_folder_path = joinpath(base_path,"sa","survey","hex_disordered","phi_1","Nlin_20","t5e4","simdata", "J_$J","Dr_$Dr","seed_$seed");
         print(save_folder_path)
 
-        rx_step = relaxation_step(save_folder_path)
+        rx_result = relaxation_step(save_folder_path,Tplot=nothing)
 
-        sim = self_aligning_step(rx_step,J,Dr,seed, save_folder_path);
+        sa_result = self_aligning_step(rx_result,J,Dr, seed, save_folder_path, Tplot=nothing);
+
+        ra_result=relax_again_step(sa_result, save_folder_path,Tplot=nothing);
+
+
     end
 end

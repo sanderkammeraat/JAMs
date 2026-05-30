@@ -1,4 +1,260 @@
 
+using FFTW
+function minimal_image_difference!(dx, xi, xj, system_sizes, system_Periodic)
+
+    
+    for n in eachindex(xi)
+        dx[n]=xj[n]-xi[n]
+        if system_Periodic
+            if dx[n]>system_sizes[n]/2
+                dx[n]-=system_sizes[n]
+            end
+            if dx[n]<=-system_sizes[n]/2
+                dx[n]+=system_sizes[n]
+            end
+        end 
+    end
+    return dx
+end
+
+
+function temporal_Fourier_transform(dt, x;  min_t_ind=1, output_not_avg=false)
+
+    #Calculate the Fourier transform along the time axis for a real signal
+
+    @views xf = x[:, min_t_ind:end ]
+    Xf =rfft(xf, 2 )
+
+    #Times 2 π to get angular frequency
+    w = convert(Array, rfftfreq( size(xf)[2], 1/dt).*2*pi)
+
+
+    Xf2 = abs.(Xf).^2
+
+    @views pavg_Xf2 = mean(Xf2, dims=1)[1,:]
+
+    @views pstd_Xf2 = std(Xf2, dims=1)[1,:]
+
+    #Standard error to the mean
+    @views pste_Xf2 = pstd_Xf2 ./ sqrt(size(Xf2)[1])
+
+
+
+
+    if output_not_avg
+
+            maxval, maxind = findmax(Xf2, dims=2)
+            w_max = [w[ci[2]] for ci in maxind[:,1] ]
+
+        FT = Dict("Xf2"=>Xf2,  "w"=>w,"max_X2"=>maxval, "max_X2_ind" =>maxind, "w_max"=>w_max )
+
+    else
+        maxval, maxind = findmax(pavg_Xf2)
+        w_max = w[maxind]
+        FT = Dict("pavg_X2"=>pavg_Xf2, "pstd_X2"=>pstd_Xf2, "pste_X2"=>pste_Xf2, "w"=>w, "max_X2"=>maxval, "max_X2_ind" =>maxind, "w_max"=>w_max )
+    end
+    return FT
+
+end
+
+function secondary_temporal_Fourier_transform(dt, C)
+
+
+        #Calculate the Fourier transform along the time axis for a real signal
+        Xf =rfft(C)
+    
+        #Times 2 π to get angular frequency
+        w = rfftfreq( length(C), 1/dt).*2*pi
+    
+    
+        Xf2 = abs.(Xf).^2
+    
+    
+        maxval, maxind = findmax(Xf2)
+        w_max = w[maxind]
+    
+    
+        FT = Dict("X2"=>Xf2, "w"=>w, "max_X2"=>maxval, "max_X2_ind" =>maxind, "w_max"=>w_max )
+    
+        return FT
+
+end
+
+
+function spatial_p_correlation(binsize, maxbin_center, x,y, px, py)
+
+
+    rbin_edges = prepend!(collect(range(start=0, step=binsize, stop=maxbin_center)),[0])
+
+    rbin_edges2 = rbin_edges.^2
+
+    rbin_centers = (rbin_edges[2:end] + rbin_edges[1:end-1])/2
+
+    Nbin = length(rbin_centers)
+
+    Nt = size(px)[2]
+
+    C = ones(Nt, Nbin)*NaN
+
+    counts = zeros(Nt, Nbin)
+
+     @showprogress dt = 1 desc="spatial correlation" showspeed=true Threads.@threads for i in 1:Nt
+
+        for p1 in 1:size(px)[1]
+
+            for p2 in p1:size(px)[1]
+
+                Δr2 = (x[p1, i]- x[p2,i])^2 +   (y[p1, i]- y[p2,i])^2
+
+                for bin in eachindex(rbin_centers)
+                    #inbounds, compiler may not know that rbin_centers is shorter than edges
+
+                    @inbounds if (Δr2<= rbin_edges2[bin+1] && Δr2> rbin_edges2[bin]) || (p1==p2 && bin==1)
+
+                        if isnan(C[i, bin])
+                            C[i, bin]=0
+                            counts[i, bin]=0
+                        end
+
+                        C[i, bin] += px[p1, i]* px[p2, i] + py[p1, i] * py[p2, i]
+                        counts[i,bin] += 1
+                    end
+
+                end
+
+            end
+        end
+    end
+
+    C.=C./counts
+    Cavg = mean(C, dims=1)[1,:]
+    return Dict("rbc"=>rbin_centers,"rbe"=>rbin_edges,"Cavg"=> Cavg)
+
+end
+function spatial_v_correlation(binsize, maxbin_center, x,y, vx, vy)
+
+
+    rbin_edges = prepend!(collect(range(start=0, step=binsize, stop=maxbin_center)),[0])
+
+    rbin_edges2 = rbin_edges.^2
+
+    rbin_centers = (rbin_edges[2:end] + rbin_edges[1:end-1])/2
+
+    Nbin = length(rbin_centers)
+
+    Nt = size(vx)[2]
+
+    C = ones(Nt, Nbin)*NaN
+
+    counts = zeros(Nt, Nbin)
+
+     @showprogress dt = 1 desc="spatial correlation" showspeed=true Threads.@threads for i in 1:Nt
+
+        vrms_2_i= mean( vx[:, i].^2 .+ vy[:, i].^2 )
+        for v1 in 1:size(vx)[1]
+
+            for v2 in v1:size(vx)[1]
+
+                Δr2 = (x[v1, i]- x[v2,i])^2 +   (y[v1, i]- y[v2,i])^2
+
+                for bin in eachindex(rbin_centers)
+                    #inbounds, compiler may not know that rbin_centers is shorter than edges
+
+                    @inbounds if (Δr2<= rbin_edges2[bin+1] && Δr2> rbin_edges2[bin]) || (v1==v2 && bin==1)
+
+                        if isnan(C[i, bin])
+                            C[i, bin]=0
+                            counts[i, bin]=0
+                        end
+
+                        C[i, bin] +=( vx[v1, i]* vx[v2, i] + vy[v1, i] * vy[v2, i])/vrms_2_i
+                        counts[i,bin] += 1
+                    end
+
+                end
+
+            end
+        end
+    end
+
+    C.=C./counts
+    Cavg = mean(C, dims=1)[1,:]
+    return Dict("rbc"=>rbin_centers,"rbe"=>rbin_edges,"Cavg"=> Cavg)
+
+end
+
+
+
+function spatiotemporal_p_correlation(binsize, maxbin_center, x0,y0, px, py; min_t_ind=1, max_t_ind=nothing, every_n=nothing)
+
+    rbin_edges = prepend!(collect(range(start=0, step=binsize, stop=maxbin_center)),[0])
+
+    rbin_edges2 = rbin_edges.^2
+
+    rbin_centers = (rbin_edges[2:end] + rbin_edges[1:end-1])/2
+
+    Nbin = length(rbin_centers)
+
+    Nt = size(px)[2]
+
+    C = ones(Nt, Nbin)*NaN
+
+    counts = zeros(Nt, Nbin)
+
+    max_t_ind_set = isnothing(max_t_ind) ? Nt : max_t_ind
+
+    #every_n_set = isnothing(every_n) ? 1 : every_n
+
+    #particle 1 loop
+    @showprogress dt = 1 desc="spatiotemporal correlation" showspeed=true for p1 in 1:size(px)[1]
+
+        #particle 2 loop
+        for p2 in 1:size(px)[1]
+
+            Δr2 = (x0[p1]- x0[p2])^2 +   (y0[p1]- y0[p2])^2
+
+            #Loop over spatial bin
+            for bin in eachindex(rbin_centers)
+
+                if (Δr2<= rbin_edges2[bin+1] && Δr2> rbin_edges2[bin]) || (p1==p2 && bin==1)
+
+                    for i in min_t_ind:max_t_ind_set
+
+                        dij = abs(i)
+
+                        if isnan(C[dij, bin])
+                            C[dij, bin]=0
+                            counts[dij, bin]=0
+                        end
+
+                        C[dij, bin] += px[p1, min_t_ind]* px[p2, i] + py[p1, min_t_ind] * py[p2, i]
+                        counts[dij,bin] += 1
+                    end
+                end
+
+            end
+
+        end
+    end
+    C.=C./counts
+    return Dict("rbc"=>rbin_centers,"rbe"=>rbin_edges,"C"=> C)
+end
+
+# function auto_correlation(t, vx, vy)
+
+#     Nt = length(t)
+#     Δt = zeros(Nt)
+#     C = zeros(Nt, Nt)
+#     N_in_bin = zeros(Nt, Nt)
+
+#     @showprogress desc="Autocorrelation" dt=1 showspeed=true for i in 1:Nt-1
+
+#         for j in i:Nt
+#             C[i,j-i+1] = mean(px[:,j].* px[:,i] .+ py[:,j].* py[:,i])
+
+
+
+
 
 
 function auto_correlation(t, px, py; normalized=false, minrow=1, maxrow=nothing)
@@ -10,10 +266,15 @@ function auto_correlation(t, px, py; normalized=false, minrow=1, maxrow=nothing)
 
     C = zeros(Nt, Nt).*NaN
 
-    @showprogress desc="Autocorrelation" showspeed=true for i in 1:Nt-1
+    @showprogress desc="Autocorrelation" dt=1 showspeed=true for i in 1:Nt-1
 
-        @views for j in i:Nt
-            C[i,j-i+1] = mean(px[:,j].* px[:,i] .+ py[:,j].* py[:,i])
+        for j in i:Nt
+
+            if normalized
+                @views C[i,j-i+1] = mean(px[:,j].* px[:,i] .+ py[:,j].* py[:,i])/sqrt( mean(px[:,i].^2 .+ py[:,i].^2) )/sqrt( mean(px[:,j].^2 .+ py[:,j].^2) )
+            else
+                @views C[i,j-i+1] = mean(px[:,j].* px[:,i] .+ py[:,j].* py[:,i])
+            end
             Δt[j-i+1] =  t[j] - t[i]
         end
         
@@ -29,22 +290,35 @@ function auto_correlation(t, px, py; normalized=false, minrow=1, maxrow=nothing)
         end
     end
 
-    return Dict("C"=>C,"Cavg"=>Cavg, "t"=>t, "Δt"=> Δt)
+    return Dict("Cavg"=>Cavg, "t"=>t, "deltat"=> Δt)
 end
+
+
+
 
 
 ## Dynamical matrix analysis
 # Helper functions
-function construct_n_ij_projector(i,j,x,y)
+function construct_n_ij_projector!(n_ij_projector, i,j,x,y, periodic_system_sizes)
 
 
-    r_ij_0_vec = [x[j]-x[i], y[j] - y[i]]
+    r_ij_0_vec = @MVector [x[j]-x[i], y[j] - y[i]]
+
+    r_i_0_vec = @MVector [x[i],y[i]]
+    r_j_0_vec = @MVector [x[j],y[j]]
+
+    if !isnothing(periodic_system_sizes)
+        r_ij_0_vec = minimal_image_difference!(r_ij_0_vec, r_i_0_vec, r_j_0_vec, periodic_system_sizes, true)
+    end
 
     r_ij_0_norm = norm(r_ij_0_vec)
 
     n_ij =r_ij_0_vec./r_ij_0_norm
 
-    n_ij_projector = [ n_ij[1]*n_ij[1] n_ij[1]*n_ij[2] ; n_ij[2]*n_ij[1] n_ij[2]*n_ij[2]]
+    n_ij_projector[1,1] = n_ij[1]*n_ij[1]
+    n_ij_projector[1,2] = n_ij[1]*n_ij[2]
+    n_ij_projector[2,1] = n_ij[1]*n_ij[2]
+    n_ij_projector[2,2] = n_ij[2]*n_ij[2]
 
     return n_ij_projector, r_ij_0_norm
 end
@@ -84,14 +358,14 @@ function u_ij_2(i,j,r_ij_0_norm, k, R,type)
     end
 end
 
-@views function construct_M_ij(i,j,x,y, k, R,type)
+@views function construct_M_ij!(M_ij,n_ij_projector, i,j,x,y, k, R,type, periodic_system_sizes)
 
-    M_ij= zeros(2,2)
+    M_ij .*=  0
 
     if i!=j
-        n_ij_projector, r_ij_0_norm = construct_n_ij_projector(i,j,x,y)
+        n_ij_projector, r_ij_0_norm = construct_n_ij_projector!(n_ij_projector,i,j,x,y,periodic_system_sizes)
 
-        M_ij.+= u_ij_1(i,j,r_ij_0_norm, k, R, type) / r_ij_0_norm .* (I - n_ij_projector)
+        M_ij.+= -u_ij_1(i,j,r_ij_0_norm, k, R, type) ./ r_ij_0_norm .* (I - n_ij_projector)
 
         M_ij.+= u_ij_2(i,j,r_ij_0_norm, k, R, type) .* n_ij_projector
 
@@ -100,35 +374,88 @@ end
     return M_ij
 
 end
+function construct_D(x0, y0, k, R,type ;periodic_system_sizes=nothing)
+D=zeros(2*length(x0), 2*length(x0))
+Id = [1 0 ; 0 1]
+nij = zeros(2,2)
+dX = @MVector [0., 0., 0.]
+for i in eachindex(x0)
+    for j in eachindex(x0)
+        if i!==j
 
+            dX[1] = x0[j] - x0[i]
+            dX[2] = y0[j] - y0[i]
+
+            if isnothing(periodic_system_sizes)
+            else
+                minimal_image_difference!(dX, [x0[i],y0[i],0], [x0[j],y0[j],0],periodic_system_sizes,true )
+            end
+            dx = dX[1]
+            dy = dX[2]
+
+            dr2 = dx^2 + dy^2
+            dr = sqrt(dr2)
+            kij = k[type[i],type[j]]
+
+            Rij = R[i]+R[j]
+            if dr<Rij
+                nij[1,1] =  dx*dx/dr2
+                nij[1,2] =  dx*dy/dr2
+                nij[2,1] =  dx*dy/dr2
+                nij[2,2] =  dy*dy/dr2
+                D[2i-1:2i,2j-1:2j] = -kij * nij - kij * (1 - Rij/dr) * (Id .- nij)
+
+                D[2i-1:2i, 2i-1:2i] -= D[2i-1:2i,2j-1:2j]
+
+            end
+
+        end
+
+    end
+
+end
+#By applying
+return Symmetric(D)
+end
 
 # Actual D construction
-@views function construct_D(x0,y0, k, R, type)
+# @views function construct_D(x0,y0, k, R, type; periodic_system_sizes=nothing)
 
-    M=zeros(2*length(x0), 2*length(x0))
+#     M=zeros(2*length(x0), 2*length(x0))
 
-    for i in eachindex(x0)
+#     D = copy(M)
 
-        for j in i:length(x0)
+#     #Allocate once
+#     M_ij_0=  @MMatrix zeros(2,2)
 
-            M[2i-1:2i,2j-1:2j] = construct_M_ij(i, j, x0, y0, k , R,type)
-        end
+#     n_ij_projector =  @MMatrix zeros(2,2)
+    
 
-    end
-    D = -(M + transpose(M))
+#     @showprogress for i in eachindex(x0)
 
-    for i in eachindex(x0)
+#         for j in i+1:length(x0)
 
-        for j in eachindex(x0)
+#             M[2i-1:2i,2j-1:2j] .= construct_M_ij!(M_ij_0, n_ij_projector,i, j, x0, y0, k , R,type, periodic_system_sizes)
+#         end
 
-            #In principle unnecessary because Mii =0, but just to be sure
-            if i!=j
-                D[2i-1:2i,2i-1:2i]-= D[2i-1:2i,2j-1:2j]
-            end
-        end
-    end
-    return Symmetric(D)
-end
+#     end
+#     D  .= -(M + transpose(M))
+
+#     @showprogress for i in eachindex(x0)
+
+#         for j in eachindex(x0)
+
+#             #In principle unnecessary because Mii =0, but just to be sure
+#             if i!=j
+#                  D[2i-1:2i,2i-1:2i] .-= D[2i-1:2i,2j-1:2j]
+#             end
+#         end
+#     end
+#     return D
+# end
+
+
+
 
 function diagonalize_D(D)
 
@@ -138,16 +465,19 @@ function diagonalize_D(D)
 end
 
 
-@views function project_on_eigvecs(eigvecs, xinterior, yinterior)
+
+
+
+function project_on_eigvecs(eigvecs, xinterior, yinterior)
 
     Neigvecs = size(eigvecs)[2]
     Nt = size(xinterior)[2]
 
     projs = zeros(Neigvecs, Nt)
 
-    @showprogress desc="Projection on eigvecs" showspeed=true for i in 1:Nt
+    @showprogress dt = 1 desc="Projection on eigvecs" showspeed=true   for i in 1:Nt
 
-         for j in 1:Neigvecs
+        for j in 1:Neigvecs
              projs[j,i] =  project_on_eigvec(eigvecs[:,j], xinterior[:,i], yinterior[:,i])
 
         end
@@ -158,9 +488,77 @@ end
     return projs
 end
 
-@views function project_on_eigvec(eigvec, xi, yi)
-
-    xy_zip = collect(Iterators.flatten(zip(xi, yi)))
-    proj = sum( xy_zip .* eigvec)
+function project_on_eigvec(eigvec, xi, yi)
+    proj=0
+    for k in eachindex(xi)
+        proj+= xi[k] * eigvec[(2*k -1)] + yi[k] * eigvec[(2*k)]
+    end
     return proj
 end
+
+
+function unwrap(angles)
+    θpc = zeros(size(angles))
+    θpc[:,1] = angles[:,1]
+
+    for p in 1:size(angles)[1]
+
+        θp = angles[p,:]
+
+        d = diff(θp)
+
+        for (i, di) in pairs(d) 
+            if -pi<di<pi
+                θpc[p,i+1] =  θpc[p,i] + di
+
+            elseif di>pi
+                θpc[p,i+1] =  θpc[p,i] + di-2*pi
+
+            elseif di<-pi
+                θpc[p,i+1] =  θpc[p,i] + di+2*pi
+            end
+        end
+    end
+    return θpc
+end
+
+
+function centered_ma(x,y, wlen)
+
+    # x x |x| x x  for odd wlen, note that we get a shorter array of (wlen-1)/2 on both sides so the new array is of length x-(wlen-1)/2*2
+
+    if wlen>0 && isodd(wlen)
+        wlen_side = round(Int, (wlen-1)/2)
+        yma = zeros(length(y) - wlen  +1)
+
+        xma = x[(wlen_side +1 ): (length(x) - wlen_side)]
+
+        for (im,i) in  pairs( wlen_side +1 : length(y) - wlen_side )
+                yma[im] = mean( y[i - wlen_side: i+ wlen_side])
+        end
+    #Convenience function to turn off moving average    
+    elseif wlen==0
+        yma = copy(y)
+        xma = copy(x)
+    else
+        error("Should use positive and odd wlen, or set wlen=0 to turn of ma.")
+    end
+
+    return Dict("xma"=> xma, "yma"=>yma)
+
+end
+
+function MSD(t,x,y; tavg=true, pavg = true)
+
+    msd = zeros(length(t))
+
+    for i in eachindex(msd)
+        msd[i] = mean( (x[:,i:end]-x[:,1:end-i+1]) .^2 + (y[:,i:end]-y[:,1:end-i+1]) .^2 )
+
+    end
+
+    return Dict("msd"=>msd, "delta_t"=>t)
+
+end
+
+

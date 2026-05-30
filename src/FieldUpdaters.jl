@@ -14,6 +14,23 @@ struct EdgeSet<:FieldUpdater
 
 end
 
+struct IndSet{T1, T2}<:FieldUpdater
+    ontypes::Union{Int64,Vector{Int64}}
+    inds::T1
+    Cset::T2
+
+end
+
+struct AvgSetwoGhost<:FieldUpdater
+    ontypes::Union{Int64,Vector{Int64}}
+    Cset::Float64
+
+end
+
+struct GhostSet<:FieldUpdater
+    ontypes::Union{Int64,Vector{Int64}}
+end
+
 function contribute_field_update!(field_i, t, dt, field_updater::PeriodicDiffusion, rngs_fields)
  
     if field_i.type in field_updater.ontypes
@@ -43,6 +60,91 @@ function contribute_field_update!(field_i, t, dt, field_updater::EdgeSet, rngs_f
 
     field_i.C[:,end].= field_updater.Cset
     field_i.Cf[:,end].= 0
+    end
+    return field_i
+end
+
+
+function contribute_field_update!(field_i, t, dt, field_updater::IndSet, rngs_fields)
+
+    if field_i.type in field_updater.ontypes
+    field_i.C[field_updater.inds...]= field_updater.Cset
+
+    end
+    return field_i
+end
+
+
+function contribute_field_update!(field_i, t, dt, field_updater::AvgSetwoGhost, rngs_fields)
+
+    if field_i.type in field_updater.ontypes
+
+        avg = mean(field_i.C[2:end-1,2:end-1])
+        field_i.C[2:end-1,2:end-1].+= field_updater.Cset - avg
+    end
+    return field_i
+end
+
+
+function contribute_field_update!(field_i, t, dt, field_updater::GhostSet, rngs_fields)
+
+    if field_i.type in field_updater.ontypes
+
+    field_i.C[1,2:end-1].= field_i.C[end-1,2:end-1]
+
+    field_i.C[end,2:end-1].= field_i.C[2,2:end-1]
+
+    field_i.C[2:end-1,1].= field_i.C[2:end-1,end-1]
+
+    field_i.C[2:end-1,end].= field_i.C[2:end-1,2]
+
+    field_i.C[1,1]= field_i.C[end-1,end-1]
+
+    field_i.C[end,end]= field_i.C[2,2]
+
+    field_i.C[end,1]= field_i.C[2,end-1]
+
+    field_i.C[1,end]= field_i.C[end-1,2]
+
+
+    field_i.Cf[1,2:end-1].= field_i.Cf[end-1,2:end-1]
+
+    field_i.Cf[end,2:end-1].= field_i.Cf[2,2:end-1]
+
+    field_i.Cf[2:end-1,1].= field_i.Cf[2:end-1,end-1]
+
+    field_i.Cf[2:end-1,end].= field_i.Cf[2:end-1,2]
+
+    field_i.Cf[1,1]= field_i.Cf[end-1,end-1]
+
+    field_i.Cf[end,end]= field_i.Cf[2,2]
+
+    field_i.Cf[end,1]= field_i.Cf[2,end-1]
+
+    field_i.Cf[1,end]= field_i.Cf[end-1,2]
+
+
+
+    field_i.Cv[1,2:end-1].= field_i.Cv[end-1,2:end-1]
+
+    field_i.Cv[end,2:end-1].= field_i.Cv[2,2:end-1]
+
+    field_i.Cv[2:end-1,1].= field_i.Cv[2:end-1,end-1]
+
+    field_i.Cv[2:end-1,end].= field_i.Cv[2:end-1,2]
+
+    field_i.Cv[1,1]= field_i.Cv[end-1,end-1]
+
+    field_i.Cv[end,end]= field_i.Cv[2,2]
+
+    field_i.Cv[end,1]= field_i.Cv[2,end-1]
+
+    field_i.Cv[1,end]= field_i.Cv[end-1,2]
+
+
+
+
+
     end
     return field_i
 end
