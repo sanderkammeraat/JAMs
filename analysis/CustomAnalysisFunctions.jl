@@ -866,7 +866,10 @@ function run_cs_analysis!(analysis_file, raw_data_file; support_raw_data_file = 
     vrms_particle_avg_time = sqrt.( mean((vx.^2 + vy.^2)[:,min_t_ind:end],dims=1)[1,:] )
     analysis_file["vrms_particle_avg_time"] = vrms_particle_avg_time
 
-    msd = MSD(t,xuw,yuw)
+    msd_uw = MSD(t,xuw,yuw)
+    save_dict2h5!(analysis_file, msd_uw, "MSD_uw")
+
+    msd = MSD(t,x,y)
     save_dict2h5!(analysis_file, msd, "MSD")
 
     auto_p = auto_correlation(t[min_t_ind:end],px[:,min_t_ind:end], py[:,min_t_ind:end], minrow=1)

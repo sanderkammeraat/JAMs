@@ -141,7 +141,7 @@ function self_aligning_step(rx_step,J,v0, Dr, seed,save_folder_path; Tsave=nothi
     system = System(sizes, initial_particle_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers,field_dofevolvers,false,rx_step.system.rcut_pair_global);
 
     #Run integration
-    sim = Euler_integrator(system,0.05, 1e5,Tsave=Tsave,seed=seed, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="sa", fps=60, plot_functions=(plot_disks_orientation!,plot_directors!, plot_velocity_vectors!), plotdim=2, Tplot=Tplot)#,record_folder_path="/Users/kammeraat/sa_explore/",res=(1000,1000)); 
+    sim = Euler_integrator(system,0.05, 1e5,Tsave=Tsave,seed=seed, save_functions = [save_2d_polar_p!],save_folder_path=save_folder_path,save_tag="sa", fps=60, plot_functions=(plot_directors!, plot_velocity_vectors!, plot_trajectories!), plotdim=2, Tplot=Tplot)#,record_folder_path="/Users/kammeraat/sa_explore/",res=(1000,1000)); 
     return sim
 end
 
@@ -189,6 +189,6 @@ rx_result= relaxation_step("", Tsave=nothing, Tplot=10)
 
 # rx_step,J,v0, Dr, seed, save_folder_path
 
-sa_result=self_aligning_step(rx_result, 10.0 , 0.01, 0.00,nothing, "", Tplot=10,  Tsave=nothing);
+sa_result=self_aligning_step(rx_result, 10 , 0.01, 0.01,nothing, "", Tplot=100,  Tsave=nothing);
 
 # ra_result=relax_again_step(sa_result, save_folder_path);

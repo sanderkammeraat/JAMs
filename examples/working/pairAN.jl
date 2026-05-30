@@ -8,7 +8,7 @@ function simulation()
     #1.3 -1 0 0.3
 
     kpar = -1
-    kper=0
+    kper= 0
     #pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,1.3, 1, 0., 0.3), pair_nematic_alignment_force(1,2.5,0.15))
     pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,true,1.3, kpar, kper, 0.3), pair_nematic_alignment_force(1,2.5,0.3))
 

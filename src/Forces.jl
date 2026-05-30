@@ -8,6 +8,15 @@ using StaticArrays
 abstract type Force end
 
 #Single-particle forces
+
+@kwdef struct Lorenz_system<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+
+    σ::Float64
+    ρ::Float64
+    β::Float64
+end
+
 struct field_propulsion_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
     consumption::Float64
@@ -214,6 +223,14 @@ struct soft_disk_force{T1} <: Force
     ontypes::Union{Int64,Vector{Int64}}
     karray::T1
 end
+
+@kwdef struct exp_repulsion_force{T1} <: Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+    rfact::Float64
+end
+
+
 struct soft_shape_disk_force{T1} <: Force
     ontypes::Union{Int64,Vector{Int64}}
     karray::T1
@@ -373,6 +390,18 @@ function contribute_external_force!(p_i, t, dt, rngs_particles, system, force::A
 
     #compensate for the dt from the dof evolver, can be changed if the evolver also changes
     p_i.ω.+= ω*sqrt(dt)/dt
+    end
+    return p_i
+end
+
+
+function contribute_external_force!(p_i, t, dt, rngs_particles, system, force::Lorenz_system)
+
+    if p_i.type[1] in force.ontypes
+      p_i.f[1]+=force.σ * (p_i.x[2] - p_i.x[1]) 
+
+      p_i.f[2]+=  p_i.x[1]* (force.ρ - p_i.x[3] ) - p_i.x[2]
+      p_i.f[3]+= p_i.x[1]* p_i.x[2] - force.β * p_i.x[3] 
     end
     return p_i
 end
@@ -708,6 +737,20 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
     return p_i
 
 end
+#Continue here
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::exp_repulsion_force)
+
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
+
+        d2R = p_i.R[1]+p_j.R[1]
+        p_i.f.+= -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] *d2R * exp(-dxn/d2R/force.rfact) * dx/dxn
+
+    end
+    return p_i
+
+end
+
+
 
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::polymer_exterior_soft_disk_force)
 

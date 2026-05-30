@@ -320,7 +320,7 @@ end
 
 
 
-function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_functions=nothing, save_folder_path=nothing, save_tag=nothing, Tplot=nothing, fps=30, plot_functions=nothing,plotdim=nothing,record_folder_path=nothing,crf=23,res=nothing,format="mp4")
+function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_functions=nothing, save_folder_path=nothing, save_tag=nothing, Tplot=nothing, fps=30, plot_functions=nothing,plotdim=nothing,record_folder_path=nothing,crf=23,res=nothing,format="mp4",sbs=false)
 
 
     integration_tax = collect(0:dt:t_stop)
@@ -454,7 +454,7 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
         cpsO = Observable(current_particle_state)
         cfsO = Observable(current_field_state)
         tO = Observable(0.)
-        f, ax = setup_system_plotting(system.sizes,plot_functions, plotdim,cpsO,cfsO,tO,fps,res=res)
+        f, ax = setup_system_plotting(system.sizes,plot_functions, plotdim,cpsO,cfsO,tO,fps,res=res, sbs=sbs)
         
 
     end

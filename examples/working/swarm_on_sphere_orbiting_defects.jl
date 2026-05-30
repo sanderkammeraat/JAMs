@@ -3,8 +3,6 @@ include(joinpath("..","..","io","InitialPositionGenerators.jl"))
 
 function simulation()
 
-    
-
     pair_forces = (soft_disk_force(1,1.),)
     external_forces = (ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,10),ABP_3d_angular_noise(1))
 
@@ -45,7 +43,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.005, 1e4, Tplot=1,fps=60,plot_functions=(plot_sphere!,plot_points!, plot_directors!, plot_velocity_vectors!), plotdim=3, Tsave=nothing, save_folder_path = "/Users/kammeraat/test_saving_speed/", save_functions=[save_2d_polar_p!]); 
+    sim = Euler_integrator(system,0.005, 1e4, sbs=false, Tplot=100,fps=60,plot_functions=(plot_sphere!,plot_points!, plot_directors!, plot_velocity_vectors!,plot_trajectories!), Tsave=nothing, save_folder_path = "/Users/kammeraat/test_saving_speed/", save_functions=[save_2d_polar_p!]); 
     return sim;
 
 end

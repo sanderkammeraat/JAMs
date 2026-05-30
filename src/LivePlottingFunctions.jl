@@ -28,6 +28,40 @@ function plot_points!(f,ax, cpsO, cfsO)
     return ax
 end
 
+#Experimental
+function plot_trajectories!(f,ax, cpsO, cfsO)
+    maxlen = 100
+    N = length(cpsO[])
+
+    trajectories = fill(Point3f(NaN, NaN, NaN), (maxlen+1) * N)
+    indices = zeros(Int, N)
+    
+    obs = Observable(trajectories)
+    color_idx =repeat(1:N, inner=maxlen+1)
+    lines!(ax, obs, color=color_idx, colorrange=(1, N), colormap=:viridis)
+    
+    on(cpsO) do particles
+        for i in 1:N
+            p = particles[i]
+            idx = (indices[i] % maxlen) + 1
+            indices[i] = idx
+            
+            base_idx = (i - 1) * (maxlen+1)
+            trajectories[base_idx + idx] = Point3f(p.x[1], p.x[2], p.x[3])
+            if idx <maxlen
+                trajectories[base_idx + idx+ 1] = Point3f(NaN, NaN, NaN)
+            else
+                trajectories[base_idx + 2] = Point3f(NaN, NaN, NaN)
+            end
+    
+            
+        end
+        notify(obs)
+    end
+    
+    return ax
+end
+
 function plot_director_points!(f,ax, cpsO, cfsO)
 
 
@@ -60,7 +94,7 @@ function plot_field_magnitude!(f,ax, cpsO, cfsO)
     
     field_C = @lift($(cfsO)[1].C)
     heatmap!(ax,field_centers1,field_centers2,field_C, alpha=0.2,colormap=:jet,colorrange=(0.0,1))
-    Colorbar(f[1,2], limits = (0.0, 1), label="Concentration c",colormap=:jet)
+    Colorbar(f[1,2], limits = (0.0, 1), label="Concentration c",colormap=(:jet,0.2))
     return ax
 end
 
@@ -576,7 +610,44 @@ end
 
 
 
-function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO,fps;res=nothing)
+# function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO,fps;res=nothing)
+#     GLMakie.activate!(; focus_on_show=true, title= "GLMakie: JAMs simulation", framerate=fps)
+#     if !isnothing(res)
+#         f = Figure(size=res)
+#     else
+#         f=Figure()
+#     end
+#     title = @lift("t = $($tO)")
+
+#     if !isnothing(plotdim)
+#         plotdim_set = plotdim
+#     else
+#         plotdim_set = length(system_sizes)
+
+#     end
+
+#     if plotdim_set==2
+#         ax = Axis(f[1, 1], xlabel = "x", ylabel="y",  aspect =system_sizes[1]/system_sizes[2], title=title )
+#         xlims!(ax, -system_sizes[1]/2, system_sizes[1]/2)
+#         ylims!(ax,  -system_sizes[2]/2, system_sizes[2]/2)
+
+#     elseif plotdim_set==3
+
+#         ax = Axis3(f[1, 1], xlabel = "x", ylabel="y", zlabel="z",  aspect = (1,system_sizes[2]/system_sizes[1],system_sizes[3]/system_sizes[1]), title=title)
+#         xlims!(ax,  -system_sizes[1]/2, system_sizes[1]/2)
+#         ylims!(ax, -system_sizes[2]/2, system_sizes[2]/2)
+#         zlims!(ax,  -system_sizes[3]/2, system_sizes[3]/2)
+
+#     end
+    
+#     for plot_function in plot_functions
+#        ax=plot_function(f,ax,cpsO,cfsO)
+#     end
+#     display(f)
+#     return f, ax
+# end
+
+function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO,fps;res=nothing,sbs=false)
     GLMakie.activate!(; focus_on_show=true, title= "GLMakie: JAMs simulation", framerate=fps)
     if !isnothing(res)
         f = Figure(size=res)
@@ -598,19 +669,90 @@ function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO
         ylims!(ax,  -system_sizes[2]/2, system_sizes[2]/2)
 
     elseif plotdim_set==3
-
+        if !sbs
         ax = Axis3(f[1, 1], xlabel = "x", ylabel="y", zlabel="z",  aspect = (1,system_sizes[2]/system_sizes[1],system_sizes[3]/system_sizes[1]), title=title)
         xlims!(ax,  -system_sizes[1]/2, system_sizes[1]/2)
         ylims!(ax, -system_sizes[2]/2, system_sizes[2]/2)
         zlims!(ax,  -system_sizes[3]/2, system_sizes[3]/2)
 
+    else
+        eye_separation=0.03f0
+        ax_left  = Axis3(f[1, 1], xlabel="x", ylabel="y", zlabel="z",aspect=(1,system_sizes[2]/system_sizes[1],system_sizes[3]/system_sizes[1]), title=title)
+        ax_right = Axis3(f[1, 2], xlabel="x", ylabel="y", zlabel="z", aspect=(1,system_sizes[2]/system_sizes[1],system_sizes[3]/system_sizes[1]), title=title)
+        for ax in (ax_left, ax_right)
+                    xlims!(ax, -system_sizes[1]/2, system_sizes[1]/2)
+                    ylims!(ax, -system_sizes[2]/2, system_sizes[2]/2)
+                    zlims!(ax, -system_sizes[3]/2, system_sizes[3]/2)
+        end
+
+        syncing = Ref(false)
+
+        on(ax_left.finallimits) do new_limits
+            syncing[] && return
+            syncing[] = true
+            # Update right axis with the new limits
+            xlims!(ax_right, new_limits.origin[1], new_limits.origin[1] + new_limits.widths[1])
+            ylims!(ax_right, new_limits.origin[2], new_limits.origin[2] + new_limits.widths[2])
+            zlims!(ax_right, new_limits.origin[3], new_limits.origin[3] + new_limits.widths[3])
+            syncing[] = false
+        end
+        
+        on(ax_right.finallimits) do new_limits
+            syncing[] && return
+            syncing[] = true
+            # Update left axis with the new limits
+            xlims!(ax_left, new_limits.origin[1], new_limits.origin[1] + new_limits.widths[1])
+            ylims!(ax_left, new_limits.origin[2], new_limits.origin[2] + new_limits.widths[2])
+            zlims!(ax_left, new_limits.origin[3], new_limits.origin[3] + new_limits.widths[3])
+            syncing[] = false
+        end
+
+        on(ax_left.azimuth) do az
+            syncing[] && return
+            syncing[] = true
+            ax_right.azimuth[] = az + 2f0 * eye_separation  # Reversed sign
+            syncing[] = false
+        end
+        on(ax_right.azimuth) do az
+            syncing[] && return
+            syncing[] = true
+            ax_left.azimuth[] = az - 2f0 * eye_separation  # Reversed sign
+            syncing[] = false
+        end
+        # ── Elevation (identical for both eyes) ───────────────────────────────
+        on(ax_left.elevation) do el
+            syncing[] && return
+            syncing[] = true
+            ax_right.elevation[] = el
+            syncing[] = false
+        end
+        on(ax_right.elevation) do el
+            syncing[] && return
+            syncing[] = true
+            ax_left.elevation[] = el
+            syncing[] = false
+        end
+        ax_right.azimuth[] = ax_left.azimuth[] + 2f0 * eye_separation
+        end
+
     end
-    
-    for plot_function in plot_functions
-       ax=plot_function(f,ax,cpsO,cfsO)
+    if !sbs || plotdim_set==2
+        for plot_function in plot_functions
+            ax=plot_function(f,ax,cpsO,cfsO)
+        end
+        display(f)
+        return f, ax
+    else
+        for plot_function in plot_functions
+            ax_left=plot_function(f,ax_left,cpsO,cfsO)
+            ax_right=plot_function(f,ax_right,cpsO,cfsO)
+        end
+        display(f)
+        return f, (ax_left, ax_right)
     end
-    display(f)
-    return f, ax
+
 end
+
+
 
 

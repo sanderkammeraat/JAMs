@@ -13,7 +13,7 @@ function simulation()
     kpar = -1
     kper=0
     #pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,1.3, 1, 0., 0.3), pair_nematic_alignment_force(1,2.5,0.15))
-    pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,true,1.3, kpar, kper, 0.1), pair_nematic_alignment_force(1,2.5,0.1))
+    pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,true,1.3, kpar, kper, 0.3), pair_nematic_alignment_force(1,2.5,0.3))
 
 
     #dofevolvers = [inertial_evolver!]
@@ -50,7 +50,7 @@ function simulation()
     #Run integrationov
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plot}ting
-    sim = Euler_integrator(system,0.01, 1e4,fps=60,Tplot=10,plot_functions=(plot_sphere!,plot_sized_points!,plot_nematic_directors! ),plotdim=3)#, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,0.01, 1e4,sbs=true,fps=60,Tplot=10,plot_functions=(plot_sphere!,plot_points!,plot_nematic_directors! ),plotdim=3)#, res=(1000,1000), crf=28, record_folder_path=joinpath(homedir(), "pairAN_on_sphere"))#, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim;
 
 end

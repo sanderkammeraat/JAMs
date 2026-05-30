@@ -95,7 +95,7 @@ GLMakie.activate!()
 
         vx[] = frames[stri]["vx"].*um
         vy[] = frames[stri]["vy"].*um
-
+        
         px[] = frames[stri]["px"]
         py[] = frames[stri]["py"]
 
@@ -106,27 +106,27 @@ GLMakie.activate!()
     close(raw_data_file)
 end
 
-mainpath = joinpath(homedir(),"surfdrive","ActivePolygonClusters","simulations")#,"c_align_dp_distr","phi_0p3")
+# mainpath = joinpath(homedir(),"surfdrive","ActivePolygonClusters","simulations")#,"c_align_dp_distr","phi_0p3")
 
-tree = construct_folder_tree_param_param_seed(mainpath)
+# tree = construct_folder_tree_param_param_seed(mainpath)
 
-for (param1, subdict) in tree
+# for (param1, subdict) in tree
 
-    for (param2, seeddict) in subdict
+#     for (param2, seeddict) in subdict
 
-        if param1=="c_no_align_ndp_distr" || param1=="c_no_align_dp_distr"
+#         if param1=="c_no_align_ndp_distr" || param1=="c_no_align_dp_distr"
 
-        print(param1)
-        print(param2)
-        raw_data_file=jldopen(joinpath(mainpath,param1, param2, "simdata","raw_data.jld2"))
-        make_movie(raw_data_file,joinpath(mainpath,param1, param2,"movies"))
-        end
+#         print(param1)
+#         print(param2)
+#         raw_data_file=jldopen(joinpath(mainpath,param1, param2, "simdata","raw_data.jld2"))
+#         make_movie(raw_data_file,joinpath(mainpath,param1, param2,"movies"))
+#         end
 
-    end
-end
+#     end
+# end
 #base_folder = "/Users/kammeraat/surfdrive/ActivePolygonClusters/simulations/align_phoretic/phi_0p1/"
 
-base_folder = "/Users/kammeraat/surfdrive/ActivePolygonClusters/simulations/for_inference_v9/phi_0p01/"
+base_folder = "/Users/kammeraat/surfdrive/ActivePolygonClusters/simulations/for_inference_v14_exp_rep/phi_0p01/"
 
 raw_data_file = jldopen(joinpath(base_folder,"simdata","raw_data.h5"),"r",iotype=IOStream )
 make_movie(raw_data_file,joinpath(base_folder,"movies"))
