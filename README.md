@@ -2,8 +2,6 @@
 
 <img width="1398" height="1376" alt="sim_snapshot" src="https://github.com/user-attachments/assets/11490a11-a9f0-419b-9787-5ffa8049ed38" />
 
-**Disclaimer:** This code is a hobby project and one of the goals is to learn the Julia programming language, so it likely is not fully optimized (yet).  
-
 See examples on how to use.  
 
 **Possible workflow**  
