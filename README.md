@@ -1,4 +1,4 @@
-# JAMs: Simple proof-of-concept simulations of Active Matter in Julia.
+# JAMs: Julia Active Matter simulations
 
 <img width="1398" height="1376" alt="sim_snapshot" src="https://github.com/user-attachments/assets/11490a11-a9f0-419b-9787-5ffa8049ed38" />
 
