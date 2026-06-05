@@ -24,7 +24,7 @@ function simulation()
     R = 1
     N_in_pol = 10
 
-    L = 7*N_in_pol
+    L = 20*N_in_pol
     x, y, radii, pol_ids, ids_in_pol, Npols = stacked_polymers_at_angle(N_in_pol, L, R, pf)
 
     #PolarPolymerParticle3d id type pol_id id_in_pol pol_N
@@ -42,7 +42,7 @@ function simulation()
     #β=-1 interesting!
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,6.);
 
-    sim = Euler_integrator(system,0.01, 1e6, Tplot=20,plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=nothing, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = joinpath(homedir(),"ANP","demos","N_in_pol_$(N_in_pol)","k_par_$(kpar)","k_per_$(kper)"),res=(1000,1000)); 
+    sim = Euler_integrator(system,0.01, 1e1, Tplot=20,plot_functions=(plot_polymers!, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2, Tsave=nothing, save_functions=(save_2d_polymer_polar_p!,),save_folder_path = joinpath(homedir(),"ANP","demos","N_in_pol_$(N_in_pol)","k_par_$(kpar)","k_per_$(kper)"),res=(1000,1000)); 
     return sim;
 
 end 

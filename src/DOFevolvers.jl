@@ -524,14 +524,21 @@ function evolve_field!(field, t, dt, dofevolver::overdamped_CCvCf_evolver)
 
     if field.type in dofevolver.ontypes
 
-        field.Cv.= field.Cf
-        field.C.+= field.Cv*dt
+        field.Cv .= field.Cf
+        field.C .+= field.Cv .* dt
 
-        
 
         #reinitalize
-        field.Cf.*= 0.
+        fill!(field.Cf,0.)
     end
+    # if field.type in dofevolver.ontypes
+    #     @inbounds @simd for i in eachindex(field.C)
+    #         cf = field.Cf[i]
+    #         field.Cv[i] = cf
+    #         field.C[i] += cf * dt
+    #         field.Cf[i] = 0.0
+    #     end
+    # end
     return field
 end
 

@@ -2,7 +2,7 @@
 include("../analysis/AnalysisPipeline.jl")
 
 
-base_folder = "/Users/kammeraat/surfdrive/ActivePolygonClusters/simulations/for_inference_v14_exp_rep/phi_0p01/simdata"
+base_folder = "/Users/kammeraat/surfdrive/ActivePolygonClusters/simulations/for_inference_v17_exp_rep/phi_0p01/simdata"
 raw_data = load_file(joinpath(base_folder,"raw_data.h5"))
 
 using DataFrames

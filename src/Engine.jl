@@ -6,6 +6,7 @@ using HDF5
 using CodecZlib
 using ProgressMeter
 using ChunkSplitters
+
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
 include("Particles.jl")
@@ -81,12 +82,23 @@ function init_f_q!(p_i, t)
 end
 
 
-@views function minimal_image_closest_bin_center!(field_indices,x, bin_centers,system_sizes,system_Periodic)
+function minimal_image_closest_bin_center!(field_indices,x, bin_centers,system_sizes,system_Periodic)
 
     for (i, xi) in pairs(x)
 
-        di = abs.( bin_centers[i].- x[i])
-        field_indices[i] = argmin(di)
+        current_min_ind = 1
+        current_min_dis = Inf
+
+        for (j, bcij) in pairs(bin_centers[i])
+            dis = abs.( bcij - x[i])
+
+            if dis<current_min_dis
+                current_min_ind = j
+                current_min_dis = dis
+            end
+
+        end
+        field_indices[i] = current_min_ind
 
    
     end
@@ -659,6 +671,11 @@ function pair_force_iterate!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, pa
     return p_i
 end
 
+function field_force_iterate!(p_i, field_j, field_indices, t, dt,rngs_particles, system, field_forces)
+    foreach(force->contribute_field_force!(p_i, field_j, field_indices, t, dt,rngs_particles, system, force),field_forces)
+    return p_i, field_j
+end
+
 
 
 function particle_step!(i,p_i, current_particle_state,Next,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles,dxbuffer)
@@ -691,20 +708,30 @@ function field_step!(i, field_i,current_field_state,Nfieldu,t,dt, system, rngs_f
     return field_i
 
 end
+# function contribute_field_forces!(p_i, current_field_state, t, dt,system, rngs_particles)
+#     field_indices = @MVector zeros(Int,length(p_i.x))
+    
+#     for (j, field_j) in pairs(current_field_state)
+#         field_indices = minimal_image_closest_bin_center!(field_indices, p_i.x, field_j.bin_centers, system.sizes, system.Periodic)
 
+#         for force in system.field_forces
+
+
+#             p_i, current_field_state[j] = contribute_field_force!(p_i, field_j, field_indices, t, dt,rngs_particles, system, force)
+#         end
+#     end
+#     return p_i, current_field_state
+# end
 
 function contribute_field_forces!(p_i, current_field_state, t, dt,system, rngs_particles)
     field_indices = @MVector zeros(Int,length(p_i.x))
     
+    for (j, field_j) in pairs(current_field_state)
+        field_indices = minimal_image_closest_bin_center!(field_indices, p_i.x, field_j.bin_centers, system.sizes, system.Periodic)
 
-    for force in system.field_forces
+        field_force_iterate!(p_i, field_j, field_indices, t, dt,rngs_particles, system, system.field_forces)
+        
 
-        for (j, field_j) in pairs(current_field_state)
-            
-            field_indices = minimal_image_closest_bin_center!(field_indices, p_i.x, field_j.bin_centers, system.sizes, system.Periodic)
-
-            p_i, current_field_state[j] = contribute_field_force!(p_i, field_j, field_indices, t, dt,rngs_particles, system, force)
-        end
     end
     return p_i, current_field_state
 end
@@ -870,11 +897,15 @@ function update_cells!(current_particle_state, cells, cell_bin_centers,system,lb
 
         p_i = current_particle_state[i]
         #initialize with the old bin location
-        new_bin_location.= p_i.ci
+        copyto!(new_bin_location, p_i.ci)
         new_bin_location,moved=find_new_bin_location!(new_bin_location,p_i, cell_bin_centers,system,lbins)
         if moved
             #remove
-            filter!(e->e≠p_i.id[1],cells[p_i.ci...])
+            #filter!(e->e≠p_i.id[1],cells[p_i.ci...])
+            ind = findfirst(cells[p_i.ci...].==p_i.id[1])
+            # #Swap and pop
+            cells[p_i.ci...][end], cells[p_i.ci...][ind] = cells[p_i.ci...][ind], cells[p_i.ci...][end]
+            pop!(cells[p_i.ci...])
             #add to correct lists
             p_i.ci.= new_bin_location
 

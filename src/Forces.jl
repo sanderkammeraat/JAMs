@@ -1331,30 +1331,49 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particle
 
 end
 
-# function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles,system, force::asymmetric_field_propulsion_distr_force)
-#     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
-#         x_index = field_indices[1]
-#         y_index = field_indices[2]
-#         #print(x_index)
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles,system, force::asymmetric_field_propulsion_distr_force)
+    if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
+        x_index = field_indices[1]
+        y_index = field_indices[2]
+        #print(x_index)
 
 
 
-#         if field_j.C[x_index, y_index]>0
-#             v0fact = force.v0max * force.σ/(force.σ+(log10(field_j.C[x_index, y_index]))^2)
-#             p_i.f[1]+= p_i.zeta[1] * (v0fact) *p_i.p[1]
-#             p_i.f[2]+= p_i.zeta[1] * (v0fact) *p_i.p[2]
+        if field_j.C[x_index, y_index]>0
+            v0fact = force.v0max * force.σ^2/(force.σ^2+(log10(field_j.C[x_index, y_index]) - force.cmid)^2)
+            p_i.f[1]+= p_i.zeta[1] * (v0fact) *p_i.p[1]
+            p_i.f[2]+= p_i.zeta[1] * (v0fact) *p_i.p[2]
 
             
+            xbin_ind = x_index-round(Int64,p_i.p[1]*p_i.R[1])
+            ybin_ind = y_index-round(Int64,p_i.p[2]*p_i.R[1])
 
-#             field_j.Cf[x_index-round(Int64,p_i.p[1]), y_index-round(Int64,p_i.p[2])]+=-force.consumption
-#         else
-#             field_j.Cf[x_index, y_index]=0
-#         end
-#     end
+            xlen = size(field_j.Cf)[1]
+            ylen  = size(field_j.Cf)[2]
 
-#     return p_i, field_j
 
-# end
+
+            if xbin_ind <=1
+                xbin_ind =  xlen + xbin_ind -2
+            elseif xbin_ind >= xlen
+                xbin_ind = 2 + (xbin_ind -xlen)
+            end
+
+            if ybin_ind <=1
+                ybin_ind =  ylen + ybin_ind -2
+            elseif ybin_ind >= ylen
+                ybin_ind = 2 + (ybin_ind -ylen)
+            end
+            
+            field_j.Cf[xbin_ind, ybin_ind]+=-force.consumption*dt
+        else
+            field_j.Cf[x_index, y_index]=0
+        end
+    end
+
+    return p_i, field_j
+
+end
 
 function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles, system, force::self_align_with_∇C_force)
     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
@@ -1435,12 +1454,13 @@ end
 function grad(field_j, x_index, y_index)
 
 
-    grad_x = (field_j.C[x_index+1, y_index] - field_j.C[x_index-1, y_index])/2
 
-    grad_y = (field_j.C[x_index, y_index+1] - field_j.C[x_index, y_index-1])/2
+    ∇C_x = (field_j.C[x_index+1, y_index] - field_j.C[x_index-1, y_index])/(2*field_j.lbin)
 
-    ∇C = @MVector[grad_x, grad_y,0.]
-    return ∇C
+    ∇C_y = (field_j.C[x_index, y_index+1] - field_j.C[x_index, y_index-1])/(2*field_j.lbin)
+
+    
+    return SVector{3, Float64}(∇C_x, ∇C_y, 0.)
 end
 
 function get_param_ind(force_types, particle_type)
