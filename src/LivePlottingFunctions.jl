@@ -91,6 +91,12 @@ function plot_field_magnitude!(f,ax, cpsO, cfsO)
     
     field_centers1 = @lift($(cfsO)[1].bin_centers[1])
     field_centers2 = @lift($(cfsO)[1].bin_centers[2])
+
+    field_edges1_l = cfsO[][1].bin_centers[1] .-cfsO[][1].lbin/2
+    field_edges2_l = cfsO[][1].bin_centers[2] .-cfsO[][1].lbin/2
+
+    field_edges1_r = cfsO[][1].bin_centers[1] .+cfsO[][1].lbin/2
+    field_edges2_r = cfsO[][1].bin_centers[2] .+cfsO[][1].lbin/2
     
     field_C = @lift($(cfsO)[1].C)
     #heatmap!(ax,field_centers1,field_centers2,field_C, alpha=0.2,colormap=:jet,colorrange=(0.0,1))
@@ -98,6 +104,34 @@ function plot_field_magnitude!(f,ax, cpsO, cfsO)
 
     heatmap!(ax,field_centers1,field_centers2,field_C, alpha=0.2,colormap=:jet,colorrange=(0.0,2))
     Colorbar(f[1,2], limits = (0, 2), label="Concentration c",colormap=(:jet,0.2))
+    vlines!(ax,field_edges1_l, color="grey", alpha=0.1)
+    hlines!(ax,field_edges2_l, color="grey", alpha=0.1)
+    vlines!(ax,field_edges1_r, color="grey", alpha=0.1)
+    hlines!(ax,field_edges2_r, color="grey", alpha=0.1)
+    return ax
+end
+
+function plot_GPUfield_magnitude!(f,ax, cpsO, cfsO)
+    
+    field_centers1 = @lift($(cfsO)[1].bin_centers[1])
+    field_centers2 = @lift($(cfsO)[1].bin_centers[2])
+
+    field_edges1_l = cfsO[][1].bin_centers[1] .-cfsO[][1].lbin/2
+    field_edges2_l = cfsO[][1].bin_centers[2] .-cfsO[][1].lbin/2
+
+    field_edges1_r = cfsO[][1].bin_centers[1] .+cfsO[][1].lbin/2
+    field_edges2_r = cfsO[][1].bin_centers[2] .+cfsO[][1].lbin/2
+    
+    field_C = @lift(Float64.($(cfsO)[1].C))
+    #heatmap!(ax,field_centers1,field_centers2,field_C, alpha=0.2,colormap=:jet,colorrange=(0.0,1))
+    #Colorbar(f[1,2], limits = (0.0, 1), label="Concentration c",colormap=(:jet,0.2))
+
+    heatmap!(ax,field_centers1,field_centers2,field_C, alpha=0.2,colormap=:jet,colorrange=(0.0,2))
+    Colorbar(f[1,2], limits = (0, 2), label="Concentration c",colormap=(:jet,0.2))
+    vlines!(ax,field_edges1_l, color="grey", alpha=0.1)
+    hlines!(ax,field_edges2_l, color="grey", alpha=0.1)
+    vlines!(ax,field_edges1_r, color="grey", alpha=0.1)
+    hlines!(ax,field_edges2_r, color="grey", alpha=0.1)
     return ax
 end
 
@@ -105,6 +139,8 @@ function plot_field_log_magnitude!(f,ax, cpsO, cfsO)
     
     field_centers1 = @lift($(cfsO)[1].bin_centers[1])
     field_centers2 = @lift($(cfsO)[1].bin_centers[2])
+
+
     
     field_C = @lift(log10.($(cfsO)[1].C))
     heatmap!(ax,field_centers1,field_centers2,field_C, alpha=0.2,colormap=:jet,colorrange=(-4,-2))
@@ -668,7 +704,7 @@ function setup_system_plotting(system_sizes,plot_functions,plotdim ,cpsO,cfsO,tO
     end
 
     if plotdim_set==2
-        ax = Axis(f[1, 1], xlabel = "x", ylabel="y",  aspect =system_sizes[1]/system_sizes[2], title=title )
+        ax = Axis(f[1, 1], xlabel = "x", ylabel="y",  aspect =system_sizes[1]/system_sizes[2], title=title,xgridvisible=false, ygridvisible=false )
         xlims!(ax, -system_sizes[1]/2, system_sizes[1]/2)
         ylims!(ax,  -system_sizes[2]/2, system_sizes[2]/2)
 

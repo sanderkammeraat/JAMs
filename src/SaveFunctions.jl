@@ -25,6 +25,28 @@ function save_single_2d_field!(current_frame_group, current_particle_state, curr
 
 end
 
+function save_single_2d_field_10!(current_frame_group, current_particle_state, current_field_state, n, Tsave, t,framecounter)
+
+
+    if (n-1)%(10*Tsave)==0
+        current_frame_group["field_n"] = n
+
+        current_frame_group["field_t"] = t
+
+
+        current_frame_group["field_id"] = [field.id for field in current_field_state]
+
+        current_frame_group["field_type"] = [field.type for field in current_field_state]
+        current_frame_group["field_bin_centers_x"] = current_field_state[1].bin_centers[1]
+        current_frame_group["field_bin_centers_y"] = current_field_state[1].bin_centers[2]
+
+        current_frame_group["field_C"] = current_field_state[1].C
+    end
+
+    return current_frame_group
+
+end
+
 function save_2d_polar_p!(current_frame_group, current_particle_state, current_field_state, n, Tsave, t,framecounter)
 
 
@@ -65,6 +87,8 @@ function save_2d_polar_p!(current_frame_group, current_particle_state, current_f
 
 
 end
+
+
 
 
 function save_2d_shape_polar_p!(current_frame_group, current_particle_state, current_field_state, n, Tsave, t,framecounter)

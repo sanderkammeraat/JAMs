@@ -3,10 +3,11 @@ using SparseArrays
 using Observables
 using JLD2
 using HDF5
-using CodecZlib
 using ProgressMeter
-using ChunkSplitters
+using KernelAbstractions
 
+#For generated unrolling of operation on tuples
+using Base.Cartesian
 #Note, only arrays can be changed in a struct. So initializing a struct attribute as array allows to change
 #Type declaration in structs is important for performance, see https://docs.julialang.org/en/v1/manual/performance-tips/#Type-declarations
 include("Particles.jl")
@@ -105,8 +106,53 @@ function minimal_image_closest_bin_center!(field_indices,x, bin_centers,system_s
     return field_indices
 
 end
+#Optimize for field indices
+function minimal_image_closest_field_center(x, bin_centers, lbin)
+
+    # x_ind = 1
+    # current_min_dis = Inf
+
+    # for (j, bcij) in pairs(bin_centers[1])
+    #     dis = abs.( bcij - x[1])
+
+    #     if dis<current_min_dis
+    #         x_ind = j
+    #         current_min_dis = dis
+    #     end
+
+    # end
+    # y_ind = 1
+    # current_min_dis = Inf
+    # for (j, bcij) in pairs(bin_centers[2])
+    # dis = abs.( bcij - x[2])
+
+    #     if dis<current_min_dis
+    #         y_ind = j
+    #         current_min_dis = dis
+    #     end
+
+    # end
+    # z_ind = 1
+    # current_min_dis = Inf
+    # for (j, bcij) in pairs(bin_centers[3])
+    # dis = abs.( bcij - x[3])
+
+    #     if dis<current_min_dis
+    #         z_ind = j
+    #         current_min_dis = dis
+    #     end
+
+    # end
+    x_ind = length(bin_centers[1])>1 ? clamp(round(Int, (x[1] - bin_centers[1][2]) / lbin) + 2, 2, length(bin_centers[1])-1) : 1
+    y_ind = length(bin_centers[2])>1 ? clamp(round(Int, (x[2] - bin_centers[2][2]) / lbin) + 2, 2, length(bin_centers[2])-1) : 1
+
+    z_ind = length(bin_centers[3])>1 ? clamp(round(Int, (x[3] - bin_centers[3][2]) / lbin) + 2, 2, length(bin_centers[3])-1) : 1
+
+    return  SVector{3, Int64}(x_ind, y_ind, z_ind)
+
+end
 #dx is assumed to be pre-allocated
-function minimal_image_difference!(dx,xi, xj, system_sizes, system_Periodic)
+function minimal_image_difference_deprecated!(dx,xi, xj, system_sizes, system_Periodic)
     
     @inbounds for n in eachindex(xi)
         dx[n]=xj[n]-xi[n]
@@ -120,6 +166,30 @@ function minimal_image_difference!(dx,xi, xj, system_sizes, system_Periodic)
         end 
     end
     return dx
+end
+
+
+
+@inbounds function minimal_image_difference(xi, xj, system_sizes, system_Periodic)
+    
+    dx_x = minimal_image_difference_component(xj[1]-xi[1],system_sizes[1], system_Periodic)
+    dx_y = minimal_image_difference_component(xj[2]-xi[2],system_sizes[2], system_Periodic)
+    dx_z = minimal_image_difference_component(xj[3]-xi[3],system_sizes[3], system_Periodic)
+    return SVector{3, Float64}(dx_x, dx_y, dx_z)
+end
+
+function minimal_image_difference_component(linear_difference,linear_size, system_Periodic)
+
+        if system_Periodic
+            if linear_difference>linear_size/2
+                linear_difference-=linear_size
+            end
+            if linear_difference<=-linear_size/2
+                linear_difference+=linear_size
+            end
+        end 
+
+    return linear_difference
 end
 
 """
@@ -146,10 +216,10 @@ periodic: Bool describing whether the system is spatially periodic of the system
 rcut_pair_global: Float setting the cutoff of all pair_forces and is used to generate cell lists.
 
 """
-struct System{Ts,Tips, Tifs, Tef, Tpf, Tff, Tfu, Tld, Tgd, Tfd}
+struct System{Tips, Tifs, Tef , Tpf, Tff , Tfu , Tld , Tgd , Tfd }
 
     #Vector that determines the linear size of the system
-    sizes::Ts
+    sizes::NTuple{3, Float64}
 
     #Array containing particles in a specific state
     initial_particle_state::Tips
@@ -323,8 +393,9 @@ function save_raw_metadata!(file, system, integration_tax,dt,t_stop,Tsave,save_t
     file["integration_info"]["master_seed"] = string(master_seed)
 
 
-    file["system"]["sizes"] = system.sizes
+    file["system"]["sizes"] = collect(system.sizes)
     file["system"]["rcut_pair_global"] = system.rcut_pair_global
+    file["system"]["periodic"] = string(system.Periodic)
 
     return file
 
@@ -482,9 +553,6 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     #Loop over time
     #Variable to keep track of the number of frames saved
     frame_counter = 1
-    #We are going to use chunksplitters to reduce the allocations necessary for the dx in a threadsafe way
-    n_chunks = Threads.nthreads()
-    dxbuffers = @MVector [ @MVector zeros(length(system.sizes)) for n = 1:Threads.nthreads()]
     
     try # Catch mechanism to close raw data file in case of an interruption
         @showprogress dt = 1 desc="JAMming in progress..." showspeed=true for (n, t) in pairs(integration_tax)
@@ -492,12 +560,12 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
             #Loop over particles and write generalized forces to p_i in place!
 
             
-            current_particle_state = threaded_particle_step!(current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles, dxbuffers,n_chunks)
+            current_particle_state = threaded_particle_step!(current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
 
             if Nfield>0
                 for i in eachindex(current_particle_state)
                     p_i = current_particle_state[i]
-                    p_i, current_field_state = contribute_field_forces!(p_i, current_field_state, t, dt,system,rngs_particles)
+                    contribute_field_forces!(p_i, current_field_state, t, dt,system,rngs_particles)
                     current_particle_state[i]=p_i
                 end
             end
@@ -612,17 +680,13 @@ function Euler_integrator(system, dt, t_stop; seed=nothing, Tsave=nothing, save_
     end
 end
 
-function threaded_particle_step!(current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles,dxbuffers,n_chunks)
-    Threads.@threads for (chunk_id, p_indices_chunk) in enumerate( chunks(eachindex(current_particle_state); n=n_chunks))
-
-        dxbuffer = dxbuffers[chunk_id]
-        for i in p_indices_chunk
+function threaded_particle_step!(current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
+    Threads.@threads for i in eachindex(current_particle_state)
             p_i = current_particle_state[i]
             init_unwrap!(p_i, t)
             init_f_q!(p_i, t)
-            particle_step!(i,p_i, current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles,dxbuffer)
+            particle_step!(i,p_i, current_particle_state,Next, Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
         end
-    end
     return current_particle_state
 end
 
@@ -649,38 +713,64 @@ function threaded_periodic_bc!(current_particle_state,system)
     return current_particle_state
 end
 
-function local_dofevolver_iterate!(p_i, t, dt, local_dofevolvers)
+# function local_dofevolver_iterate!(p_i, t, dt, local_dofevolvers)
 
-    foreach(dofevolver->evolve_locally!(p_i, t, dt, dofevolver), local_dofevolvers)
+#     foreach(dofevolver->evolve_locally!(p_i, t, dt, dofevolver), local_dofevolvers)
 
-    return p_i
+#     return p_i
+# end
+@generated function local_dofevolver_iterate!(p_i, t, dt, local_dofevolvers::NTuple{N, Any}) where N
+    quote
+        @nexprs $N k -> evolve_locally!(p_i, t, dt, local_dofevolvers[k])
+        return p_i
+    end
 end
 
-function external_force_iterate!(p_i, t, dt,rngs_particles, system, external_forces)
+# function external_force_iterate!(p_i, t, dt,rngs_particles, system, external_forces)
 
-    foreach(force->contribute_external_force!(p_i, t, dt,rngs_particles, system, force), external_forces)
+#     foreach(force->contribute_external_force!(p_i, t, dt,rngs_particles, system, force), external_forces)
 
-    return p_i
+#     return p_i
+# end
+
+@generated function external_force_iterate!(p_i, t, dt,rngs_particles, system, external_forces::NTuple{N, Any}) where N
+    quote
+        @nexprs $N k -> contribute_external_force!(p_i, t, dt,rngs_particles, system, external_forces[k])
+        return p_i
+    end
 end
 
-function pair_force_iterate!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, pair_forces)
+# function pair_force_iterate!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, pair_forces)
 
-    foreach(force->contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force),pair_forces)
-
+#     foreach(force->contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force),pair_forces)
     
-    return p_i
+#     return p_i
+# end
+
+@generated function pair_force_iterate!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system, pair_forces::NTuple{N, Any}) where N
+    quote
+        @nexprs $N k -> contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system, pair_forces[k])
+        return p_i
+    end
 end
 
-function field_force_iterate!(p_i, field_j, field_indices, t, dt,rngs_particles, system, field_forces)
-    foreach(force->contribute_field_force!(p_i, field_j, field_indices, t, dt,rngs_particles, system, force),field_forces)
-    return p_i, field_j
+# function field_force_iterate!(p_i, field_j, field_indices, t, dt,rngs_particles, system, field_forces)
+#     foreach(force->contribute_field_force!(p_i, field_j, field_indices, t, dt,rngs_particles, system, force),field_forces)
+#     return p_i, field_j
+# end
+
+@generated function field_force_iterate!(p_i, field_j, field_indices, t, dt,rngs_particles, system, field_forces::NTuple{N, Any}) where N
+    quote
+        @nexprs $N k -> contribute_field_force!(p_i, field_j, field_indices, t, dt,rngs_particles, system, field_forces[k])
+        return p_i
+    end
 end
 
 
 
-function particle_step!(i,p_i, current_particle_state,Next,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles,dxbuffer)
+function particle_step!(i,p_i, current_particle_state,Next,Npair,t, dt, system,cells,cell_bin_centers,stencils,rngs_particles)
     if Npair>0
-        p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system,cells,stencils,rngs_particles,dxbuffer)
+        p_i=contribute_pair_forces!(i,p_i, current_particle_state,t, dt, system,cells,stencils,rngs_particles)
     end
     if Next>0
         p_i=external_force_iterate!(p_i, t, dt,rngs_particles, system, system.external_forces)
@@ -708,26 +798,13 @@ function field_step!(i, field_i,current_field_state,Nfieldu,t,dt, system, rngs_f
     return field_i
 
 end
-# function contribute_field_forces!(p_i, current_field_state, t, dt,system, rngs_particles)
-#     field_indices = @MVector zeros(Int,length(p_i.x))
-    
-#     for (j, field_j) in pairs(current_field_state)
-#         field_indices = minimal_image_closest_bin_center!(field_indices, p_i.x, field_j.bin_centers, system.sizes, system.Periodic)
 
-#         for force in system.field_forces
-
-
-#             p_i, current_field_state[j] = contribute_field_force!(p_i, field_j, field_indices, t, dt,rngs_particles, system, force)
-#         end
-#     end
-#     return p_i, current_field_state
-# end
 
 function contribute_field_forces!(p_i, current_field_state, t, dt,system, rngs_particles)
-    field_indices = @MVector zeros(Int,length(p_i.x))
+
     
     for (j, field_j) in pairs(current_field_state)
-        field_indices = minimal_image_closest_bin_center!(field_indices, p_i.x, field_j.bin_centers, system.sizes, system.Periodic)
+        field_indices = minimal_image_closest_field_center(p_i.x, field_j.bin_centers, field_j.lbin)
 
         field_force_iterate!(p_i, field_j, field_indices, t, dt,rngs_particles, system, system.field_forces)
         
@@ -739,10 +816,8 @@ end
 
 
 
-function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cells,stencils,rngs_particles,dxbuffer)
+function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cells,stencils,rngs_particles)
     
-    dx = dxbuffer
-
     candidate_cell_ind=@MVector zeros(Int64, length(p_i.ci))
     for stencil in stencils
         @inbounds for cell_ind in eachindex(candidate_cell_ind)
@@ -752,7 +827,7 @@ function contribute_pair_forces!(i,p_i, current_particle_state, t, dt,system,cel
             if i!=n
                 p_j = current_particle_state[n]
 
-                dx= minimal_image_difference!(dx, p_i.x, p_j.x, system.sizes, system.Periodic)
+                dx = minimal_image_difference(p_i.x, p_j.x, system.sizes, system.Periodic)
 
                 dxn = norm(dx)
                 
@@ -859,7 +934,7 @@ function construct_cell_lists!(system)
     return system, cells, cell_bin_centers, stencils, lbins
 end
 
-@inbounds function find_new_bin_location!(new_bin_location,p_i, cell_bin_centers,system,lbins)
+@inbounds function find_new_bin_location_deprecated!(new_bin_location,p_i, cell_bin_centers,system,lbins)
 
     moved=false
     #Collect old locations to preallocate for new one
@@ -886,26 +961,50 @@ end
     return new_bin_location, moved
 
 end
+function find_new_bin_location!(p_i, cell_bin_centers,system,lbins)
+
+    moved=false
+    #Collect old locations to preallocate for new one
+    x_ind = length(cell_bin_centers[1])>1 ? clamp(round(Int, (p_i.x[1] - cell_bin_centers[1][2]) / lbins[1]) + 2, 2, length(cell_bin_centers[1])-1) : 1
+    moved = moved || x_ind == p_i.ci[1]
+
+    y_ind = length(cell_bin_centers[2])>1 ? clamp(round(Int, (p_i.x[2] - cell_bin_centers[2][2]) / lbins[2]) + 2, 2, length(cell_bin_centers[2])-1) : 1
+    moved = moved || y_ind == p_i.ci[2]
+
+    z_ind = length(cell_bin_centers[3])>1 ? clamp(round(Int, (p_i.x[3] - cell_bin_centers[3][2]) / lbins[3]) + 2, 2, length(cell_bin_centers[3])-1) : 1
+    moved = moved || z_ind == p_i.ci[3]
+
+    return SVector{3, Int64}(x_ind, y_ind, z_ind), moved
+
+end
+
+
 
 function update_cells!(current_particle_state, cells, cell_bin_centers,system,lbins)
 
     #Updating the cell list is not threadsafe, hence put it outside the threaded loop
     #The cell list update must come *after* the DOF evolving of particles!
 
-    new_bin_location = @MVector  zeros(Int64, length(current_particle_state[1].ci))
+    #new_bin_location = @MVector  zeros(Int64, length(current_particle_state[1].ci))
     for i in eachindex(current_particle_state)
 
         p_i = current_particle_state[i]
         #initialize with the old bin location
-        copyto!(new_bin_location, p_i.ci)
-        new_bin_location,moved=find_new_bin_location!(new_bin_location,p_i, cell_bin_centers,system,lbins)
+        #copyto!(new_bin_location, p_i.ci)
+        new_bin_location,moved=find_new_bin_location!(p_i, cell_bin_centers,system,lbins)
         if moved
             #remove
             #filter!(e->e≠p_i.id[1],cells[p_i.ci...])
-            ind = findfirst(cells[p_i.ci...].==p_i.id[1])
+
+            #ind = findfirst(cells[p_i.ci...].==p_i.id[1])
+
+            cell_view = @views cells[p_i.ci...]
+            ind = findfirst(x -> x == p_i.id[1], cell_view)
             # #Swap and pop
+
             cells[p_i.ci...][end], cells[p_i.ci...][ind] = cells[p_i.ci...][ind], cells[p_i.ci...][end]
             pop!(cells[p_i.ci...])
+            
             #add to correct lists
             p_i.ci.= new_bin_location
 
@@ -917,127 +1016,99 @@ end
 
 
 
-@views function update_ghost_cells!(cells,system)
-    
+function update_ghost_cells!(cells,system)
     if system.Periodic
+        
         dims = length(system.sizes)
         if dims==2
-            cells[1,:].= cells[end-1,:]
-            cells[end,:].= cells[2,:]
 
-            cells[:,1].= cells[:,end-1]
-            cells[:,end].= cells[:,2]
+            cells[1,:] .= @view cells[end-1,:]
+            cells[end,:] .= @view cells[2,:]
 
-            cells[1,1] .= cells[end-1, end-1]
-            cells[1,end] .= cells[end-1, 2]
-
-            cells[end,1] .= cells[2, end-1]
-            cells[end,end] .= cells[2, 2]
-
+            cells[:,1] .= @view cells[:,end-1]
+            cells[:,end] .= @view cells[:,2]
         end
 
         if dims==3
 
-            #6 faces
-            #x- 
-            cells[1,2:end-1, 2:end-1] = cells[end-1,2:end-1, 2:end-1 ]
-            #x+
-            cells[end,2:end-1, 2:end-1] = cells[2,2:end-1, 2:end-1 ]
+            #The bottom works, but one can do it much more easily: imagine e.g. 5 by 5 cube and see how each points gets correctly
+            # assigned by simply doing the following steps IN ORDER
 
-            #y-
-            cells[2:end-1,1, 2:end-1] = cells[2:end-1,end-1, 2:end-1 ]
-            #y+
-            cells[2:end-1,end, 2:end-1] = cells[2:end-1,2, 2:end-1 ]
+            cells[1, :, :]   .= @view cells[end-1, :, :]
+            cells[end, :, :] .= @view cells[2, :, :]
 
-            #z-
-            cells[2:end-1, 2:end-1,1] = cells[2:end-1, 2:end-1, end-1]
-            #z+
-            cells[2:end-1, 2:end-1,end] = cells[2:end-1, 2:end-1,2 ]
+            cells[:, 1, :]   .= @view cells[:, end-1, :]
+            cells[:, end, :] .= @view cells[:, 2, :]
 
-            #8 corner points
-            cells[1,1,1]=cells[end-1, end-1, end-1]
-            cells[end, 1, 1] =cells[2, end-1, end-1]
-            cells[1,1,end] =cells[end-1, end-1, 2]
-            cells[1,end,1] = cells[end-1,2,end-1]
+            cells[:, :, 1]   .= @view cells[:, :, end-1]
+            cells[:, :, end] .= @view cells[:, :, 2]
 
-            cells[1, end, end] = cells[end-1, 2, 2]
-            cells[end, end, 1] = cells[2,2, end-1]
-            cells[end, 1, end] = cells[2, end-1, 2]
-            cells[end, end, end] = cells[2,2,2]
+        
 
-            #12 edges minus corner points
+            # Old more elaborate way:
+            # #6 faces
+            # #x- 
+            # @. begin
+            # cells[1,2:end-1, 2:end-1] = cells[end-1,2:end-1, 2:end-1 ]
+            # #x+
+            # cells[end,2:end-1, 2:end-1] = cells[2,2:end-1, 2:end-1 ]
 
-            #4 along x, constant y z
-            cells[2:end-1,1,1].= cells[2:end-1,end-1,end-1]
+            # #y-
+            # cells[2:end-1,1, 2:end-1] = cells[2:end-1,end-1, 2:end-1 ]
+            # #y+
+            # cells[2:end-1,end, 2:end-1] = cells[2:end-1,2, 2:end-1 ]
 
-            cells[2:end-1,end,end].= cells[2:end-1,2,2]
+            # #z-
+            # cells[2:end-1, 2:end-1,1] = cells[2:end-1, 2:end-1, end-1]
+            # #z+
+            # cells[2:end-1, 2:end-1,end] = cells[2:end-1, 2:end-1,2 ]
 
-            cells[2:end-1,1,end].= cells[2:end-1,end-1,2]
+            # end
+            # #8 corner points
+            # cells[1,1,1]=cells[end-1, end-1, end-1]
+            # cells[end, 1, 1] =cells[2, end-1, end-1]
+            # cells[1,1,end] =cells[end-1, end-1, 2]
+            # cells[1,end,1] = cells[end-1,2,end-1]
 
-            cells[2:end-1,end,1].= cells[2:end-1,2,end-1]
+            # cells[1, end, end] = cells[end-1, 2, 2]
+            # cells[end, end, 1] = cells[2,2, end-1]
+            # cells[end, 1, end] = cells[2, end-1, 2]
+            # cells[end, end, end] = cells[2,2,2]
 
-            #4 along y, constant x z
-            cells[1,2:end-1,1].= cells[end-1,2:end-1,end-1]
+            # #12 edges minus corner points
 
-            cells[end,2:end-1,end].= cells[2,2:end-1,2]
+            # #4 along x, constant y z
+            # @. begin
+            # cells[2:end-1,1,1]= cells[2:end-1,end-1,end-1]
 
-            cells[1,2:end-1,end].= cells[end-1,2:end-1,2]
+            # cells[2:end-1,end,end]= cells[2:end-1,2,2]
 
-            cells[end,2:end-1,1].= cells[2,2:end-1,end-1]
+            # cells[2:end-1,1,end]= cells[2:end-1,end-1,2]
 
-            #4 along z, constant x y
-            cells[1,1,2:end-1].= cells[end-1,end-1,2:end-1]
+            # cells[2:end-1,end,1]= cells[2:end-1,2,end-1]
 
-            cells[end,end,2:end-1].= cells[2,2,2:end-1]
+            # #4 along y, constant x z
+            # cells[1,2:end-1,1]= cells[end-1,2:end-1,end-1]
 
-            cells[1,end,2:end-1].= cells[end-1,2,2:end-1]
+            # cells[end,2:end-1,end]= cells[2,2:end-1,2]
 
-            cells[end,1,2:end-1].= cells[2,end-1,2:end-1]
+            # cells[1,2:end-1,end]= cells[end-1,2:end-1,2]
+
+            # cells[end,2:end-1,1]= cells[2,2:end-1,end-1]
+
+            # #4 along z, constant x y
+            # cells[1,1,2:end-1]= cells[end-1,end-1,2:end-1]
+
+            # cells[end,end,2:end-1]= cells[2,2,2:end-1]
+
+            # cells[1,end,2:end-1]= cells[end-1,2,2:end-1]
+
+            # cells[end,1,2:end-1]= cells[2,end-1,2:end-1]
+            # end
 
         end
-
     end
     return cells
 end
 
 
-function get_neighbours(p_i, cells, stencils)
-    candidate_cell_ind=@MVector zeros(Int64, length(p_i.ci))
-    n=0
-    #First check number
-    for stencil in stencils
-
-        for i in eachindex(candidate_cell_ind)
-            candidate_cell_ind[i]= p_i.ci[i] + stencil[i]
-        end
-
-        if !isempty(cells[candidate_cell_ind...])
-            for id in cells[candidate_cell_ind...]
-                #push!(neighbours,id)
-                n+=1
-            end
-        end
-    end
-    #Then allocate
-    if n>0
-        neighbours = zeros(Int64, n)
-        m=1
-        for stencil in stencils
-
-            for i in eachindex(candidate_cell_ind)
-                candidate_cell_ind[i]= p_i.ci[i] + stencil[i]
-            end
-    
-            if !isempty(cells[candidate_cell_ind...])
-                for id in cells[candidate_cell_ind...]
-                    neighbours[m]=id
-                    m+=1
-                end
-            end
-        end
-    else
-        neighbours = nothing
-    end
-
-    return neighbours
-end

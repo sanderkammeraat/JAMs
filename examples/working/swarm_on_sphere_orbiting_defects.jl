@@ -8,8 +8,8 @@ function simulation()
 
     #dofevolvers = [inertial_evolver!]
     
-    global_dofevolvers = []
-    field_dofevolvers = []
+    global_dofevolvers = ()
+    field_dofevolvers = ()
 
     N=500
     poly=15e-2
@@ -29,11 +29,11 @@ function simulation()
 
 
     display(L)
-    sizes = [Lx,Ly,Lz];
+    sizes = (Lx,Ly,Lz);
     print(sizes)
     initial_field_state=[]
-    field_forces = []
-    field_updaters = []
+    field_forces = ()
+    field_updaters = ()
 
     #β=-1 interesting!
     
@@ -43,7 +43,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.005, 1e4, sbs=false, Tplot=100,fps=60,plot_functions=(plot_sphere!,plot_points!, plot_directors!, plot_velocity_vectors!,plot_trajectories!), Tsave=nothing, save_folder_path = "/Users/kammeraat/test_saving_speed/", save_functions=[save_2d_polar_p!]); 
+    sim = Euler_integrator(system,0.005, 1e4, sbs=true, Tplot=100,fps=60,plot_functions=(plot_sphere!,plot_points!, plot_directors!, plot_velocity_vectors!,plot_trajectories!), Tsave=nothing, save_folder_path = "/Users/kammeraat/test_saving_speed/", save_functions=[save_2d_polar_p!]); 
     return sim;
 
 end

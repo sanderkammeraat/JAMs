@@ -1283,7 +1283,7 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt,rngs_particles
         p_i.f[2]+= p_i.zeta[1] * (field_j.C[x_index, y_index]+force.v0offset) *sin(p_i.θ[1])
 
         if field_j.C[x_index, y_index]>0
-            field_j.Cf[x_index, y_index]+=-force.consumption*dt
+            field_j.Cf[x_index, y_index]+=-force.consumption
         end
     end
 
@@ -1321,7 +1321,7 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particle
             v0fact = force.v0max * force.σ^2/(force.σ^2+(log10(field_j.C[x_index, y_index]) - force.cmid)^2)
             p_i.f[1]+= p_i.zeta[1] * (v0fact) *p_i.p[1]
             p_i.f[2]+= p_i.zeta[1] * (v0fact) *p_i.p[2]
-            field_j.Cf[x_index, y_index]+=-force.consumption*dt
+            field_j.Cf[x_index, y_index]+=-force.consumption
         else
             field_j.Cf[x_index, y_index]=0
         end
@@ -1365,7 +1365,7 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particle
                 ybin_ind = 2 + (ybin_ind -ylen)
             end
             
-            field_j.Cf[xbin_ind, ybin_ind]+=-force.consumption*dt
+            field_j.Cf[xbin_ind, ybin_ind]+=-force.consumption
         else
             field_j.Cf[x_index, y_index]=0
         end
@@ -1422,7 +1422,7 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particle
 
         if field_j.C[x_index, y_index]>0
             p_i.f.+= force.μ * ∇C
-            field_j.Cf[x_index, y_index]+=-force.consumption*dt
+            field_j.Cf[x_index, y_index]+=-force.consumption
         else
             p_i.f.+= force.μ * ∇C
             field_j.Cf[x_index, y_index]=0
@@ -1442,7 +1442,7 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particle
 
         if field_j.C[x_index, y_index]>0
             p_i.f.+= force.μ * ∇C/field_j.C[x_index, y_index]
-            field_j.Cf[x_index, y_index]+=-force.consumption*dt
+            field_j.Cf[x_index, y_index]+=-force.consumption
         else
             p_i.f.+= force.μ * ∇C*0
             field_j.Cf[x_index, y_index]=0

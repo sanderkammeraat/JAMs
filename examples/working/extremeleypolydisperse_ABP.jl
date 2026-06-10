@@ -8,10 +8,10 @@ function simulation()
 
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_evolver(1))
-    global_dofevolvers = []
-    field_dofevolvers = []
+    global_dofevolvers = ()
+    field_dofevolvers = ()
 
-    N=1000
+    N=10000
     ϕ = 0.9
     poly=0.9
     R0=1
@@ -23,20 +23,20 @@ function simulation()
 
 
     display(L)
-    sizes = [L,L,4];
+    sizes = (L,L,4.);
     print(sizes)
     initial_field_state=[]
-    field_forces = []
-    field_updaters = []
+    field_forces = ()
+    field_updaters = ()
 
     external_forces = (ABP_3d_propulsion_force(1),ABP_perpendicular_angular_noise(1,[0,0,1]), self_align_with_v_unit_force(1,1))
 
-    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,L/10);
+    system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,(1+poly)*2.5);
 
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.05, 1e5, Tplot=10,fps=120,plot_functions=(plot_disks_orientation!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,0.05, 10, Tplot=nothing,fps=120,plot_functions=(plot_disks_orientation!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim;
 
 end
@@ -44,7 +44,7 @@ end
 
 sim = simulation()  
 
-    @profview sim = simulation() 
+@profview sim = simulation() 
 
 @profview_allocs sim = simulation()  
 

@@ -71,9 +71,9 @@ function simulation(soft_disk_no_overlap_result)
 
     C = ones(length(x_bin_centers), length(y_bin_centers))
     
-    initial_field_state=[FuelField2d(1,1,bin_centers,C, C.*0, C.*0)]
+    initial_field_state=[GeneralField2d(1,1,bin_centers,C, C.*0, C.*0,lbin)]
     # [field_propulsion_3d_force(1,1e-2,0.01)]
-    field_updaters = [PeriodicDiffusion(1,1e0),AvgSetwoGhost(1,1.), GhostSet(1)]
+    field_updaters = [Diffusion(1,1e0),AvgSetwoGhost(1,1.), GhostSet(1)]
 
     external_forces = (ABP_perpendicular_angular_noise(1,[0,0,1]),)
 

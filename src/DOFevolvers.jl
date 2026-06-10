@@ -519,50 +519,65 @@ end
 struct overdamped_CCvCf_evolver
     ontypes::Union{Int64,Vector{Int64}}
 end
+
+
     
 function evolve_field!(field, t, dt, dofevolver::overdamped_CCvCf_evolver)
 
     if field.type in dofevolver.ontypes
 
-        field.Cv .= field.Cf
-        field.C .+= field.Cv .* dt
+        Threads.@threads for j in 2:size(field.C,2)-1
 
+            @inbounds for i in 2:size(field.C,1)-1
 
-        #reinitalize
-        fill!(field.Cf,0.)
+                field.Cv[i,j] = field.Cf[i,j]
+                field.C[i,j] += field.Cv[i,j]*dt
+
+                #reinitalize
+                field.Cf[i,j]= 0.0
+            end
+        end
     end
-    # if field.type in dofevolver.ontypes
-    #     @inbounds @simd for i in eachindex(field.C)
-    #         cf = field.Cf[i]
-    #         field.Cv[i] = cf
-    #         field.C[i] += cf * dt
-    #         field.Cf[i] = 0.0
-    #     end
-    # end
     return field
 end
 
-function overdamped_evolver!(field::FuelField2d, t, dt)
+
+struct GPUoverdamped_CCvCf_evolver
+    ontypes::Union{Int64,Vector{Int64}}
+end
+function evolve_field!(field, t, dt, dofevolver::GPUoverdamped_CCvCf_evolver)
+
+    if field.type in dofevolver.ontypes
+
+
+    C_GPU = field.C_GPU
+    Cv_GPU = field.Cv_GPU
+    Cf_GPU = field.Cf_GPU
     
+    backend = KernelAbstractions.get_backend(C_GPU)
 
-    field.Cv.= field.Cf
-    field.C.+= field.Cv*dt
+    if t==0
+        display(backend)
+    end
 
-    
+    kernel! = evolve_kernel!(backend)
+    kernel!(Cf_GPU, Cv_GPU, C_GPU, Float32(dt), ndrange=size(Cf_GPU))
 
-    #reinitalize
-    field.Cf.*= 0.
+    KernelAbstractions.synchronize(MetalBackend())
+    copyto!(field.Cf, Cf_GPU)
+    copyto!(field.Cv, Cv_GPU)
+    copyto!(field.C, C_GPU)
+    end
     return field
 end
-function overdamped_evolver!(field::GeneralField2d, t, dt)
 
-    field.Cv.= field.Cf
+@kernel function evolve_kernel!(Cf, Cv, C,dt)
+    i, j = @index(Global, NTuple)
 
-    field.C.+= field.Cv*dt
-
-    
-
-    #reinitalize
-    field.Cf.*= 0.
-    return field
+    if i > 1 && i < size(C, 1) && j > 1 && j < size(C, 2)
+        @inbounds Cv[i, j] = Cf[i,j]
+        @inbounds C[i,j] += Cv[i,j]*dt
+        @inbounds Cf[i, j] =0f0
+    end
 end
+

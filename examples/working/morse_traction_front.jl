@@ -11,8 +11,8 @@ function relaxation()
 
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1))
-    global_dofevolvers = []
-    field_dofevolvers = []
+    global_dofevolvers = ()
+    field_dofevolvers = ()
 
     N = 1000
     ϕ = 0.8
@@ -27,11 +27,11 @@ function relaxation()
 
     types = ones(Int64,N)
 
-    initial_state = PolarParticle3d[ PolarParticle3d([i],[types[i]], [1], [1], [Rs[i]], [0.5], [0.01], [rand(Uniform(-Lx/2, Lx/2)) , rand(Uniform(-Ly/4,Ly/4)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
+    initial_state = PolarParticle3d[ PolarParticle3d([i],[types[i]], [1], [1], [Rs[i]], [0.1], [0.01], [rand(Uniform(-Lx/2, Lx/2)) , rand(Uniform(-Ly/4,Ly/4)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
 
     external_forces = []
     display(L)
-    sizes = [Lx*3,Ly*4,4];
+    sizes = (Lx*3,Ly*4,4.);
     print(sizes)
     initial_field_state=[]
     field_forces = []
@@ -45,6 +45,7 @@ function relaxation()
     return sim;
 
 end
+
 rx = relaxation()
 
 
@@ -53,20 +54,20 @@ function simulation(relaxation)
     
 
     #pair_forces = (soft_disk_force([1,2],[0.01 1. ; 1. 1.]),)
-    pair_forces = (morse_force(1,0.05,2.5))  
+    pair_forces = (morse_force(1,0.05,2.5),)  
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1))
-    global_dofevolvers = []
-    field_dofevolvers = []
+    global_dofevolvers = ()
+    field_dofevolvers = (0)
 
     initial_state = relaxation.final_particle_state
     sizes = relaxation.system.sizes
     print(sizes)
     initial_field_state=[]
-    field_forces = []
-    field_updaters = []
+    field_forces = ()
+    field_updaters = ()
 
-    external_forces = (ABP_3d_propulsion_force(2),ABP_perpendicular_angular_noise(2,[0,0,1]))
+    external_forces = (ABP_3d_propulsion_force(1),ABP_perpendicular_angular_noise(2,[0,0,1]), self_align_with_v_unit_force(1,0.1))
 
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,10.);
 

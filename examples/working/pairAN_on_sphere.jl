@@ -20,12 +20,12 @@ function simulation()
     global_dofevolvers = ()
     field_dofevolvers = ()
 
-    N=3000
+    N=5000
     poly=15e-2
     Rs = rand(Uniform(1-poly, 1+poly),N)
     display(size(Rs))
 
-    R = 20
+    R = 20.
     local_dofevolvers = (overdamped_xvf_Rc_evolver(1,R),overdamped_pq_Rc_evolver(1,R))
 
     L =  3*R
@@ -36,9 +36,9 @@ function simulation()
 
 
     display(L)
-    sizes = [L,L,L];
+    sizes = (L,L,L);
     print(sizes)
-    initial_field_state= ()
+    initial_field_state= []
     field_forces = ()
     field_updaters = ()
 
@@ -50,7 +50,7 @@ function simulation()
     #Run integrationov
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plot}ting
-    sim = Euler_integrator(system,0.01, 1e4,sbs=true,fps=60,Tplot=10,plot_functions=(plot_sphere!,plot_points!,plot_nematic_directors! ),plotdim=3)#, res=(1000,1000), crf=28, record_folder_path=joinpath(homedir(), "pairAN_on_sphere"))#, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,0.01, 1e4,sbs=false,fps=60,Tplot=10,plot_functions=(plot_sphere!,plot_points!,plot_nematic_directors! ),plotdim=3)#, res=(1000,1000), crf=28, record_folder_path=joinpath(homedir(), "pairAN_on_sphere"))#, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim;
 
 end

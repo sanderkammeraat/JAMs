@@ -79,9 +79,9 @@ function injection()
     global_dofevolvers = []
     sizes = [L,L,4];
     initial_field_state=[]
-    field_forces = []
-    field_updaters = []
-    field_dofevovers = []
+    field_forces = ()
+    field_updaters = ()
+    field_dofevovers = ()
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers, global_dofevolvers, field_dofevovers, true,3.);
 
     #Run integration

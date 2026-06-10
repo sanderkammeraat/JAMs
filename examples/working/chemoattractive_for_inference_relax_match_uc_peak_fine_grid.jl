@@ -14,7 +14,7 @@ function simulation(save_path)
     #type,  consumption, cmid, v0max, σ in Lorentzian
     #asymmetric_field_propulsion_distr_force(1,2000,log10(0.2),4.5*20,0.261)
     
-    field_forces =(field_propulsion_distr_force(1,1e6,log10(2),4.5*250,0.261), self_align_with_∇C_force(1,5), grad_field_propulsion_force(1,0.,-100))
+    field_forces =(field_propulsion_distr_force(1,1e1,log10(2),4.5,0.261), self_align_with_∇C_force(1,5), grad_field_propulsion_force(1,0.,-50))
 
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers =  (overdamped_xvf_evolver(1), overdamped_pq_xyc_evolver(1))
@@ -61,7 +61,7 @@ function simulation(save_path)
     #Use plot_points! for fast plotting
     #Tsave 20
 
-    sim = Euler_integrator(system,0.001, 20, Tplot= nothing, fps=120, res=(1000,1000), Tsave = nothing ,save_folder_path = save_path, save_functions=(save_2d_polar_p!,save_single_2d_field!),plot_functions=(plot_field_magnitude!, plot_disks_orientation!, plot_directors!), plotdim=2); 
+    sim = Euler_integrator(system,0.001, 20, Tplot= 50, fps=120, res=(1000,1000), Tsave = nothing ,save_folder_path = save_path, save_functions=(save_2d_polar_p!,save_single_2d_field!),plot_functions=(plot_field_magnitude!, plot_disks_orientation!, plot_directors!), plotdim=2); 
     return sim
 
 end
