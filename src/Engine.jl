@@ -91,7 +91,7 @@ function minimal_image_closest_bin_center!(field_indices,x, bin_centers,system_s
         current_min_dis = Inf
 
         for (j, bcij) in pairs(bin_centers[i])
-            dis = abs.( bcij - x[i])
+            dis = abs( bcij - x[i])
 
             if dis<current_min_dis
                 current_min_ind = j
@@ -713,6 +713,9 @@ function threaded_periodic_bc!(current_particle_state,system)
     return current_particle_state
 end
 
+#Using foreach is more idiomatic to Julia. 
+#However, we want to guarentee that the tuple of forces are unrolled for every length of the tuple.
+#Therefore we 'manually' unroll the tuple by using the @generated macro
 # function local_dofevolver_iterate!(p_i, t, dt, local_dofevolvers)
 
 #     foreach(dofevolver->evolve_locally!(p_i, t, dt, dofevolver), local_dofevolvers)
@@ -966,13 +969,13 @@ function find_new_bin_location!(p_i, cell_bin_centers,system,lbins)
     moved=false
     #Collect old locations to preallocate for new one
     x_ind = length(cell_bin_centers[1])>1 ? clamp(round(Int, (p_i.x[1] - cell_bin_centers[1][2]) / lbins[1]) + 2, 2, length(cell_bin_centers[1])-1) : 1
-    moved = moved || x_ind == p_i.ci[1]
+    moved = moved || (x_ind != p_i.ci[1])
 
     y_ind = length(cell_bin_centers[2])>1 ? clamp(round(Int, (p_i.x[2] - cell_bin_centers[2][2]) / lbins[2]) + 2, 2, length(cell_bin_centers[2])-1) : 1
-    moved = moved || y_ind == p_i.ci[2]
+    moved = moved || (y_ind != p_i.ci[2])
 
     z_ind = length(cell_bin_centers[3])>1 ? clamp(round(Int, (p_i.x[3] - cell_bin_centers[3][2]) / lbins[3]) + 2, 2, length(cell_bin_centers[3])-1) : 1
-    moved = moved || z_ind == p_i.ci[3]
+    moved = moved || (z_ind != p_i.ci[3])
 
     return SVector{3, Int64}(x_ind, y_ind, z_ind), moved
 
