@@ -964,7 +964,7 @@ end
     return new_bin_location, moved
 
 end
-function find_new_bin_location!(p_i, cell_bin_centers,system,lbins)
+@inbounds function find_new_bin_location!(p_i, cell_bin_centers,system,lbins)
 
     moved=false
     #Collect old locations to preallocate for new one

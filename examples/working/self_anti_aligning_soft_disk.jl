@@ -11,7 +11,7 @@ function simulation()
     global_dofevolvers = ()
     field_dofevolvers = ()
 
-    N=1000
+    N=50000
     ϕ = 0.7
     poly=15e-2
     Rs = rand(Uniform(1-poly, 1+poly),N)
@@ -38,7 +38,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.05, 1e3, Tplot=10,fps=60,plot_functions=(plot_disks_orientation!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,0.01, 10, Tplot=nothing,fps=60,plot_functions=(plot_disks_orientation!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim;
 
 end

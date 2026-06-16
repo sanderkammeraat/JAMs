@@ -16,7 +16,7 @@ function relaxation_step(save_folder_path; Tsave=1000, Tplot=nothing)
     global_dofevolvers = []
     field_dofevolvers = []
 
-    N=1000
+    N=7000
     ϕ = 1.
     poly=15e-2
     Rs = rand(Uniform(1-poly, 1+poly),N)
