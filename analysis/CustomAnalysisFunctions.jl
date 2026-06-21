@@ -120,15 +120,18 @@ function run_sa_analysis!(analysis_file, raw_data_file; support_raw_data_file = 
     analysis_file["r_particle_time_avg"] = r_particle_time_avg
 
     #vrms info 
-    vrms_particle_time_avg = mean(sqrt.(vx.^2 + vy.^2)[:,min_t_ind:end],dims=2)[:,1]
+
+    #
+    vrms_particle_time_avg = sqrt.(mean((vx.^2 + vy.^2)[:,min_t_ind:end],dims=2)[:,1])
     analysis_file["vrms_particle_time_avg"] = vrms_particle_time_avg
 
-    vrms_particle_avg_time_avg = mean( sqrt.(vx.^2 + vy.^2)[:,min_t_ind:end] )
+    vrms_particle_avg_time_avg = sqrt.( mean( (vx.^2 + vy.^2)[:,min_t_ind:end] ))
     analysis_file["vrms_particle_avg_time_avg"] =  vrms_particle_avg_time_avg
 
 
-    vrms_particle_avg_time = mean(sqrt.(vx.^2 + vy.^2)[:,min_t_ind:end],dims=1)[1,:]
+    vrms_particle_avg_time = sqrt.( mean((vx.^2 + vy.^2)[:,min_t_ind:end],dims=1)[1,:] )
     analysis_file["vrms_particle_avg_time"] = vrms_particle_avg_time
+
 
 
     #avg p info
@@ -225,7 +228,7 @@ function run_sa_analysis_add_auto_p!(analysis_file, raw_data_file; support_raw_d
 
         Dr = frames["1"]["Dr"][1]
 
-        J = system["forces"]["external"]["self_align_with_v_unit_force"]["β"]
+        J = haskey(system["forces"]["external"],"self_align_with_v_unit_force") ? system["forces"]["external"]["self_align_with_v_unit_force"]["β"] : system["forces"]["external"]["self_align_with_v_force"]["β"]
 
         k = system["forces"]["pair"]["soft_disk_force"]["karray"]
 
@@ -278,7 +281,7 @@ function run_sa_analysis_add_auto_v!(analysis_file, raw_data_file; support_raw_d
 
         Dr = frames["1"]["Dr"][1]
 
-        J = system["forces"]["external"]["self_align_with_v_unit_force"]["β"]
+        J = haskey(system["forces"]["external"],"self_align_with_v_unit_force") ? system["forces"]["external"]["self_align_with_v_unit_force"]["β"] : system["forces"]["external"]["self_align_with_v_force"]["β"]
 
         k = system["forces"]["pair"]["soft_disk_force"]["karray"]
 
@@ -332,7 +335,7 @@ function run_sa_analysis_add_spatial_cor!(analysis_file, raw_data_file; support_
 
         Dr = frames["1"]["Dr"][1]
 
-        J = system["forces"]["external"]["self_align_with_v_unit_force"]["β"]
+        J = haskey(system["forces"]["external"],"self_align_with_v_unit_force") ? system["forces"]["external"]["self_align_with_v_unit_force"]["β"] : system["forces"]["external"]["self_align_with_v_force"]["β"]
 
         k = system["forces"]["pair"]["soft_disk_force"]["karray"]
 
@@ -777,108 +780,3 @@ function correct_vrms_analysis!(analysis_file, raw_data_file; support_raw_data_f
     
     return analysis_file
 end
-
-function run_cs_analysis!(analysis_file, raw_data_file; support_raw_data_file = nothing)
-
-    frames = raw_data_file["frames"]
-    system = raw_data_file["system"]
-    t =  raw_data_file["integration_info"]["save_tax"]
-    analysis_file["t"] = t
-
-    v0 = frames["1"]["v0"][1]
-    analysis_file["v0"] = v0
-
-    Dr = frames["1"]["Dr"][1]
-    analysis_file["Dr"] = Dr
-
-
-    k = system["forces"]["pair"]["soft_disk_force"]["karray"]
-    analysis_file["k"] = k
-
-    analysis_file["morse_Dearray"] = system["forces"]["pair"]["morse_force"]["Dearray"]
-    analysis_file["morse_aarray"] = system["forces"]["pair"]["morse_force"]["aarray"]
-
-    R = frames["1"]["R"]
-    analysis_file["R"] = R
-
-
-    type = frames["1"]["type"]
-    analysis_file["type"] = type
-
-
-    Nt = length(t)
-    analysis_file["Nt"] = Nt
-    #Ignore boundary particles
-    Nact = length(extract_frame_data_for_type("id",2,frames["1"]))
-    analysis_file["Nact"] = Nact
-
-    Npas = length(extract_frame_data_for_type("id",1,frames["1"]))
-    analysis_file["Npas"] = Npas
-
-    min_t_ind = 1
-    analysis_file["min_t_ind"] = min_t_ind
-
-    dt = t[2] - t[1]
-    analysis_file["dt"] = dt
-
-
-    x = zeros(Nact, Nt)
-    y = zeros(Nact, Nt)
-
-    xuw = zeros(Nact, Nt)
-    yuw = zeros(Nact, Nt)
-
-    vx = zeros(Nact, Nt)
-    vy = zeros(Nact, Nt)
-
-    px = zeros(Nact, Nt)
-    py = zeros(Nact, Nt)
-
-    #qx = zeros(Nint, Nt)
-    #qy = zeros(Nint, Nt)
-
-
-    @views for i in 1:Nt
-        x[:,i] .= extract_frame_data_for_type("x", 2, frames[string(i)])
-        y[:,i] .= extract_frame_data_for_type("y", 2, frames[string(i)])
-
-        xuw[:,i] .= extract_frame_data_for_type("xuw", 2, frames[string(i)])
-        yuw[:,i] .= extract_frame_data_for_type("yuw", 2, frames[string(i)])
-
-        vx[:,i] .= extract_frame_data_for_type("vx", 2, frames[string(i)])
-        vy[:,i] .= extract_frame_data_for_type("vy", 2, frames[string(i)])
-
-        px[:,i] .= extract_frame_data_for_type("px", 2, frames[string(i)])
-        py[:,i] .= extract_frame_data_for_type("py", 2, frames[string(i)])
-
-        #qx[:,i] .= extract_frame_data_for_type("qx", 1, frames[string(i)])
-        #qy[:,i] .= extract_frame_data_for_type("qy", 1, frames[string(i)])
-
-    end
-
-    vrms_particle_time_avg = sqrt.(mean((vx.^2 + vy.^2)[:,min_t_ind:end],dims=2)[:,1])
-    analysis_file["vrms_particle_time_avg"] = vrms_particle_time_avg
-
-    vrms_particle_avg_time_avg = sqrt.( mean( (vx.^2 + vy.^2)[:,min_t_ind:end] ))
-    analysis_file["vrms_particle_avg_time_avg"] =  vrms_particle_avg_time_avg
-
-
-    vrms_particle_avg_time = sqrt.( mean((vx.^2 + vy.^2)[:,min_t_ind:end],dims=1)[1,:] )
-    analysis_file["vrms_particle_avg_time"] = vrms_particle_avg_time
-
-    msd_uw = MSD(t,xuw,yuw)
-    save_dict2h5!(analysis_file, msd_uw, "MSD_uw")
-
-    msd = MSD(t,x,y)
-    save_dict2h5!(analysis_file, msd, "MSD")
-
-    auto_p = auto_correlation(t[min_t_ind:end],px[:,min_t_ind:end], py[:,min_t_ind:end], minrow=1)
-    save_dict2h5!(analysis_file, auto_p, "auto_p")
-
-    auto_v_norm = auto_correlation(t[min_t_ind:end],vx[:,min_t_ind:end], vy[:,min_t_ind:end], minrow=1,normalized=true)
-
-    save_dict2h5!(analysis_file, auto_v_norm, "auto_v_norm")
-
-    return analysis_file
-end
-

@@ -4,11 +4,11 @@ function simulation()
 
     
     external_forces = (Lorenz_system(ontypes=1,σ = 10, β = 8/3, ρ = 28),)
-    pair_forces = []
+    pair_forces = ()
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers = (overdamped_xvf_evolver(1),)
-    global_dofevolvers = []
-    field_dofevolvers = []
+    global_dofevolvers = ()
+    field_dofevolvers = ()
 
     N=1000
     ϕ = 0.5
@@ -16,7 +16,7 @@ function simulation()
     Rs = rand(Uniform(1-poly, 1+poly),N)
     display(size(Rs))
 
-    L =  150
+    L =  150.
     Ly = L
     Lx = L
     Lz = L
@@ -25,11 +25,11 @@ function simulation()
 
 
     display(L)
-    sizes = [Lx,Ly,Lz];
+    sizes = (Lx,Ly,Lz);
     print(sizes)
     initial_field_state=[]
-    field_forces = []
-    field_updaters = []
+    field_forces = ()
+    field_updaters = ()
 
     #β=-1 interesting!
     

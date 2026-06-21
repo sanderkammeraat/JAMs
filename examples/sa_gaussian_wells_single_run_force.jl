@@ -17,7 +17,7 @@ function simulation(v0, Dr, J, Tplot, Tsave,tend)
     field_dofevolvers = ()
 
     #Number of particles
-    N=1
+    N=50
     ϕ = 1.0
     poly=15e-6
     Rs = rand(Uniform(1-poly, 1+poly),N)
@@ -31,7 +31,7 @@ function simulation(v0, Dr, J, Tplot, Tsave,tend)
 
     xa = -1
     xb = 1
-    ka = 1
+    ka = 0.8
     kb = ka
 
     lbin=0.1
@@ -48,7 +48,7 @@ function simulation(v0, Dr, J, Tplot, Tsave,tend)
 
         for (j, yj) in pairs(y_bin_centers)
 
-            C[i,j] = -exp( - ka/2* ( (xi - xa)^2 + yj^2)) - exp( - kb/2* ((xi - xb)^2 +yj^2))
+            C[i,j] = ka/2* exp( - ka/2* ( (xi - xa)^2 + yj^2)) - exp( - kb/2* ((xi - xb)^2 +yj^2))
         end
     end
 
@@ -80,7 +80,7 @@ end
 #v0, Dr, J, Tplot, Tsave
 begin
 v0 = 0.6
-Dr = 0.00
+Dr = 0.01
 J = 1
 Tplot =10 #plot every timestep, set to Tplot=nothing to turn off plotting
 

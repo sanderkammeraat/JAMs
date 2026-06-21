@@ -36,6 +36,14 @@ struct field_propulsion_distr_force<:Force
     σ::Float64
 end
 
+struct reaction_field_propulsion_distr_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    consumption::Float64
+    cmid::Float64
+    v0max::Float64
+    σ::Float64
+end
+
 struct asymmetric_field_propulsion_distr_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
     consumption::Float64
@@ -1331,6 +1339,28 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particle
 
 end
 
+function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles,system, force::reaction_field_propulsion_distr_force)
+    if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
+        x_index = field_indices[1]
+        y_index = field_indices[2]
+        #print(x_index)
+
+
+
+        if field_j.C[x_index, y_index]>0
+            v0fact = force.v0max * force.σ^2/(force.σ^2+(log10(field_j.C[x_index, y_index]) - force.cmid)^2)
+            p_i.f[1]+= p_i.zeta[1] * (v0fact) *p_i.p[1]
+            p_i.f[2]+= p_i.zeta[1] * (v0fact) *p_i.p[2]
+            field_j.Cf[x_index, y_index]+=-force.consumption*field_j.C[x_index, y_index]
+        else
+            field_j.Cf[x_index, y_index]=0
+        end
+    end
+
+    return p_i, field_j
+
+end
+
 function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particles,system, force::asymmetric_field_propulsion_distr_force)
     if p_i.type[1] in force.ontypes && field_j.type in force.ontypes
         x_index = field_indices[1]
@@ -1345,8 +1375,8 @@ function contribute_field_force!(p_i,field_j,field_indices, t, dt, rngs_particle
             p_i.f[2]+= p_i.zeta[1] * (v0fact) *p_i.p[2]
 
             
-            xbin_ind = x_index-round(Int64,p_i.p[1]*p_i.R[1])
-            ybin_ind = y_index-round(Int64,p_i.p[2]*p_i.R[1])
+            xbin_ind = x_index-round(Int64,p_i.p[1]*p_i.R[1]/field_j.lbin)
+            ybin_ind = y_index-round(Int64,p_i.p[2]*p_i.R[1]/field_j.lbin)
 
             xlen = size(field_j.Cf)[1]
             ylen  = size(field_j.Cf)[2]
