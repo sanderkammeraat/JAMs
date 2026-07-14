@@ -318,6 +318,7 @@ struct polymer_pairAN_force{T1,T2, T3}<:Force
     ontypes::Union{Int64,Vector{Int64}}
     torque::Bool
     traceless::Bool
+    intrapol::Bool
     rfact::Float64
     k_par::T1
     k_per::T2
