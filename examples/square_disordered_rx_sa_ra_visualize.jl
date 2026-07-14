@@ -3,13 +3,13 @@ include(joinpath("..","src","Engine.jl"))
 
 function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing)
 
-    external_forces = []#[thermal_translational_noise(1, 0 .*[1.,1.,0])]
+    external_forces = ()#[thermal_translational_noise(1, 0 .*[1.,1.,0])]
 
-    pair_forces = [soft_disk_force([1, 2],[1. 1.; 1. 1.])]
+    pair_forces = (soft_disk_force([1, 2],[1. 1.; 1. 1.]),)
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1))
-    global_dofevolvers = []
-    field_dofevolvers = []
+    global_dofevolvers = ()
+    field_dofevolvers = ()
 
 
    
@@ -94,7 +94,7 @@ function relaxation_step(save_folder_path; Tsave=100, Tplot=nothing)
     end
 
 
-    size = [Nlin*2+3, Nlin*2+3,1];
+    size = (Nlin*2+3., Nlin*2+3.,1.);
     initial_field_state=[]
     field_forces = []
     field_updaters = []
@@ -110,11 +110,11 @@ end
 
 function self_aligning_step(rx_step,J,v0, Dr, seed,save_folder_path; Tsave=100, Tplot=nothing)
 
-    external_forces =( ABP_3d_propulsion_force(1), self_align_with_v_unit_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
+    external_forces =( ABP_3d_propulsion_force(1), self_align_with_v_force(1,J),ABP_perpendicular_angular_noise(1,[0,0,1]))
 
     pair_forces = (soft_disk_force([1, 2],[1 1.; 1. 1]),)
 
-    local_dofevolvers = [overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1)]
+    local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1))
     global_dofevolvers = []
     field_dofevolvers = []
 
@@ -146,7 +146,7 @@ function relax_again_step(sa_step, save_folder_path; Tsave=100, Tplot=nothing)
 
     external_forces =[] # [thermal_translational_noise(1, 0 .*[1.,1.,0])]
 
-    pair_forces = [soft_disk_force([1, 2],[1. 1.; 1. 1.])]
+    pair_forces = (soft_disk_force([1, 2],[1. 1.; 1. 1.]),)
 
     local_dofevolvers = [overdamped_xvf_evolver(1),overdamped_pq_xyc_evolver(1)]
     global_dofevolvers = []
@@ -176,7 +176,7 @@ function relax_again_step(sa_step, save_folder_path; Tsave=100, Tplot=nothing)
 end
 
 rx_result= relaxation_step("",Tsave=nothing, Tplot=100)
-sa_result=self_aligning_step(rx_result,1,0.001, 0.00,1, ""; Tsave=nothing, Tplot=100);
+sa_result=self_aligning_step(rx_result,500,0.001, 0.001,1, ""; Tsave=nothing, Tplot=100);
 
 ra_result=relax_again_step(sa_result, ""; Tsave=nothing, Tplot=100);
 

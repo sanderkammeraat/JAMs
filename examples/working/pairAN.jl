@@ -10,7 +10,7 @@ function simulation()
     kpar = -1
     kper= 0
     #pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,1.3, 1, 0., 0.3), pair_nematic_alignment_force(1,2.5,0.15))
-    pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,true,1.3, kpar, kper, 0.3), pair_nematic_alignment_force(1,2.5,0.3))
+    pair_forces = (soft_disk_force(1,1),pairAN_force(1,true,false,1.3, kpar, kper, 0.3), pair_nematic_alignment_force(1,2.5,0.3))
 
 
     #dofevolvers = [inertial_evolver!]
@@ -18,7 +18,7 @@ function simulation()
     global_dofevolvers = ()
     field_dofevolvers = ()
 
-    N=2000
+    N=10000
     
     ϕ = 1.0
     poly=15e-2
@@ -31,7 +31,7 @@ function simulation()
 
 
     display(L)
-    sizes = [L,L,2];
+    sizes = (L,L,2.);
     print(sizes)
     initial_field_state= ()
     field_forces = ()
@@ -42,10 +42,7 @@ function simulation()
 
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,3.);
 
-    #Run integrationov
-    #Use plot_disks! for nice visualss
-    #Use plot_points! for fast plot}ting
-    sim = Euler_integrator(system,0.01, 1e4,fps=60,Tplot=10,plot_functions=(plot_transparant_disks!,plot_nematic_directors! ),plotdim=2, res=(1000,1000))#, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,0.01, 10,Tplot=nothing,plot_functions=(plot_disks_nematic_orientation!,plot_nematic_directors!),plotdim=2)#, res=(1000,1000),record_folder_path="/Users/kammeraat/quantum_rave_submission_hq_disks_Tplot10/",crf=23)#, plot_nematic_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim;
 
 end
@@ -53,6 +50,8 @@ end
 sim = simulation()  
 
 @profview simulation()
+
+@profview_allocs simulation()
 
 
 

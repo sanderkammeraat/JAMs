@@ -25,7 +25,7 @@ function simulation()
     Lz = L
     positions, polarities = random_on_sphere(R,N)
 
-    initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [Rs[i]], [0.2], [0.000], positions[i],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],polarities[i],[0,0,0],[0,0,0]) for i=1:N ];
+    initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [Rs[i]], [0.2], [0.01], positions[i],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],polarities[i],[0,0,0],[0,0,0]) for i=1:N ];
 
 
     display(L)
@@ -43,7 +43,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.005, 1e4, sbs=true, Tplot=100,fps=60,plot_functions=(plot_sphere!,plot_points!, plot_directors!, plot_velocity_vectors!,plot_trajectories!), Tsave=nothing, save_folder_path = "/Users/kammeraat/test_saving_speed/", save_functions=[save_2d_polar_p!]); 
+    sim = Euler_integrator(system,0.005, 1e4, sbs=false, Tplot=100,fps=60,plot_functions=(plot_sphere!,plot_points!, plot_directors!, plot_velocity_vectors!,plot_trajectories!), Tsave=nothing, save_folder_path = "/Users/kammeraat/test_saving_speed/", save_functions=[save_2d_polar_p!]); 
     return sim;
 
 end

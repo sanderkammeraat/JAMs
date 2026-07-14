@@ -33,10 +33,10 @@ function simulation()
         initial_state=push!(initial_state,PolarPolymerParticle3d([id],[2],[2],[1],[1], [1], [1], [1], [v0], [Dr], [rand(Uniform(-R/2, R/2)),rand(Uniform(-R/2, R/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]))
     end
 
-    sizes = [1.5*L,1.5*L,2.];
+    sizes = (1.5*L,1.5*L,2.);
     initial_field_state=[]
-    field_forces = []
-    field_updaters = []
+    field_forces = ()
+    field_updaters = ()
 
 
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true,6.);

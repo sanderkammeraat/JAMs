@@ -4,26 +4,26 @@ include(joinpath("..","..","src","Engine.jl"))
 
 
 function soft_disk_no_overlap()
-    pair_forces =[soft_disk_force(1,1)]#[soft_shape_disk_force(1,0)]
+    pair_forces =(soft_disk_force(1,1),)#[soft_shape_disk_force(1,0)]
 
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_2d_shape_evolver(1))
-    global_dofevolvers = []
-    field_dofevolvers = []
+    global_dofevolvers = ()
+    field_dofevolvers = ()
     N=500
-    ϕ =0.5
+    ϕ =0.7
     Rno=3
     L =  sqrt(pi * N*Rno^2 / ϕ)
     xo = Float64[ -1 0 0;  1/2 -1/2*sqrt(3)   0 ;  1/2 1/2*sqrt(3)   0]
 
     initial_state = PolarShape[PolarShape([i],[1], [1], [1], [Rno], [0.3], [0.001], [rand(Uniform(-L/2, L/2)) , rand(Uniform(-L/2,L/2)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0],deepcopy(xo),xo,[1,1,1]) for i=1:N ]
 
-    sizes = [L,L,4];
+    sizes = (L,L,4.);
     initial_field_state=[]
-    field_forces = []
-    field_updaters = []
+    field_forces = ()
+    field_updaters = ()
 
-    external_forces = []
+    external_forces = ()
 
     system = System(sizes, initial_state,initial_field_state, external_forces, pair_forces,field_forces, field_updaters, local_dofevolvers,global_dofevolvers, field_dofevolvers, true, 10.);
 
@@ -37,13 +37,13 @@ end
 function simulation(soft_disk_no_overlap_result)
 
 
-    pair_forces =[soft_shape_disk_force(1,1)]
+    pair_forces =(exp_shape_disk_force(1,1),)
 
     #dofevolvers = [inertial_evolver!]
     local_dofevolvers = (overdamped_xvf_evolver(1),overdamped_pq_evolver(1),overdamped_2d_shape_evolver(1))
     global_dofevolvers = []
-    field_forces = [ field_propulsion_distr_force(1,0.2,1.,0.4,1), self_align_with_∇C_force(1,-3)]
-    field_dofevolvers = [overdamped_CCvCf_evolver(1)]
+    field_forces = ( field_propulsion_distr_force(1,0.2,1.,0.4,1), self_align_with_∇C_force(1,0.))
+    field_dofevolvers = (overdamped_CCvCf_evolver(1),)
     initial_particle_state =deepcopy(soft_disk_no_overlap_result.final_particle_state)
 
     #Modify initial state
@@ -58,7 +58,7 @@ function simulation(soft_disk_no_overlap_result)
     Lx = sizes[1]
     Ly= sizes[2]
     Lz = sizes[3]
-    lbin = 1
+    lbin = 1.
     z_bin_centers = [0.]
     x_bin_centers = [-Lx-lbin]
     x_bin_centers = append!(x_bin_centers,range(start=-Lx/2, stop=Lx/2+0.1*lbin, step=lbin).+lbin/2)

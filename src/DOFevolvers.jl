@@ -248,7 +248,6 @@ function evolve_globally!(current_particle_state, current_field_state, system, c
         
         p_i = current_particle_state[i]
 
-        dx = @MVector zeros(Float64,length(p_i.x))
         neighbours= get_neighbours(p_i,cells,stencils)
         if !isnothing(neighbours)
     
@@ -257,7 +256,7 @@ function evolve_globally!(current_particle_state, current_field_state, system, c
                 if i!=n
                     p_j = current_particle_state[n]
     
-                    dx = minimal_image_difference!(dx, p_i.x, p_j.x, system.sizes, system.Periodic)
+                    dx = minimal_image_difference( p_i.x, p_j.x, system.sizes, system.Periodic)
     
                     dxn = norm(dx)
 
@@ -334,8 +333,6 @@ function evolve_globally!(current_particle_state, current_field_state, system, c
 
         #discard current polarity vector
         p_i.p.*=0
-
-        dx = @MVector zeros(Float64,length(p_i.x))
         neighbours= get_neighbours(p_i,cells,stencils)
         if !isnothing(neighbours)
     
@@ -344,7 +341,7 @@ function evolve_globally!(current_particle_state, current_field_state, system, c
                 if i!=n
                     p_j = current_particle_state[n]
     
-                    dx = minimal_image_difference!(dx, p_i.x, p_j.x, system.sizes, system.Periodic)
+                    dx = minimal_image_difference(p_i.x, p_j.x, system.sizes, system.Periodic)
     
                     dxn = norm(dx)
                     

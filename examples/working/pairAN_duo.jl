@@ -26,7 +26,7 @@ function simulation()
     push!(initial_state, PolarParticle3d([2],[1], [1], [1], [R2], [0.1], [0.00], [R2, 0.,0.],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],[nx2,ny2,0],[0,0,0],[0,0,0]))
 
     display(L)
-    sizes = [L,L,4];
+    sizes = (L,L,4.);
     print(sizes)
     initial_field_state=[]
     field_forces = []

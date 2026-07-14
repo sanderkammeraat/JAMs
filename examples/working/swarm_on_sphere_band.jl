@@ -21,7 +21,7 @@ function simulation()
     R = 10
     local_dofevolvers = (overdamped_xvf_Rc_evolver(1,R),overdamped_pq_Rc_evolver(1,R))
 
-    L =  30
+    L =  30.
     Ly = L
     Lx = L
     Lz = L
@@ -31,7 +31,7 @@ function simulation()
 
 
     display(L)
-    sizes = [Lx,Ly,Lz];
+    sizes = (Lx,Ly,Lz);
     print(sizes)
     initial_field_state=[]
     field_forces = []

@@ -23,7 +23,7 @@ function simulation()
 
 
     display(L)
-    sizes = [L,L,4];
+    sizes = (L,L,4.);
     print(sizes)
     initial_field_state=[]
     field_forces = []
@@ -37,7 +37,7 @@ function simulation()
     #Run integration
     #Use plot_disks! for nice visualss
     #Use plot_points! for fast plotting
-    sim = Euler_integrator(system,0.05, 1e5, Tplot=nothing,fps=120,plot_functions=(plot_disks_orientation!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
+    sim = Euler_integrator(system,0.05, 1e5, Tplot=10,fps=120,plot_functions=(plot_disks_orientation!, plot_directors!, plot_velocity_vectors!), plotdim=2); 
     return sim;
 
 end

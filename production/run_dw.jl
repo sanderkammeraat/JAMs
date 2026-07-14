@@ -24,7 +24,7 @@ function simulation(k, Dr, J, Tplot, Tsave,tend)
     field_dofevolvers = ()
 
     #Number of particles, 1000 in each well
-    N=1
+    N=2000
 
     Lx =  10.
 
@@ -42,36 +42,9 @@ function simulation(k, Dr, J, Tplot, Tsave,tend)
     initial_state = PolarParticle3d[ PolarParticle3d([i],[1], [1], [1], [1.], [0.3], [Dr], [put_in_well_a_or_b(i,N,xa,xb) + rand(Uniform(-sigma,sigma)) , rand(Uniform(-sigma,sigma)),0],[0.,0.,0.],[0,0,0], [0,0,0],[0,0,0],normalize([rand(Normal(0, 1)),rand(Normal(0, 1)),0]),[0,0,0],[0,0,0]) for i=1:N ];
 
 
-    
-
-    lbin=0.1
-    z_bin_centers = [0.]
-    x_bin_centers = []
-    x_bin_centers = append!(x_bin_centers,range(start=-2*Lx/3, stop=2*Lx/3+0.1*lbin, step=lbin).+lbin/2)
-
-    y_bin_centers = []
-    y_bin_centers = append!(y_bin_centers,range(start=-2*Ly/3, stop=2*Ly/3+0.1*lbin, step=lbin).+lbin/2)
-    bin_centers = [x_bin_centers, y_bin_centers,z_bin_centers]
-
-    C = zeros(length(x_bin_centers), length(y_bin_centers))
-    for (i, xi) in pairs(x_bin_centers)
-
-        for (j, yj) in pairs(y_bin_centers)
-
-            #force
-
-
-            #potential
-            C[i,j] = -exp( - ka/2* ( (xi - xa)^2 + yj^2)) - exp( - kb/2* ((xi - xb)^2 +yj^2))
-        end
-    end
-
-    
-
-    initial_field_state=[FuelField2d(1,1,bin_centers,C, C.*0, C.*0)]
 
     sizes = (Lx,Ly,4.);
-    #initial_field_state=[]
+    initial_field_state=[]
     field_forces = ()
     field_updaters = ()
 
@@ -85,22 +58,25 @@ function simulation(k, Dr, J, Tplot, Tsave,tend)
     #Use plot_points! for fast plotting
 
     #save_folder = "/Users/kammeraat/dwsa/single/simdata/v0_$v0/Dr_$Dr/J_$J/"
-    save_folder = "/Users/kammeraat/sa_double_well/"
-    sim = Euler_integrator(system,0.0001,tend, Tsave=Tsave, fps=120,Tplot=Tplot,plot_functions=(plot_potential!,plot_points!), plotdim=2, save_folder_path = save_folder, save_functions = (save_2d_polar_p!,)); 
+    save_folder = "/Volumes/T7_Shield/sa_double_well/vary_k/k_$k/"
+    sim = Euler_integrator(system,0.01,tend, Tsave=Tsave, fps=120,Tplot=Tplot,plot_functions=(plot_potential!,plot_trajectories!), plotdim=2, save_folder_path = save_folder, save_functions = (save_2d_polar_p!,),res=(1000,1000)); 
     return sim;
 
 end
 
 #v0, Dr, J, Tplot, Tsave
-begin #start with k=0.1, k=2 is max, close to 1.55 we get hopping, regular 2- orbits round 0.3
-k = 1.0
-Dr = 0.00
-J = 1
-Tplot =10 #plot every nth timestep, set to Tplot=nothing to turn off plotting
+#start with k=0.1, k=2 is max, close to 1.55 we get hopping, regular 2- orbits round 0.3
 
-Tsave = nothing #save every nth timestep, set to Tsave=nothing to turn off saving
+for k in [0.1, 0.2, 0.4, 0.6, 0.8, 1., 1.2, 1.4, 1.5, 1.55, 1.6, 1.8, 2.0]
+    #k =1.6
+    display(k)
+    Dr = 0.01
+    J = 1
+    Tplot =nothing #plot every nth timestep, set to Tplot=nothing to turn off plotting
 
-tend = 1e3 #for how long to run the simulation (in units of simulation time)
+    Tsave = 10 #save every nth timestep, set to Tsave=nothing to turn off saving
 
-simulation(k, Dr ,J, Tplot, Tsave,tend)
+    tend = 1e3#1e3 #for how long to run the simulation (in units of simulation time)
+
+    simulation(k, Dr ,J, Tplot, Tsave,tend)
 end

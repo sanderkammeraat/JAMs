@@ -7,7 +7,7 @@ include(joinpath("../src","Engine.jl"))
 
 include(joinpath("../io","InitialPositionGenerators.jl"))
 
-function relaxation_step(save_folder_path; Tsave=nothing, Tplot=nothing, Nlin=20)
+function relaxation_step(save_folder_path; Tsave=nothing, Tplot=nothing, Nlin=10)
 
     external_forces = ()#[thermal_translational_noise(1, 0 .*[1.,1.,0])]
 
@@ -22,7 +22,7 @@ function relaxation_step(save_folder_path; Tsave=nothing, Tplot=nothing, Nlin=20
     xs = []
     ys = []
     r=1.0
-    ϕ=1.3
+    ϕ=1.0
     l = 2
 
     #if regular hexagonal packing
@@ -70,7 +70,7 @@ function relaxation_step(save_folder_path; Tsave=nothing, Tplot=nothing, Nlin=20
     N = Nint+Nb
     display(N)
 
-    poly=0.15
+    poly=0.15*1e-4
     Rs = rand(Uniform((1-poly)*r, (1+poly)*r),N)
     while mean(Rs)<1 || mean(Rs)>1+ 1e-2
         Rs = rand(Uniform((1-poly)*r, (1+poly)*r),N)
@@ -189,6 +189,6 @@ rx_result= relaxation_step("", Tsave=nothing, Tplot=10)
 
 # rx_step,J,v0, Dr, seed, save_folder_path
 
-sa_result=self_aligning_step(rx_result, 10 , 0.01, 0.01,nothing, "", Tplot=20,  Tsave=nothing);
+sa_result=self_aligning_step(rx_result, 10 , 0.01, 0.0001,nothing, "", Tplot=20,  Tsave=nothing);
 
 # ra_result=relax_again_step(sa_result, save_folder_path);

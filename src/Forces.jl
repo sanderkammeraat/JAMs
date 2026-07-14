@@ -121,8 +121,8 @@ end
 
 struct external_double_gaussian_force<:Force
     ontypes::Union{Int64,Vector{Int64}}
-    a::Float64
-    b::Float64
+    ka::Float64 #stiffness in bottom of well a (after linearization) 
+    kb::Float64 #stiffness in bottom of well b (after linearization) 
     xa::MVector{3,Float64}
     xb::MVector{3,Float64}
     
@@ -528,8 +528,8 @@ function contribute_external_force!(p_i, t, dt,rngs_particles,system, force::ext
         db = p_i.x .- force.xb
 
         
-        p_i.f.+=  - force.a .* da  .* exp(-dot(da, da)/2*force.a )
-        p_i.f.+=  - force.b .* db  .* exp(-dot(db, db)/2*force.a )
+        p_i.f.+=  - force.ka .* da  .* exp(-dot(da, da)/2*force.ka )
+        p_i.f.+=  - force.kb .* db  .* exp(-dot(db, db)/2*force.ka )
 
     end
     return p_i
@@ -735,11 +735,9 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
 
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
     d2R = p_i.R[1]+p_j.R[1]
-    f = @MVector zeros(length(dx))
         if dxn < d2R
 
-            @views f.= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
-            p_i.f.+= f
+            p_i.f.+= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
         end
     end
     return p_i
@@ -767,11 +765,9 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
         #If not part of the same polymer
         if p_i.pol_id[1]!= p_j.pol_id[1]
         d2R = p_i.R[1]+p_j.R[1]
-        f = @MVector zeros(length(dx))
             if dxn < d2R
 
-                @views f.= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
-                p_i.f.+= f
+                p_i.f.+= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
             end
         end
     end
@@ -794,16 +790,13 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles ,system,
                 
                 d2R = p_i.re[m] + p_j.re[n]
 
-
-                dxe =  @MVector zeros(length(dx))
-
-                dxe.= minimal_image_difference!(dxe, p_i.xe[m,:],p_j.xe[n,:],system.sizes, system.Periodic)
+                dxe= minimal_image_difference(p_i.xe[m,:],p_j.xe[n,:],system.sizes, system.Periodic)
 
                 dxen = norm(dxe)
 
                 if dxen<d2R
                     f.= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxen - d2R) * dxe/dxen
-                    T.=  cross(p_i.xo[m,:] +dxe/dxen*p_i.re[m] , f)
+                    T.=  cross(p_i.xe[m,:] +dxe/dxen*p_i.re[m] - p_i.x , f)
 
                     p_i.f.+= f
                     p_i.q.+= T
@@ -830,9 +823,8 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles,system, 
                 d2R = p_i.re[m] + p_j.re[n]
 
 
-                dxe =  @MVector zeros(length(dx))
 
-                dxe.= minimal_image_difference!(dxe, p_i.xe[m,:],p_j.xe[n,:],system.sizes, system.Periodic)
+                dxe= minimal_image_difference( p_i.xe[m,:],p_j.xe[n,:],system.sizes, system.Periodic)
 
                 dxen = norm(dxe)
 

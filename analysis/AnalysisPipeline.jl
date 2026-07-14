@@ -12,6 +12,7 @@ function load_file(file_location)
     return file
 end
 
+
 #Helper function
 function initialize_file(save_path; overwrite = false, append=false, modify=false)
 
@@ -229,6 +230,27 @@ function extract_frame_data_for_type(datakey, type, frame_data)
 
 end
 
+function extract_frame_data(file, datakey)
+
+    t = file["integration_info"]["save_tax"]
+
+    Nt = length(t)
+
+    Np = length(file["frames"]["1"]["id"])
+
+    #remember: Julia is column major, so for speed do this
+    data = zeros(Np,Nt)
+
+    @views for i in 1:Nt
+
+        data[:,i] =  file["frames"][string(i)][datakey]
+    end
+
+    return data
+end
+
+
+
 function findfile(directory, filepattern)
 
     paths = String[]
@@ -402,3 +424,4 @@ function run_sequential_movie(raw_data_file_paths, movie_save_paths,custom_movie
     
 
 end
+

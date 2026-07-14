@@ -37,6 +37,7 @@ function plot_trajectories!(f,ax, cpsO, cfsO)
     indices = zeros(Int, N)
     
     obs = Observable(trajectories)
+    #Note that particle ids will always be ordered and starting from 1, so we can take 1:N
     color_idx =repeat(1:N, inner=maxlen+1)
     lines!(ax, obs, color=color_idx, colorrange=(1, N), colormap=:viridis)
     
