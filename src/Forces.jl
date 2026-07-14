@@ -180,15 +180,25 @@ struct coulomb_force<:Force
     
 end
 
-struct polymer_harmonic_stretch_force{T1}<:Force
+struct polymer_harmonic_stretch_force{T1,T2}<:Force
     ontypes::Union{Int64,Vector{Int64}}
+    internal_repulsion::Bool
     karray::T1
+    farray::T2
 end
 
 struct ring_polymer_harmonic_stretch_force{T1}<:Force
     ontypes::Union{Int64,Vector{Int64}}
     karray::T1
 end
+
+struct polymer_pair_polar_nematic_force<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    bundles::Bool
+    rfact::Float64
+    v0::Float64
+end
+
 
 
 struct polymer_harmonic_bend_force{T1}<:Force
@@ -202,6 +212,11 @@ struct ring_polymer_harmonic_bend_force{T1}<:Force
 end
 
 struct polymer_exterior_soft_disk_force{T1}<:Force
+    ontypes::Union{Int64,Vector{Int64}}
+    karray::T1
+end
+
+struct polymer_soft_disk_force{T1}<:Force
     ontypes::Union{Int64,Vector{Int64}}
     karray::T1
 end
@@ -594,14 +609,21 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system,
             if p_j.id_in_pol[1]==p_i.id_in_pol[1]+1 || p_j.id_in_pol[1]==p_i.id_in_pol[1]-1
 
                 d2R = p_i.R[1]+p_j.R[1]
+
+                f_factor = force.farray[get_param_ind(force.ontypes,p_i.type[1]), get_param_ind(force.ontypes,p_j.type[1])]
                 
-                p_i.f.+= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
+                if force.internal_repulsion
+                    l_stretch = d2R*(2*f_factor - 1)
+                else
+                    l_stretch = d2R*f_factor
+                end
+
+                p_i.f.+= force.karray[get_param_ind(force.ontypes,p_i.type[1]), get_param_ind(force.ontypes,p_j.type[1])] * (dxn-l_stretch) * dx/dxn
             end
         end
     end
     return p_i
 end
-
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::ring_polymer_harmonic_stretch_force)
 
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
@@ -634,7 +656,7 @@ end
 
                 if p_j.id_in_pol[1]==p_i.id_in_pol[1]+2 || p_j.id_in_pol[1]==p_i.id_in_pol[1]-2
 
-                    p_i.f.+= -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+                    p_i.f.+= - force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
                 elseif p_j.id_in_pol[1]==p_i.id_in_pol[1]+1 || p_j.id_in_pol[1]==p_i.id_in_pol[1]-1
 
@@ -647,24 +669,24 @@ end
 
                 if p_j.id_in_pol[1]==3
 
-                    p_i.f.+=  -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+                    p_i.f.+= - force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
                 elseif p_j.id_in_pol[1]==2
 
-                    p_i.f.+= 2 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+                    p_i.f.+= 2 * force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
                 end
         
             #If i is the right most particle
-            elseif p_i.id_in_pol[1]== p_i.pol_N[1]
+            elseif p_i.id_in_pol[1]==p_i.pol_N[1]
 
                 if p_j.id_in_pol[1]==p_i.pol_N[1]-2
 
-                    p_i.f.+=  -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+                    p_i.f.+= - force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
                 elseif p_j.id_in_pol[1]==p_i.pol_N[1]-1
 
-                    p_i.f.+= 2 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+                    p_i.f.+= 2 * force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
                 end
 
@@ -687,17 +709,17 @@ end
                 end
 
             #If i is the second right most particle
-            elseif p_i.id_in_pol[1]==p_i.pol_N[1]-1
+            elseif p_i.id_in_pol[1]==p_i.pol_N[1]-1 #2   2
 
-                if p_j.id_in_pol[1]==p_i.pol_N[1]-3
+                if p_j.id_in_pol[1]==p_i.pol_N[1]-3 #0   4
 
-                    p_i.f.+=  -force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
+                    p_i.f.+= - force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
-                elseif p_j.id_in_pol[1]==p_i.pol_N[1]-2
+                elseif p_j.id_in_pol[1]==p_i.pol_N[1]-2 #1  3
 
                     p_i.f.+= 4 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
-                elseif p_j.id_in_pol[1]==p_i.pol_N[1]
+                elseif p_j.id_in_pol[1]==p_i.pol_N[1] #3   1
 
                     p_i.f.+= 2 *  force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])]/2 * dx
 
@@ -758,16 +780,17 @@ end
 
 
 
-function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::polymer_exterior_soft_disk_force)
+
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::polymer_soft_disk_force)
 
     if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
-
-        #If not part of the same polymer
-        if p_i.pol_id[1]!= p_j.pol_id[1]
+        if !(p_i.pol_id[1]==p_j.pol_id[1]) || ((p_i.pol_id[1]==p_j.pol_id[1]) && abs(p_i.id_in_pol[1]-p_j.id_in_pol[1]) > 1)
         d2R = p_i.R[1]+p_j.R[1]
+        f = @MVector zeros(length(dx))
             if dxn < d2R
 
-                p_i.f.+= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
+                @views f.= force.karray[get_param_ind(force.ontypes,p_i.type[1]),get_param_ind(force.ontypes,p_j.type[1])] * (dxn-d2R) * dx/dxn
+                p_i.f.+= f
             end
         end
     end
@@ -1244,7 +1267,46 @@ function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt, rngs_particles, system
     return p_i
 
 end
+function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::polymer_pair_polar_nematic_force)
+    
+    if p_i.type[1] in force.ontypes && p_j.type[1] in force.ontypes
 
+        if p_j.pol_id[1]!=p_i.pol_id[1]
+
+            d2a = p_i.R[1]+p_j.R[1]
+            r = force.rfact*d2a::Float64
+
+            if dxn < r
+
+                β = 1 - dxn/r
+
+                if force.bundles
+
+                    p_i.f .+= β*force.v0[p_i.type[1]] * (p_i.p .- p_j.p)
+
+                else
+
+                    if dot(p_i.p, p_j.p) > 0
+
+                        sign_ij = sign(p_i.pol_id[1] - p_j.pol_id[1])
+
+                        p_i.f .+= β*sign_ij*force.v0[p_i.type[1]] * (p_i.p .+ p_j.p)
+
+                    else
+
+                        p_i.f .+= β*force.v0[p_i.type[1]] * (p_i.p .- p_j.p)
+
+                    end
+
+                end
+            end
+
+        end
+
+    end
+    return p_i
+
+end
 
 function contribute_pair_force!(p_i, p_j, dx, dxn, t, dt,rngs_particles, system, force::fluid_dipole_2d_force)
     

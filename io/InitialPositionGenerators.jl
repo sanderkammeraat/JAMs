@@ -127,15 +127,22 @@ end
 # scatter!(xi, yi)
 
 #Thanks to Gabriel Martin
-function stacked_polymers_at_angle(N_in_pol, L, R,pf; tilt_angle = nothing)
+function stacked_polymers_at_angle(N_in_pol, R, pf, f_eq_stretch_force, L_0; tilt_angle = nothing, random_polarity = false)
 
     # initialization
 
     S = pi * R^2
 
-    Npols = convert(Int64, floor(pf*L*L/S/N_in_pol))
+    S_overlap = 2*(R*R*acos(f_eq_stretch_force*R) - (f_eq_stretch_force*R)^2*tan(acos(f_eq_stretch_force*R)))
 
-    M = Npols * N_in_pol
+    S_polymers = (S*N_in_pol-S_overlap*(N_in_pol-1))
+
+    Npols = floor(Int64, pf * L_0^2 / S_polymers)
+
+    L = sqrt(Npols*S_polymers/pf)
+
+    M = Npols*N_in_pol
+
     x = zeros(M)
     y = zeros(M)
     radii = R * ones(M)
@@ -144,43 +151,38 @@ function stacked_polymers_at_angle(N_in_pol, L, R,pf; tilt_angle = nothing)
 
     ids_in_pol= zeros(M)
 
+    Lpols = 2*R + (N_in_pol - 1) * 2*R * f_eq_stretch_force
+
     if isnothing(tilt_angle)
-        tilt_angle = atan(L/(2R*M))   # The angle along which to place the particles to maximize the spread of particles on the torque
+        tilt_angle = atan(L/Npols/Lpols)   # The angle along which to place the particles to maximize the spread of particles on the torque
     end
     
     id = 1
 
-    for i in 1:Npols
+    for (i, pol_index) in enumerate(shuffle!(collect(1:Npols)))
+
+        flip = random_polarity ? rand((true,false)) : false   #based on the random_polarity bool, if true choose random, if false use false
 
         for j in 1:N_in_pol
-            pol_ids[id] = i
+            
+            pol_ids[id] = pol_index
 
             ids_in_pol[id] = j
 
-            x[id] = 2*sum(radii[1:id])*cos(tilt_angle) % L -L/2
-            y[id] = 2*sum(radii[1:id])*sin(tilt_angle) % L -L/2
+            index = j - 1
 
+            if flip
+                index = N_in_pol - j
+            end
+
+            x[id] = ((i-1)*Lpols + index*2*R*f_eq_stretch_force)*cos(tilt_angle) % L - L/2
+            y[id] = ((i-1)*Lpols + index*2*R*f_eq_stretch_force)*sin(tilt_angle) % L - L/2
 
             id+=1
 
         end
 
     end
+    return x, y, radii, pol_ids, ids_in_pol, L, Npols
 
-    return x, y, radii, pol_ids, ids_in_pol, Npols
-
-end
-
-function random_on_sphere(R, N)
-
-    positions = [ ]
-    polarities = [ ]
-    for i=1:N
-        unit_position = normalize( rand(Normal(0,1),3))
-        position = R .* unit_position
-        polarity = normalize( cross(  rand(Normal(0,1),3) ,unit_position) )
-        push!(positions, position)
-        push!(polarities, polarity)
-    end
-    return positions, polarities
 end
